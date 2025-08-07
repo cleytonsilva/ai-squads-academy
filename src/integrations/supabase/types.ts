@@ -24,6 +24,7 @@ export type Database = {
           id: string
           instructor_id: string | null
           is_published: boolean
+          status: string
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           is_published?: boolean
+          status?: string
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -50,6 +52,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           is_published?: boolean
+          status?: string
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
@@ -71,6 +74,7 @@ export type Database = {
           created_at: string
           duration: number | null
           id: string
+          metadata: Json | null
           module_type: string | null
           order_index: number
           title: string
@@ -82,6 +86,7 @@ export type Database = {
           created_at?: string
           duration?: number | null
           id?: string
+          metadata?: Json | null
           module_type?: string | null
           order_index: number
           title: string
@@ -93,6 +98,7 @@ export type Database = {
           created_at?: string
           duration?: number | null
           id?: string
+          metadata?: Json | null
           module_type?: string | null
           order_index?: number
           title?: string
@@ -115,6 +121,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          profile_data: Json | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
@@ -126,6 +133,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          profile_data?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
@@ -137,6 +145,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          profile_data?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
