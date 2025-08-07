@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-
+import { Link } from "react-router-dom";
 type Course = {
   id: string;
   title: string;
@@ -125,9 +125,14 @@ const AdminDashboard = () => {
                     <Badge variant={course.is_published ? "default" : "secondary"}>
                       {course.is_published ? "Publicado" : (course.status || "Rascunho")}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      Atualizado {new Date(course.updated_at).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">
+                        Atualizado {new Date(course.updated_at).toLocaleDateString()}
+                      </span>
+                      <Button asChild size="sm" variant="outline">
+                        <Link to={`/admin/courses/${course.id}`}>Editar</Link>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
