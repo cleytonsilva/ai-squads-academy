@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Sparkles, Shield, Cloud, Users } from "lucide-react";
@@ -7,26 +7,12 @@ import heroImage from "@/assets/hero-esquads.jpg";
 import { Link } from "react-router-dom";
 
 const Index = () => {
-  const canonical = typeof window !== "undefined" ? `${window.location.origin}/` : "/";
+  useEffect(() => {
+    document.title = "Esquads — Educação Tech por IA";
+  }, []);
   return (
     <>
-      <Helmet>
-        <title>Esquads — Educação Tech por IA</title>
-        <meta name="description" content="Plataforma de cursos em cibersegurança, cloud e IA com geração automática de conteúdo, gamificação e squads." />
-        <link rel="canonical" href={canonical} />
-        <meta property="og:title" content="Esquads — Educação Tech por IA" />
-        <meta property="og:description" content="Aprenda com trilhas personalizadas, XP e colaboração em squads." />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "EducationalOrganization",
-            name: "Esquads",
-            url: canonical,
-            description:
-              "Plataforma educacional tecnológica com IA para cibersegurança, cloud e tecnologia.",
-          })}
-        </script>
-      </Helmet>
+
 
       <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
         <header className="container mx-auto py-6 flex items-center justify-between">
