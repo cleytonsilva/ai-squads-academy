@@ -5,7 +5,7 @@ import { CheckCircle2, Sparkles, Shield, Cloud, Users } from "lucide-react";
 import SignatureAurora from "@/components/SignatureAurora";
 import heroImage from "@/assets/hero-esquads.jpg";
 import { Link } from "react-router-dom";
-
+import VoiceInterface from "@/components/VoiceInterface";
 const Index = () => {
   useEffect(() => {
     document.title = "Esquads — Educação Tech por IA";
@@ -127,6 +127,7 @@ const Index = () => {
             </div>
           </div>
         </footer>
+        <VoiceInterface />
       </div>
     </>
   );

@@ -1,1 +1,5 @@
 project_id = "ncrlojjfkhevjotchhxi"
+
+[functions]
+[functions.openai-ephemeral]
+verify_jwt = false
