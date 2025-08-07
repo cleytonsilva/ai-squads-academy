@@ -15,17 +15,6 @@ const Index = () => {
 
 
       <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
-        <header className="container mx-auto py-6 flex items-center justify-between">
-          <Link to="/" className="font-semibold text-lg">Esquads</Link>
-          <nav className="flex items-center gap-4">
-            <Link to="/courses" className="hover:underline">Cursos</Link>
-            <Link to="/app" className="hover:underline">Minha jornada</Link>
-            <Link to="/admin" className="hover:underline">Admin</Link>
-            <Button asChild variant="hero" className="ml-2">
-              <Link to="/app">Começar agora</Link>
-            </Button>
-          </nav>
-        </header>
 
         <main>
           <section className="container mx-auto grid md:grid-cols-2 gap-10 items-center py-14">

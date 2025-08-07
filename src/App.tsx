@@ -9,6 +9,7 @@ import AppDashboard from "./pages/AppDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Courses from "./pages/Courses";
 import AdminCourseEditor from "./pages/AdminCourseEditor";
+import AppLayout from "@/components/AppLayout";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -18,13 +19,14 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/app" element={<AppDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/courses/:id" element={<AdminCourseEditor />} />
-          <Route path="/courses" element={<Courses />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/app" element={<AppDashboard />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/courses/:id" element={<AdminCourseEditor />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
