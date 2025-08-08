@@ -29,17 +29,45 @@ const safeJsonParse = (text: string): any => {
   }
 };
 
+// OpenRouter helper to call models with fallback
+async function callOpenRouter(messages: any[], models: string[], temperature: number = 0.6): Promise<string> {
+  const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+  const APP_URL = "https://esquads.dev";
+  const APP_TITLE = "Esquads Platform";
+  if (!OPENROUTER_API_KEY) throw new Error("Missing OPENROUTER_API_KEY");
+  let lastErr: any = null;
+  for (const model of models) {
+    try {
+      const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": APP_URL,
+          "X-Title": APP_TITLE,
+        },
+        body: JSON.stringify({ model, messages, temperature }),
+      });
+      const data = await r.json();
+      if (!r.ok) { lastErr = data; continue; }
+      const content = data?.choices?.[0]?.message?.content;
+      if (content) return content;
+    } catch (e) { lastErr = e; }
+  }
+  throw new Error(`OpenRouter failed: ${lastErr?.error?.message || lastErr?.message || "Unknown"}`);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+  const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 
-  if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
+  if (!OPENROUTER_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
     return new Response(JSON.stringify({ error: "Missing server configuration/secrets" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -115,29 +143,21 @@ serve(async (req) => {
 
         const userMsg = `Gere um curso completo para o público: ${audience}.\nTítulo sugerido: ${promptTitle}\nNível: ${difficulty}.\nCada módulo com resumo, conteúdo em HTML curto (2-4 parágrafos com <p>), e um quiz de 5 questões de múltipla escolha.`;
 
-        const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4.1-2025-04-14",
-            temperature: 0.6,
-            messages: [
-              { role: "system", content: system },
-              { role: "user", content: userMsg },
-            ],
-          }),
-        });
+        const models = [
+          "qwen/qwen2.5-vl-72b-instruct:free",
+          "openai/gpt-oss-20b:free",
+          "z-ai/glm-4.5-air:free",
+          "deepseek/deepseek-r1-0528-qwen3-8b:free",
+        ];
 
-        const aiJson = await aiRes.json();
-        if (!aiRes.ok) {
-          console.error("OpenAI error", aiJson);
-          throw new Error(aiJson?.error?.message || "OpenAI API error");
-        }
-
-        const contentText = aiJson?.choices?.[0]?.message?.content || "";
+        const contentText = await callOpenRouter(
+          [
+            { role: "system", content: system },
+            { role: "user", content: userMsg },
+          ],
+          models,
+          0.6,
+        );
         const parsed = safeJsonParse(contentText);
         if (!parsed || !parsed.modules || !Array.isArray(parsed.modules)) {
           throw new Error("Resposta da IA inválida (sem módulos)");
@@ -225,18 +245,16 @@ serve(async (req) => {
             const topics = Array.isArray(parsed.modules) ? parsed.modules.map((m: any) => m.title).join("; ") : "";
             const user2 = `Crie ${qCount} questões de múltipla escolha (nível: ${fed}) para a prova final do curso "${parsed.title || promptTitle}".\n- Cada questão deve ter ${optCount} opções.\n- Evite respostas ambíguas.\n- Inclua explicação curta.\n- Use pt-BR.\n- Foco nos tópicos: ${topics}`;
 
-            const aiRes2 = await fetch("https://api.openai.com/v1/chat/completions", {
-              method: "POST",
-              headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-              body: JSON.stringify({
-                model: "gpt-4.1-2025-04-14",
-                temperature: 0.4,
-                messages: [ { role: "system", content: system2 }, { role: "user", content: user2 } ],
-              }),
-            });
-            const aiJson2 = await aiRes2.json();
-            if (!aiRes2.ok) throw new Error(aiJson2?.error?.message || "OpenAI error (final exam)");
-            const contentText2 = aiJson2?.choices?.[0]?.message?.content || "";
+            const contentText2 = await callOpenRouter(
+              [ { role: "system", content: system2 }, { role: "user", content: user2 } ],
+              [
+                "qwen/qwen2.5-vl-72b-instruct:free",
+                "openai/gpt-oss-20b:free",
+                "z-ai/glm-4.5-air:free",
+                "deepseek/deepseek-r1-0528-qwen3-8b:free",
+              ],
+              0.4,
+            );
             const parsed2 = safeJsonParse(contentText2) || { questions: [] };
             const questions = Array.isArray(parsed2.questions) ? parsed2.questions : [];
 

@@ -69,6 +69,38 @@ async function generateImageWithOpenAI(prompt: string, size: string = "1536x1024
 }
 
 
+async function generateImageWithGemini(prompt: string, width: number = 1536, height: number = 1024): Promise<string> {
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY for image generation");
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/images:generate?key=${GEMINI_API_KEY}`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "imagen-3.0",
+      prompt: { text: prompt },
+      imageGenerationConfig: { numberOfImages: 1, width, height }
+    }),
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Gemini image error ${resp.status}: ${text}`);
+  }
+  const data = await resp.json();
+  // Try to parse common response shapes
+  const img = data?.images?.[0];
+  if (img?.content) {
+    const mime = img?.mimeType || "image/png";
+    return `data:${mime};base64,${img.content}`;
+  }
+  const cand = data?.candidates?.[0]?.content?.parts?.find?.((p: any) => p?.inline_data?.data);
+  if (cand?.inline_data?.data) {
+    const mime = cand?.inline_data?.mime_type || "image/png";
+    return `data:${mime};base64,${cand.inline_data.data}`;
+  }
+  throw new Error("Gemini response without image");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -133,21 +165,25 @@ serve(async (req) => {
     // Generate images (sequential to avoid rate limits) with fallback
     let courseImageUrl: string | null = null;
     try {
-      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY);
+      courseImageUrl = await generateImageWithGemini(coursePrompt, 1536, 1024);
     } catch (err) {
-      console.warn("Corcel course image failed, falling back to OpenAI:", err?.toString?.());
-      courseImageUrl = await generateImageWithOpenAI(coursePrompt);
+      console.warn("Gemini course image failed, falling back to OpenAI:", err?.toString?.());
+      try {
+        courseImageUrl = await generateImageWithOpenAI(coursePrompt, "1536x1024");
+      } catch (e2) {
+        console.error("OpenAI fallback failed for course image:", e2);
+      }
     }
 
     const moduleResults: Record<string, string> = {};
     for (const mp of modulePrompts) {
       try {
-        const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY);
+        const url = await generateImageWithGemini(mp.prompt, 1536, 1024);
         moduleResults[mp.id] = url;
       } catch (e) {
-        console.warn("Corcel module image failed, falling back to OpenAI", mp.id, e?.toString?.());
+        console.warn("Gemini module image failed, falling back to OpenAI", mp.id, e?.toString?.());
         try {
-          const url2 = await generateImageWithOpenAI(mp.prompt);
+          const url2 = await generateImageWithOpenAI(mp.prompt, "1536x1024");
           moduleResults[mp.id] = url2;
         } catch (e2) {
           console.error("Module image fallback failed", mp.id, e2);
