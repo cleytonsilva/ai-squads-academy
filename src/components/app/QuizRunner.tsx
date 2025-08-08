@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Progress } from "@/components/ui/progress";
 
 export type NormalizedQuestion = {
   prompt: string;
@@ -76,6 +77,34 @@ export default function QuizRunner({ quiz, onClose }: { quiz: QuizRow; onClose?:
   const [answers, setAnswers] = useState<Record<number, number | null>>({});
   const [submitted, setSubmitted] = useState(false);
 
+  // Timer: 1 min por questão (mín 3min, máx 20min)
+  const totalSeconds = useMemo(() => {
+    const q = Math.max(questions.length, 3);
+    return Math.min(20 * 60, Math.max(3 * 60, q * 60));
+  }, [questions.length]);
+  const [remaining, setRemaining] = useState(totalSeconds);
+
+  useEffect(() => {
+    setRemaining(totalSeconds);
+    setSubmitted(false);
+    setAnswers({});
+  }, [totalSeconds, quiz.id]);
+
+  useEffect(() => {
+    if (submitted) return;
+    const t = setInterval(() => {
+      setRemaining((s) => {
+        if (s <= 1) {
+          clearInterval(t);
+          setSubmitted(true);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [submitted, totalSeconds]);
+
   const score = useMemo(() => {
     if (!submitted) return 0;
     let s = 0;
@@ -94,11 +123,43 @@ export default function QuizRunner({ quiz, onClose }: { quiz: QuizRow; onClose?:
   const reset = () => {
     setAnswers({});
     setSubmitted(false);
+    setRemaining(totalSeconds);
+  };
+
+  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const ss = String(remaining % 60).padStart(2, "0");
+  const progress = totalSeconds > 0 ? ((totalSeconds - remaining) / totalSeconds) * 100 : 0;
+
+  const prevent = (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if ((e.ctrlKey || e.metaKey) && ["c", "p"].includes(e.key.toLowerCase())) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 select-none"
+      onCopy={prevent}
+      onCut={prevent}
+      onPaste={prevent}
+      onContextMenu={prevent}
+      onKeyDownCapture={onKey}
+    >
       {quiz.description && <p className="text-sm text-muted-foreground">{quiz.description}</p>}
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span>Tempo</span>
+          <span className="font-mono">{mm}:{ss}</span>
+        </div>
+        <Progress value={progress} />
+      </div>
 
       <div className="space-y-5">
         {questions.map((q, idx) => (
@@ -107,7 +168,7 @@ export default function QuizRunner({ quiz, onClose }: { quiz: QuizRow; onClose?:
             <RadioGroup
               value={answers[idx] != null ? String(answers[idx]) : undefined}
               onValueChange={(val) => setAnswers((prev) => ({ ...prev, [idx]: Number(val) }))}
-              disabled={submitted}
+              disabled={submitted || remaining <= 0}
             >
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center space-x-2 py-1">
@@ -136,11 +197,11 @@ export default function QuizRunner({ quiz, onClose }: { quiz: QuizRow; onClose?:
             Resultado: <span className="font-semibold">{score}/{questions.length}</span>
           </div>
         ) : (
-          <div />
-        )}
+          <div />)
+        }
         <div className="flex gap-2">
           {!submitted ? (
-            <Button onClick={handleSubmit} disabled={!allAnswered}>Enviar</Button>
+            <Button onClick={handleSubmit} disabled={!allAnswered || remaining <= 0}>Enviar</Button>
           ) : (
             <Button variant="outline" onClick={reset}>Refazer</Button>
           )}

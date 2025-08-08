@@ -336,7 +336,7 @@ export default function CourseView() {
         </div>
       )}
       <Dialog open={!!openQuiz} onOpenChange={(o) => !o && setOpenQuiz(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{openQuiz?.title || "Quiz"}</DialogTitle>
           </DialogHeader>
