@@ -3,3 +3,7 @@ project_id = "ncrlojjfkhevjotchhxi"
 [functions]
 [functions.openai-ephemeral]
 verify_jwt = false
+
+[functions.ai-generate-course]
+verify_jwt = true
+

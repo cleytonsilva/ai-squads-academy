@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      badges: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          key: string | null
+          name: string
+          style: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          key?: string | null
+          name: string
+          style?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          key?: string | null
+          name?: string
+          style?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      certificates: {
+        Row: {
+          certificate_number: string | null
+          course_id: string
+          created_at: string
+          id: string
+          issued_at: string
+          metadata: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          course_id: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          metadata?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          certificate_number?: string | null
+          course_id?: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          metadata?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           ai_generated: boolean
@@ -66,6 +132,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      generation_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          input: Json | null
+          output: Json | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          input?: Json | null
+          output?: Json | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      missions: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          module_id: string | null
+          order_index: number
+          points: number
+          requirements: Json
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          module_id?: string | null
+          order_index?: number
+          points?: number
+          requirements?: Json
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          module_id?: string | null
+          order_index?: number
+          points?: number
+          requirements?: Json
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       modules: {
         Row: {
@@ -150,6 +294,135 @@ export type Database = {
           updated_at?: string
           user_id?: string
           xp?: number
+        }
+        Relationships: []
+      }
+      quiz_attempts: {
+        Row: {
+          answers: Json
+          created_at: string
+          feedback: Json
+          id: string
+          is_passed: boolean
+          quiz_id: string
+          score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          feedback?: Json
+          id?: string
+          is_passed?: boolean
+          quiz_id: string
+          score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          feedback?: Json
+          id?: string
+          is_passed?: boolean
+          quiz_id?: string
+          score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quizzes: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          module_id: string | null
+          questions: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          module_id?: string | null
+          questions?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          module_id?: string | null
+          questions?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          awarded_at: string
+          badge_id: string
+          created_at: string
+          id: string
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          badge_id: string
+          created_at?: string
+          id?: string
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          badge_id?: string
+          created_at?: string
+          id?: string
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_missions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          mission_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

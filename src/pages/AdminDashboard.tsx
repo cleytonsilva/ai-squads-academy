@@ -1,9 +1,13 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -49,6 +53,37 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  // IA generation dialog state
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiTitle, setAiTitle] = useState("");
+  const [aiDifficulty, setAiDifficulty] = useState("beginner");
+  const [aiModules, setAiModules] = useState<number>(12);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleStartAIGeneration = async () => {
+    try {
+      setIsGenerating(true);
+      const { data, error } = await supabase.functions.invoke("ai-generate-course", {
+        body: {
+          title: aiTitle,
+          difficulty: aiDifficulty,
+          num_modules: aiModules,
+          audience: "profissionais e estudantes de TI no Brasil",
+        },
+      });
+      if (error) throw error as any;
+      toast.success("Geração iniciada. Atualize em alguns segundos.");
+      setAiOpen(false);
+      // Tenta refetch depois de alguns segundos
+      setTimeout(() => refetch(), 5000);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Falha ao iniciar geração por IA.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleCreateCourse = async () => {
     const { data, error } = await supabase.from("courses").insert({
       title: "Novo Curso",
@@ -82,6 +117,62 @@ const AdminDashboard = () => {
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => refetch()}>Atualizar</Button>
+            <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">Gerar curso com IA</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Gerar curso com IA</DialogTitle>
+                  <DialogDescription>
+                    Crie um curso com módulos e quizzes automaticamente. Você poderá editar antes de publicar.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="ai-title">Título / Tema</Label>
+                    <Input
+                      id="ai-title"
+                      value={aiTitle}
+                      onChange={(e) => setAiTitle(e.target.value)}
+                      placeholder="Ex.: Fundamentos de Cibersegurança em Cloud"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-difficulty">Nível</Label>
+                      <Select value={aiDifficulty} onValueChange={setAiDifficulty}>
+                        <SelectTrigger id="ai-difficulty">
+                          <SelectValue placeholder="Selecione o nível" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="beginner">Iniciante</SelectItem>
+                          <SelectItem value="intermediate">Intermediário</SelectItem>
+                          <SelectItem value="advanced">Avançado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ai-modules">Qtde de módulos</Label>
+                      <Input
+                        id="ai-modules"
+                        type="number"
+                        min={8}
+                        max={20}
+                        value={aiModules}
+                        onChange={(e) => setAiModules(Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="secondary" onClick={() => setAiOpen(false)} disabled={isGenerating}>Cancelar</Button>
+                  <Button onClick={handleStartAIGeneration} disabled={isGenerating || !aiTitle.trim()}>
+                    {isGenerating ? "Gerando..." : "Gerar"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button variant="hero" onClick={handleCreateCourse}>Novo curso</Button>
           </div>
         </header>
