@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import QuizManager from "@/components/admin/QuizManager";
 import MissionManager from "@/components/admin/MissionManager";
-
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 interface Course {
   id: string;
   title: string;
@@ -37,7 +37,7 @@ interface ModuleRow {
 
 export default function AdminCourseEditor() {
   const { id } = useParams<{ id: string }>();
-
+  const navigate = useNavigate();
   const getHtml = (payload: unknown): string => {
     try {
       if (payload && typeof payload === "object" && payload !== null && "html" in (payload as any)) {
@@ -52,7 +52,7 @@ export default function AdminCourseEditor() {
   const [courseDesc, setCourseDesc] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [status, setStatus] = useState("draft");
-
+  const [deleting, setDeleting] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [moduleTitle, setModuleTitle] = useState("");
   const [moduleHtml, setModuleHtml] = useState("");
@@ -113,12 +113,26 @@ export default function AdminCourseEditor() {
     }
   };
 
+  const handleDeleteCourse = async () => {
+    if (!id) return;
+    try {
+      setDeleting(true);
+      const { error } = await supabase.from("courses").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Curso excluído");
+      navigate("/admin");
+    } catch (e: any) {
+      toast.error("Erro ao excluir curso", { description: e?.message });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleSelectModule = (m: ModuleRow) => {
   setSelectedModuleId(m.id);
   setModuleTitle(m.title);
   setModuleHtml(getHtml(m.content_jsonb));
   };
-
   const handleSaveModule = async () => {
     if (!selectedModuleId) return;
     const { error } = await supabase
@@ -172,6 +186,25 @@ export default function AdminCourseEditor() {
               <Switch checked={isPublished} onCheckedChange={setIsPublished} />
             </div>
             <Button variant="secondary" onClick={() => refetch()}>Recarregar</Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={deleting}>Excluir</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir curso?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso removerá o curso permanentemente. Se existirem módulos/quizzes/missões vinculados, a exclusão pode falhar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteCourse} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Confirmar exclusão
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button variant="hero" onClick={handleSaveCourse}>Salvar curso</Button>
           </div>
         </header>
