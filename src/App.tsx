@@ -13,6 +13,7 @@ import CourseView from "./pages/CourseView";
 import AppLayout from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import RequireAuth, { RequireRole } from "@/components/auth/RequireAuth";
+import AdminTracks from "./pages/AdminTracks";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -35,6 +36,7 @@ const App = () => (
             <Route element={<RequireRole roles={["admin", "instructor"]} />}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/courses/:id" element={<AdminCourseEditor />} />
+              <Route path="/admin/tracks" element={<AdminTracks />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

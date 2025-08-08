@@ -117,6 +117,9 @@ const AdminDashboard = () => {
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => refetch()}>Atualizar</Button>
+            <Button asChild variant="outline">
+              <Link to="/admin/tracks">Trilhas</Link>
+            </Button>
             <Dialog open={aiOpen} onOpenChange={setAiOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">Gerar curso com IA</Button>
