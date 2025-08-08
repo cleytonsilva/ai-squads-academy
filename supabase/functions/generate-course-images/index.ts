@@ -166,31 +166,42 @@ serve(async (req) => {
       prompt: `Imagem realista relacionada a tecnologia e cibersegurança para capítulo: ${m.title}. Visual profissional, foco no tema, sem texto. Aspect ratio 16:9.`,
     }));
 
-    // Generate images (sequential to avoid rate limits) with fallback
+    // Generate images (sequential to avoid rate limits) with fallback: Corcel -> Gemini -> OpenAI
     let courseImageUrl: string | null = null;
     try {
-      courseImageUrl = await generateImageWithGemini(coursePrompt, 1536, 1024);
+      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY);
     } catch (err) {
-      console.warn("Gemini course image failed, falling back to OpenAI:", err?.toString?.());
+      console.warn("Corcel course image failed, falling back to Gemini:", err?.toString?.());
       try {
-        courseImageUrl = await generateImageWithOpenAI(coursePrompt, "1536x1024");
+        courseImageUrl = await generateImageWithGemini(coursePrompt, 1536, 1024);
       } catch (e2) {
-        console.error("OpenAI fallback failed for course image:", e2);
+        console.warn("Gemini fallback failed for course image, trying OpenAI:", e2?.toString?.());
+        try {
+          courseImageUrl = await generateImageWithOpenAI(coursePrompt, "1536x1024");
+        } catch (e3) {
+          console.error("All providers failed for course image:", e3);
+        }
       }
     }
 
     const moduleResults: Record<string, string> = {};
     for (const mp of modulePrompts) {
       try {
-        const url = await generateImageWithGemini(mp.prompt, 1536, 1024);
+        const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY);
         moduleResults[mp.id] = url;
       } catch (e) {
-        console.warn("Gemini module image failed, falling back to OpenAI", mp.id, e?.toString?.());
+        console.warn("Corcel module image failed, falling back to Gemini", mp.id, e?.toString?.());
         try {
-          const url2 = await generateImageWithOpenAI(mp.prompt, "1536x1024");
+          const url2 = await generateImageWithGemini(mp.prompt, 1536, 1024);
           moduleResults[mp.id] = url2;
         } catch (e2) {
-          console.error("Module image fallback failed", mp.id, e2);
+          console.warn("Gemini module fallback failed, trying OpenAI", mp.id, e2?.toString?.());
+          try {
+            const url3 = await generateImageWithOpenAI(mp.prompt, "1536x1024");
+            moduleResults[mp.id] = url3;
+          } catch (e3) {
+            console.error("All providers failed for module", mp.id, e3);
+          }
         }
       }
     }
