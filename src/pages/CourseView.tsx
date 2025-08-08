@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/store/useAppStore";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import QuizRunner from "@/components/app/QuizRunner";
 
 interface Course {
   id: string;
@@ -40,6 +42,7 @@ export default function CourseView() {
   const { addXP } = useAppStore();
   const [profileId, setProfileId] = useState<string | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [openQuiz, setOpenQuiz] = useState<QuizRow | null>(null);
   const { data, isLoading, error } = useQuery({
     queryKey: ["course-view", id],
     enabled: !!id,
@@ -290,7 +293,7 @@ export default function CourseView() {
                                 <p className="text-sm text-muted-foreground">{q.description}</p>
                               )}
                             </div>
-                            <Button variant="outline" onClick={() => toast({ title: "Em breve", description: "Tentativa de quiz no player do curso." })}>
+                            <Button variant="outline" onClick={() => setOpenQuiz(q)}>
                               Responder
                             </Button>
                           </li>
@@ -311,7 +314,7 @@ export default function CourseView() {
                                 <p className="text-sm text-muted-foreground">{q.description}</p>
                               )}
                             </div>
-                            <Button onClick={() => toast({ title: "Em breve", description: "Prova final será resolvida aqui." })}>
+                            <Button onClick={() => setOpenQuiz(q)}>
                               Iniciar
                             </Button>
                           </li>
@@ -332,6 +335,14 @@ export default function CourseView() {
           </Card>
         </div>
       )}
+      <Dialog open={!!openQuiz} onOpenChange={(o) => !o && setOpenQuiz(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{openQuiz?.title || "Quiz"}</DialogTitle>
+          </DialogHeader>
+          {openQuiz && <QuizRunner quiz={openQuiz} onClose={() => setOpenQuiz(null)} />}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
