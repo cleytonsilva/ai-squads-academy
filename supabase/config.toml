@@ -1,9 +1,15 @@
 project_id = "ncrlojjfkhevjotchhxi"
 
 [functions]
+
 [functions.openai-ephemeral]
 verify_jwt = false
 
 [functions.ai-generate-course]
 verify_jwt = true
 
+[functions.ai-extend-module]
+verify_jwt = true
+
+[functions.ai-generate-certifications]
+verify_jwt = true
