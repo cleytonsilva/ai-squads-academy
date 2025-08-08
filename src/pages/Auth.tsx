@@ -56,8 +56,9 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       if (error) throw error;
     } catch (err: any) {
       toast("Erro ao entrar", { description: err.message, className: "destructive" });
@@ -69,12 +70,13 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
     try {
       const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
-        options: { emailRedirectTo: redirectUrl, data: { display_name: email.split("@")[0] } },
+        options: { emailRedirectTo: redirectUrl, data: { display_name: normalizedEmail.split("@")[0] } },
       });
       if (error) throw error;
       toast("Confirme seu email", { description: "Enviamos um link de confirmação." });
@@ -112,7 +114,7 @@ const Auth = () => {
                 <form onSubmit={handleLogin} className="space-y-4 mt-4">
                   <div className="space-y-2">
                     <Label htmlFor="email-login">Email</Label>
-                    <Input id="email-login" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Input id="email-login" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password-login">Senha</Label>
@@ -126,7 +128,7 @@ const Auth = () => {
                 <form onSubmit={handleSignup} className="space-y-4 mt-4">
                   <div className="space-y-2">
                     <Label htmlFor="email-signup">Email</Label>
-                    <Input id="email-signup" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Input id="email-signup" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password-signup">Senha</Label>
