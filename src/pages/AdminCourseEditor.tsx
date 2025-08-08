@@ -19,6 +19,7 @@ import QuizManager from "@/components/admin/QuizManager";
 import MissionManager from "@/components/admin/MissionManager";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import AIGenerationDialog from "@/components/admin/AIGenerationDialog";
+import AIModuleExtendDialog from "@/components/admin/AIModuleExtendDialog";
 interface Course {
   id: string;
   title: string;
@@ -290,9 +291,53 @@ export default function AdminCourseEditor() {
                           <div className="rounded-md border">
                             <ReactQuill theme="snow" value={moduleHtml} onChange={setModuleHtml} />
                           </div>
-                          <div className="flex items-center gap-2 justify-end">
-                            <Button variant="secondary" onClick={() => { setModuleHtml(getHtml(currentModule.content_jsonb)); setModuleTitle(currentModule.title); }}>Reverter</Button>
-                            <Button variant="hero" onClick={handleSaveModule}>Salvar módulo</Button>
+                          <div className="flex items-center gap-2 justify-between">
+                            <AIModuleExtendDialog
+                              moduleTitle={moduleTitle}
+                              currentHtml={moduleHtml}
+                              onExtended={(extendedHtml) => {
+                                setModuleHtml((prev) => `${prev}\n${extendedHtml}`);
+                                toast.success("Conteúdo do módulo estendido com IA");
+                              }}
+                            />
+                            <div className="flex items-center gap-2">
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" disabled={!selectedModuleId}>Excluir módulo</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir módulo?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. Isso removerá o módulo permanentemente. Se existirem quizzes/missões vinculados, a exclusão pode falhar.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={async () => {
+                                        if (!selectedModuleId) return;
+                                        const { error } = await supabase.from("modules").delete().eq("id", selectedModuleId);
+                                        if (error) {
+                                          toast.error("Erro ao excluir módulo", { description: error.message });
+                                        } else {
+                                          toast.success("Módulo excluído");
+                                          setSelectedModuleId(null);
+                                          setModuleTitle("");
+                                          setModuleHtml("");
+                                          refetch();
+                                        }
+                                      }}
+                                    >
+                                      Confirmar exclusão
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                              <Button variant="secondary" onClick={() => { setModuleHtml(getHtml(currentModule.content_jsonb)); setModuleTitle(currentModule.title); }}>Reverter</Button>
+                              <Button variant="hero" onClick={handleSaveModule}>Salvar módulo</Button>
+                            </div>
                           </div>
                         </>
                       ) : (
