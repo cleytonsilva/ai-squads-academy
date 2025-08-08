@@ -54,6 +54,10 @@ serve(async (req) => {
       difficulty = "beginner",
       num_modules = 12,
       audience = "estudantes e profissionais de TI no Brasil",
+      include_final_exam = true,
+      final_exam_difficulty,
+      final_exam_options = 4,
+      final_exam_questions = 20,
     } = input || {};
 
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -80,7 +84,7 @@ serve(async (req) => {
       .insert({
         type: "ai_generate_course",
         status: "queued",
-        input: { topic, title, difficulty, num_modules, audience },
+        input: { topic, title, difficulty, num_modules, audience, include_final_exam, final_exam_difficulty, final_exam_options, final_exam_questions },
         created_by: profileId,
       })
       .select("id")
@@ -207,6 +211,71 @@ serve(async (req) => {
               console.error("DB error creating quiz", quizErr);
               throw new Error("Falha ao criar quiz");
             }
+          }
+        }
+
+        // Final exam generation (optional)
+        if (include_final_exam) {
+          try {
+            const fed = (typeof final_exam_difficulty === "string" && final_exam_difficulty) ? final_exam_difficulty : difficulty;
+            const optCount = Math.max(2, Math.min(6, Number(final_exam_options) || 4));
+            const qCount = Math.max(5, Math.min(50, Number(final_exam_questions) || 20));
+
+            const system2 = `Gere apenas JSON válido para uma prova final. Estrutura: { "questions": [ { "question": string, "options": string[], "correct_answer": string, "explanation": string } ] }`;
+            const topics = Array.isArray(parsed.modules) ? parsed.modules.map((m: any) => m.title).join("; ") : "";
+            const user2 = `Crie ${qCount} questões de múltipla escolha (nível: ${fed}) para a prova final do curso "${parsed.title || promptTitle}".\n- Cada questão deve ter ${optCount} opções.\n- Evite respostas ambíguas.\n- Inclua explicação curta.\n- Use pt-BR.\n- Foco nos tópicos: ${topics}`;
+
+            const aiRes2 = await fetch("https://api.openai.com/v1/chat/completions", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model: "gpt-4.1-2025-04-14",
+                temperature: 0.4,
+                messages: [ { role: "system", content: system2 }, { role: "user", content: user2 } ],
+              }),
+            });
+            const aiJson2 = await aiRes2.json();
+            if (!aiRes2.ok) throw new Error(aiJson2?.error?.message || "OpenAI error (final exam)");
+            const contentText2 = aiJson2?.choices?.[0]?.message?.content || "";
+            const parsed2 = safeJsonParse(contentText2) || { questions: [] };
+            const questions = Array.isArray(parsed2.questions) ? parsed2.questions : [];
+
+            // Create final exam module
+            const { data: finalMod, error: fModErr } = await serviceClient
+              .from("modules")
+              .insert({
+                course_id: courseId,
+                title: "Prova Final",
+                order_index: parsed.modules.length,
+                module_type: "final_exam",
+                content_jsonb: { html: `<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>` },
+              })
+              .select("id")
+              .single();
+            if (fModErr || !finalMod?.id) throw new Error("Falha ao criar módulo de prova final");
+
+            // Insert final exam quiz
+            const qNormalized = questions.map((q: any) => ({
+              question: String(q.question || q.q || "Pergunta"),
+              options: Array.isArray(q.options) ? q.options.slice(0, optCount).map((o: any) => String(o)) : [],
+              correct_answer: typeof q.correct_answer === "string" ? q.correct_answer : (Array.isArray(q.options) ? String(q.options[0]) : ""),
+              explanation: q.explanation ? String(q.explanation) : "",
+              type: "multiple_choice",
+            }));
+
+            const { error: fQuizErr } = await serviceClient
+              .from("quizzes")
+              .insert({
+                course_id: courseId,
+                module_id: finalMod.id,
+                title: "Prova final do curso",
+                description: `Nível: ${fed}. Você precisa atingir a nota de corte definida pelo curso para obter o certificado.`,
+                questions: qNormalized,
+              });
+            if (fQuizErr) throw fQuizErr;
+          } catch (e) {
+            console.error("[AI-GEN] Final exam generation failed:", e);
+            // Continue without failing the whole job
           }
         }
 

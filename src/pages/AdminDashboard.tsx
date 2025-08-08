@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -53,11 +55,14 @@ const AdminDashboard = () => {
     }
   }, []);
 
-  // IA generation dialog state
   const [aiOpen, setAiOpen] = useState(false);
   const [aiTitle, setAiTitle] = useState("");
   const [aiDifficulty, setAiDifficulty] = useState("beginner");
   const [aiModules, setAiModules] = useState<number>(12);
+  const [includeFinalExam, setIncludeFinalExam] = useState(true);
+  const [finalExamDifficulty, setFinalExamDifficulty] = useState("beginner");
+  const [finalExamOptions, setFinalExamOptions] = useState<number>(4);
+  const [finalExamQuestions, setFinalExamQuestions] = useState<number>(20);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleStartAIGeneration = async () => {
@@ -69,6 +74,10 @@ const AdminDashboard = () => {
           difficulty: aiDifficulty,
           num_modules: aiModules,
           audience: "profissionais e estudantes de TI no Brasil",
+          include_final_exam: includeFinalExam,
+          final_exam_difficulty: finalExamDifficulty,
+          final_exam_options: finalExamOptions,
+          final_exam_questions: finalExamQuestions,
         },
       });
       if (error) throw error as any;
@@ -166,6 +175,38 @@ const AdminDashboard = () => {
                         onChange={(e) => setAiModules(Number(e.target.value))}
                       />
                     </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="include-final">Incluir Prova Final</Label>
+                      <Switch id="include-final" checked={includeFinalExam} onCheckedChange={setIncludeFinalExam} />
+                    </div>
+                    {includeFinalExam && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="final-difficulty">Nível da Prova</Label>
+                          <Select value={finalExamDifficulty} onValueChange={setFinalExamDifficulty}>
+                            <SelectTrigger id="final-difficulty">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="beginner">Iniciante</SelectItem>
+                              <SelectItem value="intermediate">Intermediário</SelectItem>
+                              <SelectItem value="advanced">Avançado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="final-options">Opções por questão</Label>
+                          <Input id="final-options" type="number" min={2} max={6} value={finalExamOptions} onChange={(e) => setFinalExamOptions(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="final-questions">Qtd. de questões</Label>
+                          <Input id="final-questions" type="number" min={5} max={50} value={finalExamQuestions} onChange={(e) => setFinalExamQuestions(Number(e.target.value))} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DialogFooter>
