@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useAppStore } from "@/store/useAppStore";
 
 interface Course {
   id: string;
@@ -24,7 +26,10 @@ interface ModuleRow {
 export default function CourseView() {
   const { id } = useParams<{ id: string }>();
   const [selectedIndex, setSelectedIndex] = useState(0);
-
+  const { toast } = useToast();
+  const { addXP } = useAppStore();
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const { data, isLoading, error } = useQuery({
     queryKey: ["course-view", id],
     enabled: !!id,
@@ -45,10 +50,39 @@ export default function CourseView() {
 
   useEffect(() => { document.title = data?.course?.title ? `${data.course.title} — Esquads` : "Curso — Esquads"; }, [data?.course?.title]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user || !id) return;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        if (profile?.id) {
+          setProfileId(profile.id);
+          const { data: rows } = await supabase
+            .from("user_progress")
+            .select("module_id,is_completed")
+            .eq("user_id", profile.id)
+            .eq("course_id", id);
+          if (rows) {
+            const set = new Set<string>();
+            rows.forEach((r: any) => { if (r.is_completed && r.module_id) set.add(r.module_id as string); });
+            setCompletedIds(set);
+          }
+        }
+      } catch (e) {
+        console.error("Erro ao carregar progresso:", e);
+      }
+    };
+    load();
+  }, [id]);
+
   const canonical = useMemo(() => {
     try { return window.location.href } catch { return `/courses/${id}` }
   }, [id]);
-
   const getHtml = (payload: unknown): string => {
     try {
       if (payload && typeof payload === "object" && payload !== null && "html" in (payload as any)) {
@@ -62,9 +96,100 @@ export default function CourseView() {
 
   const current = data?.modules?.[selectedIndex] || null;
 
-  const goPrev = () => setSelectedIndex((i) => Math.max(0, i - 1));
-  const goNext = () => setSelectedIndex((i) => Math.min((data?.modules?.length || 1) - 1, i + 1));
+  useEffect(() => {
+    const saveLastAccess = async () => {
+      if (!profileId || !current?.id || !id) return;
+      try {
+        const { data: existing } = await supabase
+          .from("user_progress")
+          .select("id")
+          .eq("user_id", profileId)
+          .eq("course_id", id)
+          .eq("module_id", current.id)
+          .maybeSingle();
+        if (existing?.id) {
+          await supabase
+            .from("user_progress")
+            .update({ last_accessed_at: new Date().toISOString() })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("user_progress").insert({
+            user_id: profileId,
+            course_id: id,
+            module_id: current.id,
+            is_completed: false,
+            last_accessed_at: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        console.error("Erro ao salvar progresso:", e);
+      }
+    };
+    saveLastAccess();
+  }, [selectedIndex, profileId, current?.id, id]);
 
+  const markModuleCompleted = async () => {
+    if (!profileId || !current?.id || !id) return;
+    if (completedIds.has(current.id)) return;
+
+    try {
+      const { data: existing } = await supabase
+        .from("user_progress")
+        .select("id,is_completed")
+        .eq("user_id", profileId)
+        .eq("course_id", id)
+        .eq("module_id", current.id)
+        .maybeSingle();
+
+      if (existing?.id && !existing.is_completed) {
+        await supabase
+          .from("user_progress")
+          .update({ is_completed: true, completed_at: new Date().toISOString() })
+          .eq("id", existing.id);
+      } else if (!existing?.id) {
+        await supabase.from("user_progress").insert({
+          user_id: profileId,
+          course_id: id,
+          module_id: current.id,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        });
+      }
+
+      setCompletedIds((prev) => new Set(prev).add(current.id));
+
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("xp")
+        .eq("id", profileId)
+        .maybeSingle();
+      const newXP = (prof?.xp || 0) + 50;
+      await supabase.from("profiles").update({ xp: newXP }).eq("id", profileId);
+      addXP(50);
+      toast({ title: "Módulo concluído", description: "+50 XP ganhos" });
+
+      const total = data?.modules?.length || 0;
+      if (total > 0 && (completedIds.size + 1) >= total) {
+        const { data: prof2 } = await supabase
+          .from("profiles")
+          .select("xp")
+          .eq("id", profileId)
+          .maybeSingle();
+        const newXP2 = (prof2?.xp || 0) + 200;
+        await supabase.from("profiles").update({ xp: newXP2 }).eq("id", profileId);
+        addXP(200);
+        toast({ title: "Curso concluído!", description: "Parabéns! +200 XP" });
+      }
+    } catch (e) {
+      console.error("Erro ao concluir módulo:", e);
+    }
+  };
+
+  const goPrev = () => setSelectedIndex((i) => Math.max(0, i - 1));
+  const goNext = async () => {
+    await markModuleCompleted();
+    setSelectedIndex((i) => Math.min((data?.modules?.length || 1) - 1, i + 1));
+  };
   return (
     <main className="container mx-auto py-8">
       <Helmet>
