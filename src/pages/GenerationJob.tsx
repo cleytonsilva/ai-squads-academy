@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function GenerationJob() {
   const { jobId } = useParams();

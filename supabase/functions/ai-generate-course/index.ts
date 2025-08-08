@@ -66,9 +66,17 @@ serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-  if (!OPENROUTER_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
-    return new Response(JSON.stringify({ error: "Missing server configuration/secrets" }), {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
+    return new Response(JSON.stringify({ error: "Missing Supabase server configuration/secrets" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  if (!OPENROUTER_API_KEY && !OPENAI_API_KEY && !GEMINI_API_KEY) {
+    return new Response(JSON.stringify({ error: "No AI provider configured (OpenRouter, OpenAI or Gemini)" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -165,14 +173,32 @@ serve(async (req) => {
           "deepseek/deepseek-r1-0528-qwen3-8b:free",
         ];
 
-        const contentText = await callOpenRouter(
-          [
-            { role: "system", content: system },
-            { role: "user", content: userMsg },
-          ],
-          models,
-          0.6,
-        );
+        let contentText: string | null = null;
+        try {
+          contentText = await callOpenRouter(
+            [
+              { role: "system", content: system },
+              { role: "user", content: userMsg },
+            ],
+            models,
+            0.6,
+          );
+        } catch (e1) {
+          await logEvent("OpenRouter falhou, tentando OpenAI...");
+          try {
+            contentText = await callOpenAI([
+              { role: "system", content: system },
+              { role: "user", content: userMsg },
+            ], 0.6);
+          } catch (e2) {
+            await logEvent("OpenAI falhou, tentando Gemini...");
+            contentText = await callGemini([
+              { role: "system", content: system },
+              { role: "user", content: userMsg },
+            ], 0.6);
+          }
+        }
+
         const parsed = safeJsonParse(contentText);
         if (!parsed || !parsed.modules || !Array.isArray(parsed.modules)) {
           throw new Error("Resposta da IA inválida (sem módulos)");
@@ -268,16 +294,32 @@ serve(async (req) => {
             const topics = Array.isArray(parsed.modules) ? parsed.modules.map((m: any) => m.title).join("; ") : "";
             const user2 = `Crie ${qCount} questões de múltipla escolha (nível: ${fed}) para a prova final do curso "${parsed.title || promptTitle}".\n- Cada questão deve ter ${optCount} opções.\n- Evite respostas ambíguas.\n- Inclua explicação curta.\n- Use pt-BR.\n- Foco nos tópicos: ${topics}`;
 
-            const contentText2 = await callOpenRouter(
-              [ { role: "system", content: system2 }, { role: "user", content: user2 } ],
-              [
-                "qwen/qwen2.5-vl-72b-instruct:free",
-                "openai/gpt-oss-20b:free",
-                "z-ai/glm-4.5-air:free",
-                "deepseek/deepseek-r1-0528-qwen3-8b:free",
-              ],
-              0.4,
-            );
+            let contentText2: string | null = null;
+            try {
+              contentText2 = await callOpenRouter(
+                [ { role: "system", content: system2 }, { role: "user", content: user2 } ],
+                [
+                  "qwen/qwen2.5-vl-72b-instruct:free",
+                  "openai/gpt-oss-20b:free",
+                  "z-ai/glm-4.5-air:free",
+                  "deepseek/deepseek-r1-0528-qwen3-8b:free",
+                ],
+                0.4,
+              );
+            } catch (e1) {
+              await logEvent("OpenRouter falhou na prova final, tentando OpenAI...");
+              try {
+                contentText2 = await callOpenAI([
+                  { role: "system", content: system2 }, { role: "user", content: user2 }
+                ], 0.4);
+              } catch (e2) {
+                await logEvent("OpenAI falhou na prova final, tentando Gemini...");
+                contentText2 = await callGemini([
+                  { role: "system", content: system2 }, { role: "user", content: user2 }
+                ], 0.4);
+              }
+            }
+
             const parsed2 = safeJsonParse(contentText2) || { questions: [] };
             const questions = Array.isArray(parsed2.questions) ? parsed2.questions : [];
 
