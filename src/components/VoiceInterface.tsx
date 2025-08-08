@@ -48,6 +48,23 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
     onSpeakingChange(false);
   };
   useEffect(() => () => chatRef.current?.disconnect(), []);
-  return;
+  return (
+    <div className="flex items-center gap-2">
+      {!isConnected ? (
+        <Button onClick={startConversation} aria-label="Conectar voz">
+          Conectar Voz
+        </Button>
+      ) : (
+        <>
+          <Button variant="secondary" onClick={endConversation} aria-label="Desconectar voz">
+            Desconectar
+          </Button>
+          <span aria-live="polite" className="text-sm opacity-80">
+            {speaking ? "Falando..." : "Aguardando áudio"}
+          </span>
+        </>
+      )}
+    </div>
+  );
 };
 export default VoiceInterface;
