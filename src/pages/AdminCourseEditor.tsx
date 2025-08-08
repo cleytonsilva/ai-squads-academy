@@ -14,6 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import QuizManager from "@/components/admin/QuizManager";
+import MissionManager from "@/components/admin/MissionManager";
 
 interface Course {
   id: string;
@@ -173,89 +176,115 @@ export default function AdminCourseEditor() {
           </div>
         </header>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1"><Skeleton className="h-96" /></Card>
-            <Card className="lg:col-span-2"><Skeleton className="h-96" /></Card>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Sidebar do curso */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle>Informações</CardTitle>
-                <CardDescription>Edite os metadados do curso</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm">Título</label>
-                  <Input value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm">Descrição</label>
-                  <Textarea value={courseDesc} onChange={(e) => setCourseDesc(e.target.value)} rows={4} />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <span className="text-sm font-medium">{isPublished ? "published" : status || "draft"}</span>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium">Módulos</h3>
-                    <Button size="sm" variant="outline" onClick={handleAddModule}>Adicionar</Button>
-                  </div>
-                  <div className="space-y-2 max-h-[50vh] overflow-auto pr-1">
-                    {data?.modules?.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => handleSelectModule(m)}
-                        className={`w-full text-left rounded-md border px-3 py-2 text-sm transition ${selectedModuleId === m.id ? "bg-accent" : "hover:bg-accent/50"}`}
-                        aria-current={selectedModuleId === m.id}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="truncate">{m.title}</span>
-                          <span className="ml-2 text-xs text-muted-foreground">#{m.order_index}</span>
-                        </div>
-                      </button>
-                    ))}
-                    {(!data?.modules || data.modules.length === 0) && (
-                      <p className="text-sm text-muted-foreground">Nenhum módulo. Adicione o primeiro.</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <Tabs defaultValue="conteudo">
+            <TabsList>
+              <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
+              <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
+              <TabsTrigger value="missoes">Missões</TabsTrigger>
+            </TabsList>
 
-            {/* Editor principal */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Editor WYSIWYG</CardTitle>
-                <CardDescription>Edite o módulo selecionado</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {currentModule ? (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm">Título do módulo</label>
-                      <Input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} />
-                    </div>
-                    <div className="rounded-md border">
-                      <ReactQuill theme="snow" value={moduleHtml} onChange={setModuleHtml} />
-                    </div>
-  <div className="flex items-center gap-2 justify-end">
-    <Button variant="secondary" onClick={() => { setModuleHtml(getHtml(currentModule.content_jsonb)); setModuleTitle(currentModule.title); }}>Reverter</Button>
-    <Button variant="hero" onClick={handleSaveModule}>Salvar módulo</Button>
-  </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Selecione um módulo para editar.</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+            <TabsContent value="conteudo">
+              {isLoading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <Card className="lg:col-span-1"><Skeleton className="h-96" /></Card>
+                  <Card className="lg:col-span-2"><Skeleton className="h-96" /></Card>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Sidebar do curso */}
+                  <Card className="lg:col-span-1">
+                    <CardHeader>
+                      <CardTitle>Informações</CardTitle>
+                      <CardDescription>Edite os metadados do curso</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm">Título</label>
+                        <Input value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm">Descrição</label>
+                        <Textarea value={courseDesc} onChange={(e) => setCourseDesc(e.target.value)} rows={4} />
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Status</span>
+                        <span className="text-sm font-medium">{isPublished ? "published" : status || "draft"}</span>
+                      </div>
+                      <Separator />
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium">Módulos</h3>
+                          <Button size="sm" variant="outline" onClick={handleAddModule}>Adicionar</Button>
+                        </div>
+                        <div className="space-y-2 max-h-[50vh] overflow-auto pr-1">
+                          {data?.modules?.map((m) => (
+                            <button
+                              key={m.id}
+                              onClick={() => handleSelectModule(m)}
+                              className={`w-full text-left rounded-md border px-3 py-2 text-sm transition ${selectedModuleId === m.id ? "bg-accent" : "hover:bg-accent/50"}`}
+                              aria-current={selectedModuleId === m.id}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="truncate">{m.title}</span>
+                                <span className="ml-2 text-xs text-muted-foreground">#{m.order_index}</span>
+                              </div>
+                            </button>
+                          ))}
+                          {(!data?.modules || data.modules.length === 0) && (
+                            <p className="text-sm text-muted-foreground">Nenhum módulo. Adicione o primeiro.</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Editor principal */}
+                  <Card className="lg:col-span-2">
+                    <CardHeader>
+                      <CardTitle>Editor WYSIWYG</CardTitle>
+                      <CardDescription>Edite o módulo selecionado</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {currentModule ? (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-sm">Título do módulo</label>
+                            <Input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} />
+                          </div>
+                          <div className="rounded-md border">
+                            <ReactQuill theme="snow" value={moduleHtml} onChange={setModuleHtml} />
+                          </div>
+                          <div className="flex items-center gap-2 justify-end">
+                            <Button variant="secondary" onClick={() => { setModuleHtml(getHtml(currentModule.content_jsonb)); setModuleTitle(currentModule.title); }}>Reverter</Button>
+                            <Button variant="hero" onClick={handleSaveModule}>Salvar módulo</Button>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Selecione um módulo para editar.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="quizzes">
+              {id ? (
+                <QuizManager courseId={id} modules={(data?.modules || []).map(m => ({ id: m.id, title: m.title }))} />
+              ) : (
+                <p className="text-sm text-muted-foreground">Curso inválido.</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="missoes">
+              {id ? (
+                <MissionManager courseId={id} modules={(data?.modules || []).map(m => ({ id: m.id, title: m.title }))} />
+              ) : (
+                <p className="text-sm text-muted-foreground">Curso inválido.</p>
+              )}
+            </TabsContent>
+          </Tabs>
       </main>
     </>
   );
