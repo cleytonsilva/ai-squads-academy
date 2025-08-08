@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export type NormalizedQuestion = {
   prompt: string;
@@ -130,18 +132,80 @@ export default function QuizRunner({ quiz, onClose }: { quiz: QuizRow; onClose?:
   const ss = String(remaining % 60).padStart(2, "0");
   const progress = totalSeconds > 0 ? ((totalSeconds - remaining) / totalSeconds) * 100 : 0;
 
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [xpDelta, setXpDelta] = useState(0);
+
+  useEffect(() => {
+    if (!submitted || saved) return;
+    const persist = async () => {
+      setSaving(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          toast({ title: "Faça login", description: "Autenticação necessária.", variant: "destructive" });
+          return;
+        }
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("id,xp")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        const profileId = profile?.id as string | undefined;
+        const correct = score;
+        const wrong = Math.max(0, questions.length - correct);
+        const gain = correct * 10;
+        const penalty = wrong * 5;
+        const delta = gain - penalty;
+        setXpDelta(delta);
+
+        const feedback = questions.map((q, i) => ({
+          correct: q.correctIndex != null ? (answers[i] === q.correctIndex) : null,
+          explanation: q.explanation ?? null,
+        }));
+
+        await supabase.from("quiz_attempts").insert({
+          user_id: profileId,
+          quiz_id: quiz.id,
+          score: correct,
+          is_passed: correct >= Math.ceil(0.7 * questions.length),
+          answers,
+          feedback,
+        });
+
+        if (profileId) {
+          const newXp = Math.max(0, (profile?.xp || 0) + delta);
+          await supabase.from("profiles").update({ xp: newXp }).eq("id", profileId);
+          toast({
+            title: delta >= 0 ? `+${delta} XP` : `${delta} XP`,
+            description: delta >= 0 ? "Bom trabalho!" : "Pontos deduzidos pelo desempenho.",
+          });
+        }
+
+        setSaved(true);
+      } catch (err) {
+        console.error("Salvar tentativa de quiz:", err);
+        toast({ title: "Erro ao salvar tentativa", description: "Tente novamente depois.", variant: "destructive" });
+      } finally {
+        setSaving(false);
+      }
+    };
+    persist();
+  }, [submitted, saved, score, answers, questions.length, quiz.id]);
+
   const prevent = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if ((e.ctrlKey || e.metaKey) && ["c", "p"].includes(e.key.toLowerCase())) {
+  const onKey = (e: any) => {
+    if ((e.ctrlKey || e.metaKey) && ["c", "p"].includes(String(e.key).toLowerCase())) {
       e.preventDefault();
       e.stopPropagation();
     }
   };
-
   return (
     <div
       className="space-y-6 select-none"
@@ -194,11 +258,17 @@ export default function QuizRunner({ quiz, onClose }: { quiz: QuizRow; onClose?:
       <div className="flex items-center justify-between">
         {submitted ? (
           <div className="text-sm">
-            Resultado: <span className="font-semibold">{score}/{questions.length}</span>
+            <div>
+              Resultado: <span className="font-semibold">{score}/{questions.length}</span>
+            </div>
+            <div className="mt-1">
+              XP: <span className={xpDelta >= 0 ? "text-primary" : "text-destructive"}>{xpDelta >= 0 ? `+${xpDelta}` : xpDelta}</span>{saving ? " (salvando...)" : ""}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Ranking em construção</p>
           </div>
         ) : (
-          <div />)
-        }
+          <div />
+        )}
         <div className="flex gap-2">
           {!submitted ? (
             <Button onClick={handleSubmit} disabled={!allAnswered || remaining <= 0}>Enviar</Button>
