@@ -29,32 +29,47 @@ const safeJsonParse = (text: string): any => {
   }
 };
 
-// OpenRouter helper to call models with fallback
-async function callOpenRouter(messages: any[], models: string[], temperature: number = 0.6): Promise<string> {
-  const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-  const APP_URL = "https://esquads.dev";
-  const APP_TITLE = "Esquads Platform";
-  if (!OPENROUTER_API_KEY) throw new Error("Missing OPENROUTER_API_KEY");
-  let lastErr: any = null;
-  for (const model of models) {
-    try {
-      const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": APP_URL,
-          "X-Title": APP_TITLE,
-        },
-        body: JSON.stringify({ model, messages, temperature }),
-      });
-      const data = await r.json();
-      if (!r.ok) { lastErr = data; continue; }
-      const content = data?.choices?.[0]?.message?.content;
-      if (content) return content;
-    } catch (e) { lastErr = e; }
-  }
-  throw new Error(`OpenRouter failed: ${lastErr?.error?.message || lastErr?.message || "Unknown"}`);
+// OpenAI helper
+async function callOpenAI(messages: any[], temperature: number = 0.6): Promise<string> {
+  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+  if (!OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY");
+  const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages,
+      temperature,
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error?.message || "OpenAI request failed");
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenAI returned empty content");
+  return content;
+}
+
+// Gemini helper
+async function callGemini(messages: any[], temperature: number = 0.6): Promise<string> {
+  const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+  if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
+  const user = messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n\n");
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: user }] }],
+      generationConfig: { temperature },
+    }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error?.message || "Gemini request failed");
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Gemini returned empty content");
+  return text;
 }
 
 serve(async (req) => {
@@ -62,7 +77,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
@@ -75,8 +89,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  if (!OPENROUTER_API_KEY && !OPENAI_API_KEY && !GEMINI_API_KEY) {
-    return new Response(JSON.stringify({ error: "No AI provider configured (OpenRouter, OpenAI or Gemini)" }), {
+  if (!OPENAI_API_KEY && !GEMINI_API_KEY) {
+    return new Response(JSON.stringify({ error: "No AI provider configured (OpenAI or Gemini)" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -125,7 +139,7 @@ serve(async (req) => {
       .insert({
         type: "ai_generate_course",
         status: "queued",
-        input: { topic, title, difficulty, num_modules, audience, include_final_exam, final_exam_difficulty, final_exam_options, final_exam_questions },
+        input: { topic, title, difficulty, num_modules, audience, include_final_exam, final_exam_difficulty, final_exam_options, final_exam_questions, description, tone, target_audience, module_length_min, module_length_max },
         created_by: profileId,
       })
       .select("id")
@@ -162,41 +176,24 @@ serve(async (req) => {
 
         const promptTitle = title || (topic ? `Curso: ${topic}` : "Curso de Cibersegurança");
 
-        const system = `Você é um gerador de cursos da plataforma Esquads. Gere JSON válido e conciso.\nRegras:\n- Domínio: Cibersegurança/TI/Negócios\n- Idioma: pt-BR\n- Estrutura: {\n  "title": string,\n  "description": string,\n  "estimated_minutes": number,\n  "modules": [\n    { "title": string, "summary": string, "content_html": string, "quiz": {\n        "title": string, "description": string,\n        "questions": [ {"q": string, "options": [string,string,string,string], "answer": number, "explanation": string } ]\n      }\n    }\n  ]\n}\n- Mínimo: 8 módulos, Máximo: ${Math.max(8, Math.min(20, Number(num_modules) || 12))}.`;
+        const system = `Você é um gerador de cursos da plataforma Esquads. Gere JSON válido e conciso em pt-BR.\nRegras:\n- Domínio: Cibersegurança/TI/Negócios\n- Estrutura: {\n  "title": string,\n  "description": string,\n  "estimated_minutes": number,\n  "modules": [\n    { "title": string, "summary": string, "content_html": string, "quiz": {\n        "title": string, "description": string,\n        "questions": [ {"q": string, "options": [string,string,string,string], "answer": number, "explanation": string } ]\n      }\n    }\n  ]\n}\n- Número de módulos: mínimo 8, máximo ${Math.max(8, Math.min(20, Number(num_modules) || 12))}.\n- Para content_html: produza de ${module_length_min} a ${module_length_max} caracteres, com HTML simples (<p>, <ul>, <ol>, uso leve de <code>).`;
 
-        const userMsg = `Gere um curso completo para o público: ${audience}.\nTítulo sugerido: ${promptTitle}\nNível: ${difficulty}.\nCada módulo com resumo, conteúdo em HTML curto (2-4 parágrafos com <p>), e um quiz de 5 questões de múltipla escolha.`;
-
-        const models = [
-          "qwen/qwen2.5-vl-72b-instruct:free",
-          "openai/gpt-oss-20b:free",
-          "z-ai/glm-4.5-air:free",
-          "deepseek/deepseek-r1-0528-qwen3-8b:free",
-        ];
+        const ta = Array.isArray(target_audience) && target_audience.length > 0 ? target_audience.join(", ") : audience;
+        const extraDesc = description ? `Descrição do curso (admin): ${description}\n` : "";
+        const userMsg = `${extraDesc}Gere um curso completo para o público: ${ta}.\nTítulo sugerido: ${promptTitle}\nTom do curso: ${tone}\nNível: ${difficulty}.\nCada módulo deve conter:\n- summary conciso\n- content_html no intervalo de ${module_length_min}-${module_length_max} caracteres, com 2-5 parágrafos (<p>)\n- quiz com 5 questões de múltipla escolha (4 opções).\nRespeite o JSON estrito, sem texto fora do JSON.`;
 
         let contentText: string | null = null;
         try {
-          contentText = await callOpenRouter(
-            [
-              { role: "system", content: system },
-              { role: "user", content: userMsg },
-            ],
-            models,
-            0.6,
-          );
+          contentText = await callOpenAI([
+            { role: "system", content: system },
+            { role: "user", content: userMsg },
+          ], 0.6);
         } catch (e1) {
-          await logEvent("OpenRouter falhou, tentando OpenAI...");
-          try {
-            contentText = await callOpenAI([
-              { role: "system", content: system },
-              { role: "user", content: userMsg },
-            ], 0.6);
-          } catch (e2) {
-            await logEvent("OpenAI falhou, tentando Gemini...");
-            contentText = await callGemini([
-              { role: "system", content: system },
-              { role: "user", content: userMsg },
-            ], 0.6);
-          }
+          await logEvent("OpenAI falhou, tentando Gemini...");
+          contentText = await callGemini([
+            { role: "system", content: system },
+            { role: "user", content: userMsg },
+          ], 0.6);
         }
 
         const parsed = safeJsonParse(contentText);
@@ -296,28 +293,16 @@ serve(async (req) => {
 
             let contentText2: string | null = null;
             try {
-              contentText2 = await callOpenRouter(
+              contentText2 = await callOpenAI(
                 [ { role: "system", content: system2 }, { role: "user", content: user2 } ],
-                [
-                  "qwen/qwen2.5-vl-72b-instruct:free",
-                  "openai/gpt-oss-20b:free",
-                  "z-ai/glm-4.5-air:free",
-                  "deepseek/deepseek-r1-0528-qwen3-8b:free",
-                ],
                 0.4,
               );
             } catch (e1) {
-              await logEvent("OpenRouter falhou na prova final, tentando OpenAI...");
-              try {
-                contentText2 = await callOpenAI([
-                  { role: "system", content: system2 }, { role: "user", content: user2 }
-                ], 0.4);
-              } catch (e2) {
-                await logEvent("OpenAI falhou na prova final, tentando Gemini...");
-                contentText2 = await callGemini([
-                  { role: "system", content: system2 }, { role: "user", content: user2 }
-                ], 0.4);
-              }
+              await logEvent("OpenAI falhou na prova final, tentando Gemini...");
+              contentText2 = await callGemini(
+                [ { role: "system", content: system2 }, { role: "user", content: user2 } ],
+                0.4,
+              );
             }
 
             const parsed2 = safeJsonParse(contentText2) || { questions: [] };
