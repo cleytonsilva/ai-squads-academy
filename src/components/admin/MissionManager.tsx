@@ -91,10 +91,10 @@ export default function MissionManager({ courseId, modules }: { courseId: string
                 {statuses.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={moduleId} onValueChange={setModuleId}>
+            <Select value={moduleId ?? "__none__"} onValueChange={(v) => setModuleId(v === "__none__" ? undefined : v)}>
               <SelectTrigger><SelectValue placeholder="Vincular módulo (opcional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value={""}>Sem vínculo</SelectItem>
+                <SelectItem value="__none__">Sem vínculo</SelectItem>
                 {modules.map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
               </SelectContent>
             </Select>
