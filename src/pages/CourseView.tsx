@@ -220,8 +220,8 @@ export default function CourseView() {
   const completedNonFinalCount = useMemo(() => nonFinalModules.filter((m) => completedIds.has(m.id)).length, [nonFinalModules, completedIds]);
 
   const unlockedFinalExam = useMemo(() => {
-    return nonFinalModules.length > 0 && completedNonFinalCount >= nonFinalModules.length && passedAllModuleQuizzes;
-  }, [nonFinalModules.length, completedNonFinalCount, passedAllModuleQuizzes]);
+    return nonFinalModules.length > 0 && completedNonFinalCount >= nonFinalModules.length;
+  }, [nonFinalModules.length, completedNonFinalCount]);
 
   const isFinalExamForOpen = useMemo(() => {
     if (!openQuiz) return false;
@@ -398,11 +398,11 @@ export default function CourseView() {
                     <div dangerouslySetInnerHTML={{ __html: getHtml(current.content_jsonb) }} />
                   </article>
 
-                  {moduleQuizzes.length > 0 && (
+                  {isFinalCurrent && moduleQuizzes.length > 0 && (
                     <section className="rounded-md border p-4">
-                      <h3 className="font-medium">{isFinalCurrent ? "Prova final" : "Quiz do módulo"}</h3>
+                      <h3 className="font-medium">Prova final</h3>
                       {!unlockedFinalExam && isFinalCurrent && (
-                        <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos e acerte ao menos 70% nos quizzes para liberar a prova final.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos para liberar a prova final.</p>
                       )}
                       <ul className="mt-2 space-y-2">
                         {moduleQuizzes.map((q) => (
@@ -426,7 +426,7 @@ export default function CourseView() {
                       <section className="rounded-md border p-4">
                         <h3 className="font-medium">Prova final do curso</h3>
                         {!unlockedFinalExam && (
-                          <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos e acerte ao menos 70% nos quizzes para liberar a prova final.</p>
+                          <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos para liberar a prova final.</p>
                         )}
                         <ul className="mt-2 space-y-2">
                           {finalQuizzes.map((q) => (
