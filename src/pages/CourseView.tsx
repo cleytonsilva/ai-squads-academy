@@ -139,12 +139,18 @@ export default function CourseView() {
   useEffect(() => {
     const now = Date.now();
     if (current?.id) {
-      if (prevModuleIdRef.current && moduleStartAtRef.current != null) {
-        const sec = Math.floor((now - moduleStartAtRef.current) / 1000);
-        accumulateTimeSpent(prevModuleIdRef.current, sec);
+      if (isFinalCurrent && !finalExamModule) {
+        // Reset timers for synthetic final module (UI-only)
+        prevModuleIdRef.current = null;
+        moduleStartAtRef.current = null;
+      } else {
+        if (prevModuleIdRef.current && moduleStartAtRef.current != null) {
+          const sec = Math.floor((now - moduleStartAtRef.current) / 1000);
+          accumulateTimeSpent(prevModuleIdRef.current, sec);
+        }
+        prevModuleIdRef.current = current.id;
+        moduleStartAtRef.current = now;
       }
-      prevModuleIdRef.current = current.id;
-      moduleStartAtRef.current = now;
     }
     return () => {
       if (prevModuleIdRef.current && moduleStartAtRef.current != null) {
@@ -169,13 +175,7 @@ export default function CourseView() {
     }
   };
 
-  const current = data?.modules?.[selectedIndex] || null;
-
   const quizzes: QuizRow[] = (data as any)?.quizzes || [];
-  const moduleQuizzes = useMemo(() => {
-    if (!current?.id) return [] as QuizRow[];
-    return quizzes.filter((q) => q.module_id === current.id);
-  }, [quizzes, current?.id]);
 
   const finalQuizzes = useMemo(() => quizzes.filter((q) => !q.module_id), [quizzes]);
 
@@ -183,7 +183,32 @@ export default function CourseView() {
     return (data?.modules || []).find((m: any) => m.module_type === "final_exam") || null;
   }, [data?.modules]);
 
+  const displayModules: ModuleRow[] = useMemo(() => {
+    const base = (data?.modules || []) as ModuleRow[];
+    if (finalExamModule) return base;
+    if (finalQuizzes.length > 0 && base.length > 0) {
+      const lastOrder = base[base.length - 1]?.order_index ?? base.length;
+      const synthetic: ModuleRow = {
+        id: "final-synthetic",
+        title: "Prova final",
+        order_index: lastOrder + 1,
+        content_jsonb: { html: "<p>Prova final do curso</p>" },
+        module_type: "final_exam",
+      } as any;
+      return [...base, synthetic];
+    }
+    return base;
+  }, [data?.modules, finalExamModule, finalQuizzes.length]);
+
+  const current = displayModules?.[selectedIndex] || null;
+
+  const moduleQuizzes = useMemo(() => {
+    if (!current?.id) return [] as QuizRow[];
+    return quizzes.filter((q) => q.module_id === current.id);
+  }, [quizzes, current?.id]);
+
   const isFinalCurrent = (current as any)?.module_type === "final_exam";
+  const isSyntheticFinalCurrent = useMemo(() => !finalExamModule && isFinalCurrent, [finalExamModule, isFinalCurrent]);
 
   const quizIds = useMemo(() => quizzes.map((q) => q.id), [quizzes]);
   const { data: attempts } = useQuery({
@@ -216,7 +241,7 @@ export default function CourseView() {
     });
   }, [quizzes, latestByQuiz]);
 
-  const nonFinalModules = useMemo(() => (data?.modules || []).filter((m: any) => m.module_type !== "final_exam"), [data?.modules]);
+  const nonFinalModules = useMemo(() => (displayModules || []).filter((m: any) => m.module_type !== "final_exam"), [displayModules]);
   const completedNonFinalCount = useMemo(() => nonFinalModules.filter((m) => completedIds.has(m.id)).length, [nonFinalModules, completedIds]);
 
   const unlockedFinalExam = useMemo(() => {
@@ -233,6 +258,7 @@ export default function CourseView() {
   useEffect(() => {
     const saveLastAccess = async () => {
       if (!profileId || !current?.id || !id) return;
+      if (isFinalCurrent && !finalExamModule) return;
       try {
         const { data: existing } = await supabase
           .from("user_progress")
@@ -326,7 +352,7 @@ export default function CourseView() {
       await accumulateTimeSpent(current.id, sec);
     }
     await markModuleCompleted();
-    setSelectedIndex((i) => Math.min((data?.modules?.length || 1) - 1, i + 1));
+    setSelectedIndex((i) => Math.min((displayModules?.length || 1) - 1, i + 1));
   };
   return (
     <main className="container mx-auto py-8">
@@ -360,12 +386,19 @@ export default function CourseView() {
               <Separator />
               <h2 className="font-medium">Módulos</h2>
               <div className="space-y-2 max-h-[55vh] overflow-auto pr-1">
-                {data?.modules?.map((m, idx) => (
+                {displayModules?.map((m, idx) => (
                   <button
                     key={m.id}
-                    onClick={() => setSelectedIndex(idx)}
+                    onClick={() => {
+                      if ((m as any).module_type === "final_exam" && !unlockedFinalExam) {
+                        toast({ title: "Prova final bloqueada", description: "Conclua todos os módulos para liberar." });
+                        return;
+                      }
+                      setSelectedIndex(idx);
+                    }}
                     className={`w-full text-left rounded-md border px-3 py-2 text-sm transition ${idx === selectedIndex ? "bg-accent" : "hover:bg-accent/50"}`}
                     aria-current={idx === selectedIndex}
+                    disabled={(m as any).module_type === "final_exam" && !unlockedFinalExam}
                   >
                     <div className="flex items-center justify-between">
                       <span className="truncate">{idx + 1}. {m.title}</span>
@@ -379,7 +412,7 @@ export default function CourseView() {
                     </div>
                   </button>
                 ))}
-                {(!data?.modules || data.modules.length === 0) && (
+                {(!displayModules || displayModules.length === 0) && (
                   <p className="text-sm text-muted-foreground">Nenhum módulo disponível.</p>
                 )}
               </div>
@@ -443,7 +476,7 @@ export default function CourseView() {
                     </section>
                   )}
 
-                    {!finalExamModule && selectedIndex === (data?.modules?.length || 0) - 1 && finalQuizzes.length > 0 && (
+                    {!finalExamModule && selectedIndex === (displayModules?.length || 0) - 1 && finalQuizzes.length > 0 && (
                       <section className="rounded-md border p-4">
                         <h3 className="font-medium">Prova final do curso</h3>
                         {!unlockedFinalExam && (
@@ -469,7 +502,7 @@ export default function CourseView() {
 
                   <div className="flex items-center justify-between">
                     <Button variant="outline" onClick={goPrev} disabled={selectedIndex === 0}>Anterior</Button>
-                    <Button onClick={goNext} disabled={selectedIndex >= (data?.modules?.length || 1) - 1}>Próximo</Button>
+                    <Button onClick={goNext} disabled={selectedIndex >= (displayModules?.length || 1) - 1}>Próximo</Button>
                   </div>
                 </div>
               ) : (
