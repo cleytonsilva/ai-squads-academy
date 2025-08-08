@@ -10,8 +10,7 @@ const Index = () => {
   useEffect(() => {
     document.title = "Esquads — Educação Tech por IA";
   }, []);
-  return (
-    <>
+  return <>
 
 
       <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
@@ -41,12 +40,7 @@ const Index = () => {
               </ul>
             </div>
             <div className="relative">
-              <img
-                src={heroImage}
-                alt="Plataforma Esquads: educação em cibersegurança, cloud e IA"
-                loading="lazy"
-                className="w-full h-auto rounded-xl border border-border shadow-glow"
-              />
+              <img src={heroImage} alt="Plataforma Esquads: educação em cibersegurança, cloud e IA" loading="lazy" className="w-full h-auto rounded-xl border border-border shadow-glow" />
               <SignatureAurora />
             </div>
           </section>
@@ -88,22 +82,7 @@ const Index = () => {
             </div>
           </section>
 
-          <section className="container mx-auto py-16">
-            <div className="grid md:grid-cols-3 gap-8">
-              <div>
-                <h2 className="text-2xl font-semibold mb-2">João</h2>
-                <p className="text-muted-foreground">Estudante de TI (20-25). Busca especialização e primeiro emprego.</p>
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold mb-2">Maria</h2>
-                <p className="text-muted-foreground">Profissional em transição (28-35). Quer migrar para tecnologia com prática.</p>
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold mb-2">Carlos</h2>
-                <p className="text-muted-foreground">Especialista (30-45). Precisa se atualizar rápido com conteúdo preciso.</p>
-              </div>
-            </div>
-          </section>
+          
         </main>
 
         <footer className="border-t border-border py-8">
@@ -118,8 +97,6 @@ const Index = () => {
         </footer>
         <VoiceInterface />
       </div>
-    </>
-  );
+    </>;
 };
-
 export default Index;
