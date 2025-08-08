@@ -74,7 +74,7 @@ function normalizeQuestions(raw: any[] = []): NormalizedQuestion[] {
   });
 }
 
-export default function QuizRunner({ quiz, onClose }: { quiz: QuizRow; onClose?: () => void }) {
+export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty }: { quiz: QuizRow; onClose?: () => void; courseId: string; courseDifficulty?: string | null }) {
   const questions = useMemo(() => normalizeQuestions(quiz.questions || []), [quiz.questions]);
   const [answers, setAnswers] = useState<Record<number, number | null>>({});
   const [submitted, setSubmitted] = useState(false);

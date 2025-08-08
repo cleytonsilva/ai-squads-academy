@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
@@ -11,11 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppStore } from "@/store/useAppStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QuizRunner from "@/components/app/QuizRunner";
+import { CheckCircle2, Circle, Lock } from "lucide-react";
 
 interface Course {
   id: string;
   title: string;
   description: string | null;
+  difficulty_level?: string | null;
 }
 
 interface ModuleRow {
@@ -23,6 +25,7 @@ interface ModuleRow {
   title: string;
   order_index: number;
   content_jsonb: any | null;
+  module_type?: string | null;
 }
 
 interface QuizRow {
@@ -52,8 +55,8 @@ export default function CourseView() {
         { data: modules, error: mErr },
         { data: quizzes, error: qErr },
       ] = await Promise.all([
-        supabase.from("courses").select("id,title,description").eq("id", id!).maybeSingle(),
-        supabase.from("modules").select("id,title,order_index,content_jsonb").eq("course_id", id!).order("order_index", { ascending: true }),
+        supabase.from("courses").select("id,title,description,difficulty_level").eq("id", id!).maybeSingle(),
+        supabase.from("modules").select("id,title,order_index,content_jsonb,module_type").eq("course_id", id!).order("order_index", { ascending: true }),
         supabase.from("quizzes").select("id,title,description,is_active,module_id,questions").eq("course_id", id!).eq("is_active", true).order("updated_at", { ascending: false }),
       ]);
       if (cErr) throw cErr;
@@ -99,6 +102,59 @@ export default function CourseView() {
     load();
   }, [id]);
 
+  const moduleStartAtRef = useRef<number | null>(null);
+  const prevModuleIdRef = useRef<string | null>(null);
+
+  const accumulateTimeSpent = async (moduleId: string, seconds: number) => {
+    if (!profileId || !id || !moduleId || seconds <= 0) return;
+    try {
+      const { data: row } = await supabase
+        .from("user_progress")
+        .select("id,time_spent")
+        .eq("user_id", profileId)
+        .eq("course_id", id)
+        .eq("module_id", moduleId)
+        .maybeSingle();
+      if (row?.id) {
+        const newTime = (row.time_spent || 0) + seconds;
+        await supabase
+          .from("user_progress")
+          .update({ time_spent: newTime, last_accessed_at: new Date().toISOString() })
+          .eq("id", row.id);
+      } else {
+        await supabase.from("user_progress").insert({
+          user_id: profileId,
+          course_id: id,
+          module_id: moduleId,
+          is_completed: false,
+          time_spent: seconds,
+          last_accessed_at: new Date().toISOString(),
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao salvar tempo:", e);
+    }
+  };
+
+  useEffect(() => {
+    const now = Date.now();
+    if (current?.id) {
+      if (prevModuleIdRef.current && moduleStartAtRef.current != null) {
+        const sec = Math.floor((now - moduleStartAtRef.current) / 1000);
+        accumulateTimeSpent(prevModuleIdRef.current, sec);
+      }
+      prevModuleIdRef.current = current.id;
+      moduleStartAtRef.current = now;
+    }
+    return () => {
+      if (prevModuleIdRef.current && moduleStartAtRef.current != null) {
+        const sec = Math.floor((Date.now() - moduleStartAtRef.current) / 1000);
+        accumulateTimeSpent(prevModuleIdRef.current, sec);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex]);
+
   const canonical = useMemo(() => {
     try { return window.location.href } catch { return `/courses/${id}` }
   }, [id]);
@@ -122,6 +178,50 @@ export default function CourseView() {
   }, [quizzes, current?.id]);
 
   const finalQuizzes = useMemo(() => quizzes.filter((q) => !q.module_id), [quizzes]);
+
+  const finalExamModule = useMemo(() => {
+    return (data?.modules || []).find((m: any) => m.module_type === "final_exam") || null;
+  }, [data?.modules]);
+
+  const isFinalCurrent = (current as any)?.module_type === "final_exam";
+
+  const quizIds = useMemo(() => quizzes.map((q) => q.id), [quizzes]);
+  const { data: attempts } = useQuery({
+    queryKey: ["quiz-attempts", id, profileId, quizIds.length],
+    enabled: !!profileId && quizIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("quiz_attempts")
+        .select("quiz_id,score,created_at")
+        .eq("user_id", profileId!);
+      return (data || []).filter((a: any) => quizIds.includes(a.quiz_id));
+    },
+  });
+
+  const latestByQuiz = useMemo(() => {
+    const map = new Map<string, { score: number; created_at: string }>();
+    (attempts || []).forEach((a: any) => {
+      const ex = map.get(a.quiz_id);
+      if (!ex || a.created_at > ex.created_at) map.set(a.quiz_id, { score: a.score, created_at: a.created_at });
+    });
+    return map;
+  }, [attempts]);
+
+  const passedAllModuleQuizzes = useMemo(() => {
+    const moduleQs = quizzes.filter((q) => q.module_id);
+    return moduleQs.every((q) => {
+      const len = Array.isArray(q.questions) ? q.questions.length : 1;
+      const att = latestByQuiz.get(q.id);
+      return !!att && att.score >= Math.ceil(0.7 * len);
+    });
+  }, [quizzes, latestByQuiz]);
+
+  const nonFinalModules = useMemo(() => (data?.modules || []).filter((m: any) => m.module_type !== "final_exam"), [data?.modules]);
+  const completedNonFinalCount = useMemo(() => nonFinalModules.filter((m) => completedIds.has(m.id)).length, [nonFinalModules, completedIds]);
+
+  const unlockedFinalExam = useMemo(() => {
+    return nonFinalModules.length > 0 && completedNonFinalCount >= nonFinalModules.length && passedAllModuleQuizzes;
+  }, [nonFinalModules.length, completedNonFinalCount, passedAllModuleQuizzes]);
 
   useEffect(() => {
     const saveLastAccess = async () => {
@@ -214,6 +314,10 @@ export default function CourseView() {
 
   const goPrev = () => setSelectedIndex((i) => Math.max(0, i - 1));
   const goNext = async () => {
+    if (current?.id && moduleStartAtRef.current != null) {
+      const sec = Math.floor((Date.now() - moduleStartAtRef.current) / 1000);
+      await accumulateTimeSpent(current.id, sec);
+    }
     await markModuleCompleted();
     setSelectedIndex((i) => Math.min((data?.modules?.length || 1) - 1, i + 1));
   };
@@ -258,7 +362,13 @@ export default function CourseView() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="truncate">{idx + 1}. {m.title}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">#{m.order_index}</span>
+                      <span className="ml-2">
+                        {(m as any).module_type === "final_exam" ? (
+                          unlockedFinalExam ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          completedIds.has(m.id) ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </span>
                     </div>
                   </button>
                 ))}
@@ -283,7 +393,10 @@ export default function CourseView() {
 
                   {moduleQuizzes.length > 0 && (
                     <section className="rounded-md border p-4">
-                      <h3 className="font-medium">Quiz do módulo</h3>
+                      <h3 className="font-medium">{isFinalCurrent ? "Prova final" : "Quiz do módulo"}</h3>
+                      {!unlockedFinalExam && isFinalCurrent && (
+                        <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos e acerte ao menos 70% nos quizzes para liberar a prova final.</p>
+                      )}
                       <ul className="mt-2 space-y-2">
                         {moduleQuizzes.map((q) => (
                           <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
@@ -293,8 +406,8 @@ export default function CourseView() {
                                 <p className="text-sm text-muted-foreground">{q.description}</p>
                               )}
                             </div>
-                            <Button variant="outline" onClick={() => setOpenQuiz(q)}>
-                              Responder
+                            <Button variant="outline" onClick={() => setOpenQuiz(q)} disabled={isFinalCurrent && !unlockedFinalExam}>
+                              {isFinalCurrent ? (unlockedFinalExam ? "Iniciar" : "Bloqueado") : "Responder"}
                             </Button>
                           </li>
                         ))}
@@ -302,26 +415,29 @@ export default function CourseView() {
                     </section>
                   )}
 
-                  {selectedIndex === (data?.modules?.length || 0) - 1 && finalQuizzes.length > 0 && (
-                    <section className="rounded-md border p-4">
-                      <h3 className="font-medium">Prova final do curso</h3>
-                      <ul className="mt-2 space-y-2">
-                        {finalQuizzes.map((q) => (
-                          <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
-                            <div>
-                              <p className="font-medium">{q.title}</p>
-                              {q.description && (
-                                <p className="text-sm text-muted-foreground">{q.description}</p>
-                              )}
-                            </div>
-                            <Button onClick={() => setOpenQuiz(q)}>
-                              Iniciar
-                            </Button>
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  )}
+                    {!finalExamModule && selectedIndex === (data?.modules?.length || 0) - 1 && finalQuizzes.length > 0 && (
+                      <section className="rounded-md border p-4">
+                        <h3 className="font-medium">Prova final do curso</h3>
+                        {!unlockedFinalExam && (
+                          <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos e acerte ao menos 70% nos quizzes para liberar a prova final.</p>
+                        )}
+                        <ul className="mt-2 space-y-2">
+                          {finalQuizzes.map((q) => (
+                            <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
+                              <div>
+                                <p className="font-medium">{q.title}</p>
+                                {q.description && (
+                                  <p className="text-sm text-muted-foreground">{q.description}</p>
+                                )}
+                              </div>
+                              <Button onClick={() => setOpenQuiz(q)} disabled={!unlockedFinalExam}>
+                                {unlockedFinalExam ? "Iniciar" : "Bloqueado"}
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    )}
 
                   <div className="flex items-center justify-between">
                     <Button variant="outline" onClick={goPrev} disabled={selectedIndex === 0}>Anterior</Button>
@@ -340,7 +456,7 @@ export default function CourseView() {
           <DialogHeader>
             <DialogTitle>{openQuiz?.title || "Quiz"}</DialogTitle>
           </DialogHeader>
-          {openQuiz && <QuizRunner quiz={openQuiz} onClose={() => setOpenQuiz(null)} />}
+          {openQuiz && <QuizRunner quiz={openQuiz} onClose={() => setOpenQuiz(null)} courseId={id!} courseDifficulty={data?.course?.difficulty_level || null} />}
         </DialogContent>
       </Dialog>
     </main>
