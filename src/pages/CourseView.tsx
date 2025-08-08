@@ -23,6 +23,16 @@ interface ModuleRow {
   content_jsonb: any | null;
 }
 
+interface QuizRow {
+  id: string;
+  title: string;
+  description: string | null;
+  is_active: boolean;
+  module_id: string | null;
+  questions?: any[];
+}
+
+
 export default function CourseView() {
   const { id } = useParams<{ id: string }>();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -33,14 +43,20 @@ export default function CourseView() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["course-view", id],
     enabled: !!id,
-    queryFn: async (): Promise<{ course: Course | null; modules: ModuleRow[] }> => {
-      const [{ data: course, error: cErr }, { data: modules, error: mErr }] = await Promise.all([
+    queryFn: async (): Promise<{ course: Course | null; modules: ModuleRow[]; quizzes: QuizRow[] }> => {
+      const [
+        { data: course, error: cErr },
+        { data: modules, error: mErr },
+        { data: quizzes, error: qErr },
+      ] = await Promise.all([
         supabase.from("courses").select("id,title,description").eq("id", id!).maybeSingle(),
         supabase.from("modules").select("id,title,order_index,content_jsonb").eq("course_id", id!).order("order_index", { ascending: true }),
+        supabase.from("quizzes").select("id,title,description,is_active,module_id,questions").eq("course_id", id!).eq("is_active", true).order("updated_at", { ascending: false }),
       ]);
       if (cErr) throw cErr;
       if (mErr) throw mErr;
-      return { course: course as any, modules: (modules || []) as any };
+      if (qErr) throw qErr;
+      return { course: course as any, modules: (modules || []) as any, quizzes: (quizzes || []) as any };
     },
   });
 
@@ -95,6 +111,14 @@ export default function CourseView() {
   };
 
   const current = data?.modules?.[selectedIndex] || null;
+
+  const quizzes: QuizRow[] = (data as any)?.quizzes || [];
+  const moduleQuizzes = useMemo(() => {
+    if (!current?.id) return [] as QuizRow[];
+    return quizzes.filter((q) => q.module_id === current.id);
+  }, [quizzes, current?.id]);
+
+  const finalQuizzes = useMemo(() => quizzes.filter((q) => !q.module_id), [quizzes]);
 
   useEffect(() => {
     const saveLastAccess = async () => {
@@ -253,6 +277,49 @@ export default function CourseView() {
                   <article className="rounded-md border p-4">
                     <div dangerouslySetInnerHTML={{ __html: getHtml(current.content_jsonb) }} />
                   </article>
+
+                  {moduleQuizzes.length > 0 && (
+                    <section className="rounded-md border p-4">
+                      <h3 className="font-medium">Quiz do módulo</h3>
+                      <ul className="mt-2 space-y-2">
+                        {moduleQuizzes.map((q) => (
+                          <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
+                            <div>
+                              <p className="font-medium">{q.title}</p>
+                              {q.description && (
+                                <p className="text-sm text-muted-foreground">{q.description}</p>
+                              )}
+                            </div>
+                            <Button variant="outline" onClick={() => toast({ title: "Em breve", description: "Tentativa de quiz no player do curso." })}>
+                              Responder
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {selectedIndex === (data?.modules?.length || 0) - 1 && finalQuizzes.length > 0 && (
+                    <section className="rounded-md border p-4">
+                      <h3 className="font-medium">Prova final do curso</h3>
+                      <ul className="mt-2 space-y-2">
+                        {finalQuizzes.map((q) => (
+                          <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
+                            <div>
+                              <p className="font-medium">{q.title}</p>
+                              {q.description && (
+                                <p className="text-sm text-muted-foreground">{q.description}</p>
+                              )}
+                            </div>
+                            <Button onClick={() => toast({ title: "Em breve", description: "Prova final será resolvida aqui." })}>
+                              Iniciar
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <Button variant="outline" onClick={goPrev} disabled={selectedIndex === 0}>Anterior</Button>
                     <Button onClick={goNext} disabled={selectedIndex >= (data?.modules?.length || 1) - 1}>Próximo</Button>
