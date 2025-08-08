@@ -19,6 +19,7 @@ import QuizManager from "@/components/admin/QuizManager";
 import MissionManager from "@/components/admin/MissionManager";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import AIGenerationDialog from "@/components/admin/AIGenerationDialog";
+import AIModuleGenerationDialog from "@/components/admin/AIModuleGenerationDialog";
 interface Course {
   id: string;
   title: string;
@@ -165,11 +166,27 @@ export default function AdminCourseEditor() {
   setModuleHtml(getHtml(inserted.content_jsonb));
   refetch();
     }
+  const handleDeleteModule = async (moduleId: string) => {
+    if (!moduleId) return;
+    const confirmDelete = window.confirm("Excluir este módulo? Esta ação não pode ser desfeita.");
+    if (!confirmDelete) return;
+    const { error } = await supabase.from("modules").delete().eq("id", moduleId);
+    if (error) {
+      toast.error("Erro ao excluir módulo");
+    } else {
+      toast("Módulo excluído");
+      if (selectedModuleId === moduleId) {
+        const remaining = (data?.modules || []).filter(m => m.id !== moduleId);
+        const next = remaining[0];
+        setSelectedModuleId(next ? next.id : null);
+        setModuleTitle(next ? next.title : "");
+        setModuleHtml(next ? getHtml(next.content_jsonb) : "");
+      }
+      refetch();
+    }
   };
-
   return (
-    <>
-      <Helmet>
+      <>\n      <Helmet>
         <title>Editor do Curso — {courseTitle || "Carregando"} | Esquads</title>
         <meta name="description" content="Editor WYSIWYG do curso para administradores." />
         <link rel="canonical" href={canonical} />
@@ -250,7 +267,18 @@ export default function AdminCourseEditor() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <h3 className="font-medium">Módulos</h3>
-                          <Button size="sm" variant="outline" onClick={handleAddModule}>Adicionar</Button>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" onClick={handleAddModule}>Adicionar</Button>
+                            {id && <AIModuleGenerationDialog courseId={id} onSuccess={() => refetch()} />}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={!selectedModuleId}
+                              onClick={() => selectedModuleId && handleDeleteModule(selectedModuleId)}
+                            >
+                              Excluir selecionado
+                            </Button>
+                          </div>
                         </div>
                         <div className="space-y-2 max-h-[50vh] overflow-auto pr-1">
                           {data?.modules?.map((m) => (
