@@ -9,6 +9,7 @@ import AppDashboard from "./pages/AppDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Courses from "./pages/Courses";
 import AdminCourseEditor from "./pages/AdminCourseEditor";
+import CourseView from "./pages/CourseView";
 import AppLayout from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import RequireAuth, { RequireRole } from "@/components/auth/RequireAuth";
@@ -28,6 +29,7 @@ const App = () => (
             <Route element={<RequireAuth />}>
               <Route path="/app" element={<AppDashboard />} />
               <Route path="/courses" element={<Courses />} />
+              <Route path="/courses/:id" element={<CourseView />} />
             </Route>
 
             <Route element={<RequireRole roles={["admin", "instructor"]} />}>

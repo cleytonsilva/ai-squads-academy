@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 
 interface Course {
   id: string;
@@ -63,21 +64,23 @@ const Courses = () => {
       ) : data && data.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {data.map((course) => (
-            <Card key={course.id} className="overflow-hidden">
-              {course.thumbnail_url ? (
-                <img src={course.thumbnail_url} alt={`Capa do curso ${course.title}`} loading="lazy" className="h-40 w-full object-cover" />
-              ) : (
-                <div className="h-40 w-full bg-muted" aria-label="Sem imagem" />
-              )}
-              <CardHeader>
-                <CardTitle className="line-clamp-1">{course.title}</CardTitle>
-                <CardDescription className="line-clamp-2">{course.description || "Sem descrição"}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <Badge>Publicado</Badge>
-                <span className="text-xs text-muted-foreground">Atualizado {new Date(course.updated_at).toLocaleDateString()}</span>
-              </CardContent>
-            </Card>
+            <Link key={course.id} to={`/courses/${course.id}`} className="block group">
+              <Card className="overflow-hidden hover-scale cursor-pointer">
+                {course.thumbnail_url ? (
+                  <img src={course.thumbnail_url} alt={`Capa do curso ${course.title}`} loading="lazy" className="h-40 w-full object-cover" />
+                ) : (
+                  <div className="h-40 w-full bg-muted" aria-label="Sem imagem" />
+                )}
+                <CardHeader>
+                  <CardTitle className="line-clamp-1">{course.title}</CardTitle>
+                  <CardDescription className="line-clamp-2">{course.description || "Sem descrição"}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between">
+                  <Badge>Publicado</Badge>
+                  <span className="text-xs text-muted-foreground">Atualizado {new Date(course.updated_at).toLocaleDateString()}</span>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       ) : (
