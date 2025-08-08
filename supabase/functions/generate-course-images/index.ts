@@ -15,29 +15,39 @@ async function generateImageWithCorcel(
   prompt: string,
   apiKey: string,
   engine: string = "proteus",
-  width: number = 1536,
-  height: number = 1024,
+  width: number = 1024,
+  height: number = 576,
   steps: number = 8,
   cfgScale: number = 2
 ): Promise<string> {
+  // Enforce Corcel limits: multiples of 64, between 512-1344
+  const clampDim = (v: number) => Math.max(512, Math.min(1344, Math.floor(v / 64) * 64));
+  const W = String(clampDim(width));
+  const H = String(clampDim(height));
+
   const resp = await fetch("https://api.corcel.io/v1/image/vision/text-to-image", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      // Corcel expects the raw API key in Authorization (no Bearer prefix)
+      "Authorization": apiKey,
       "Content-Type": "application/json",
       "accept": "application/json",
     },
     body: JSON.stringify({
-      text_prompts: [{ text: prompt }],
+      text_prompts: [{ text: prompt, weight: 1 }],
       cfg_scale: cfgScale,
-      height: String(height),
-      width: String(width),
+      height: H,
+      width: W,
       steps,
       engine,
     }),
   });
   if (!resp.ok) {
-    const text = await resp.text();
+    let text = await resp.text();
+    try {
+      const j = JSON.parse(text);
+      text = JSON.stringify(j);
+    } catch {}
     throw new Error(`Corcel error ${resp.status}: ${text}`);
   }
   const data = await resp.json();
@@ -186,7 +196,7 @@ serve(async (req) => {
     // Generate images (sequential to avoid rate limits) - Corcel only (no fallback)
     let courseImageUrl: string | null = null;
     try {
-      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY, engine, 1536, 1024, 8, 2);
+      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY, engine, 1024, 576, 8, 2);
     } catch (err) {
       console.error("Corcel course image failed:", err?.toString?.());
     }
@@ -194,7 +204,7 @@ serve(async (req) => {
     const moduleResults: Record<string, string> = {};
     for (const mp of modulePrompts) {
       try {
-        const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY, engine, 1536, 1024, 8, 2);
+        const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY, engine, 1024, 576, 8, 2);
         moduleResults[mp.id] = url;
       } catch (e) {
         console.error("Corcel module image failed", mp.id, e?.toString?.());
