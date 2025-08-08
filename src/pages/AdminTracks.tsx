@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import TrackQuizManager from "@/components/admin/TrackQuizManager";
 import TrackMissionManager from "@/components/admin/TrackMissionManager";
+import AIGenerationDialog from "@/components/admin/AIGenerationDialog";
 
 interface Track { id: string; title: string; is_public: boolean; is_certifiable: boolean; created_by: string | null; updated_at: string; }
 interface Course { id: string; title: string; }
@@ -180,15 +181,53 @@ export default function AdminTracks() {
                 </div>
 
                 <Tabs defaultValue="quizzes">
-                  <TabsList>
-                    <TabsTrigger value="quizzes">Quizzes de certificação</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
                     <TabsTrigger value="missoes">Missões</TabsTrigger>
+                    <TabsTrigger value="ai-generate">Gerar com IA</TabsTrigger>
                   </TabsList>
                   <TabsContent value="quizzes">
                     <TrackQuizManager trackId={selectedTrack.id} />
                   </TabsContent>
                   <TabsContent value="missoes">
                     <TrackMissionManager trackId={selectedTrack.id} />
+                  </TabsContent>
+                  <TabsContent value="ai-generate">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Geração Automática com IA</CardTitle>
+                        <CardDescription>
+                          Gere missões de certificação e quizzes automaticamente para esta trilha usando IA
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-3">
+                            <h4 className="font-medium">Missões de Certificação</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Crie missões práticas baseadas nos cursos desta trilha para certificação dos estudantes.
+                            </p>
+                            <AIGenerationDialog 
+                              type="missions" 
+                              trackId={selectedTrack.id}
+                              onSuccess={() => refetchTC()}
+                            />
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <h4 className="font-medium">Quizzes de Prova</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Gere quizzes abrangentes para avaliar o conhecimento dos estudantes sobre toda a trilha.
+                            </p>
+                            <AIGenerationDialog 
+                              type="quizzes" 
+                              trackId={selectedTrack.id}
+                              onSuccess={() => refetchTC()}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </TabsContent>
                 </Tabs>
               </div>

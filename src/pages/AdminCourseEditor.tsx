@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import QuizManager from "@/components/admin/QuizManager";
 import MissionManager from "@/components/admin/MissionManager";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import AIGenerationDialog from "@/components/admin/AIGenerationDialog";
 interface Course {
   id: string;
   title: string;
@@ -214,6 +215,7 @@ export default function AdminCourseEditor() {
               <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
               <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
               <TabsTrigger value="missoes">Missões</TabsTrigger>
+              <TabsTrigger value="ai-generate">Gerar com IA</TabsTrigger>
             </TabsList>
 
             <TabsContent value="conteudo">
@@ -313,6 +315,48 @@ export default function AdminCourseEditor() {
             <TabsContent value="missoes">
               {id ? (
                 <MissionManager courseId={id} modules={(data?.modules || []).map(m => ({ id: m.id, title: m.title }))} />
+              ) : (
+                <p className="text-sm text-muted-foreground">Curso inválido.</p>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="ai-generate">
+              {id && data?.course ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Geração Automática com IA</CardTitle>
+                    <CardDescription>
+                      Gere missões e quizzes automaticamente baseados no conteúdo deste curso
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-3">
+                        <h4 className="font-medium">Missões do Curso</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Crie missões práticas baseadas nos módulos deste curso.
+                        </p>
+                        <AIGenerationDialog 
+                          type="missions" 
+                          courseId={id}
+                          onSuccess={() => refetch()}
+                        />
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <h4 className="font-medium">Quizzes do Curso</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Gere quizzes para avaliar o conhecimento sobre este curso específico.
+                        </p>
+                        <AIGenerationDialog 
+                          type="quizzes" 
+                          courseId={id}
+                          onSuccess={() => refetch()}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ) : (
                 <p className="text-sm text-muted-foreground">Curso inválido.</p>
               )}
