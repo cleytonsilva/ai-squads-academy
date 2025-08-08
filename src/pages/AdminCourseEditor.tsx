@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import ReactQuill from "react-quill";
@@ -58,6 +58,63 @@ export default function AdminCourseEditor() {
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [moduleTitle, setModuleTitle] = useState("");
   const [moduleHtml, setModuleHtml] = useState("");
+
+  // Quill editor config: image/video insertion at cursor
+  const quillRef = useRef<any>(null);
+
+  const quillModules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image", "video"],
+        ["clean"],
+      ],
+      handlers: {
+        image: () => {
+          try {
+            const url = window.prompt("URL da imagem (https://...)");
+            if (!url) return;
+            const editor = quillRef.current?.getEditor?.();
+            const range = editor?.getSelection(true);
+            if (editor && range) {
+              editor.insertEmbed(range.index, "image", url, "user");
+              editor.setSelection(range.index + 1, 0);
+            }
+          } catch {
+            // ignore
+          }
+        },
+        video: () => {
+          try {
+            let url = window.prompt("URL do vídeo (YouTube, Vimeo, etc.)");
+            if (!url) return;
+            const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([A-Za-z0-9_-]{11})/);
+            if (ytMatch) {
+              url = `https://www.youtube.com/embed/${ytMatch[1]}`;
+            }
+            const editor = quillRef.current?.getEditor?.();
+            const range = editor?.getSelection(true);
+            if (editor && range) {
+              editor.insertEmbed(range.index, "video", url, "user");
+              editor.setSelection(range.index + 1, 0);
+            }
+          } catch {
+            // ignore
+          }
+        },
+      },
+    },
+    clipboard: { matchVisual: false },
+  }), []);
+
+  const quillFormats = useMemo(() => ([
+    "header",
+    "bold", "italic", "underline", "strike",
+    "list", "bullet",
+    "link", "image", "video",
+  ]), []);
 
   const canonical = useMemo(() => {
     try { return window.location.href } catch { return `/admin/courses/${id}` }
@@ -289,7 +346,14 @@ export default function AdminCourseEditor() {
                             <Input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} />
                           </div>
                           <div className="rounded-md border">
-                            <ReactQuill theme="snow" value={moduleHtml} onChange={setModuleHtml} />
+                            <ReactQuill
+                              ref={quillRef}
+                              theme="snow"
+                              value={moduleHtml}
+                              onChange={setModuleHtml}
+                              modules={quillModules}
+                              formats={quillFormats}
+                            />
                           </div>
                           <div className="flex items-center gap-2 justify-between">
                             <AIModuleExtendDialog
