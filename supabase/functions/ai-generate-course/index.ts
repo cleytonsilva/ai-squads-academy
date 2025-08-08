@@ -86,6 +86,11 @@ serve(async (req) => {
       final_exam_difficulty,
       final_exam_options = 4,
       final_exam_questions = 20,
+      description,
+      tone = "profissional",
+      target_audience = [],
+      module_length_min = 2200,
+      module_length_max = 3200,
     } = input || {};
 
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

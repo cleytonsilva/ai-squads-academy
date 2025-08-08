@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -64,22 +66,42 @@ const AdminDashboard = () => {
   const [finalExamOptions, setFinalExamOptions] = useState<number>(4);
   const [finalExamQuestions, setFinalExamQuestions] = useState<number>(20);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [imgLoadingCourse, setImgLoadingCourse] = useState<string | null>(null);
+const [imgLoadingCourse, setImgLoadingCourse] = useState<string | null>(null);
+const [aiDescription, setAiDescription] = useState("");
+const [aiTone, setAiTone] = useState("profissional");
+const [audCeo, setAudCeo] = useState(false);
+const [audRh, setAudRh] = useState(false);
+const [audAdv, setAudAdv] = useState(false);
+const [audOutrosChecked, setAudOutrosChecked] = useState(false);
+const [audOutrosText, setAudOutrosText] = useState("");
 
 
   const handleStartAIGeneration = async () => {
     try {
       setIsGenerating(true);
+
+      const selectedAudience: string[] = [];
+      if (audCeo) selectedAudience.push("CEOs");
+      if (audRh) selectedAudience.push("RH");
+      if (audAdv) selectedAudience.push("Advogados");
+      if (audOutrosChecked && audOutrosText.trim()) selectedAudience.push(audOutrosText.trim());
+      const audienceString = selectedAudience.length > 0 ? selectedAudience.join(", ") : "profissionais e estudantes de TI no Brasil";
+
       const { data, error } = await supabase.functions.invoke("ai-generate-course", {
         body: {
           title: aiTitle,
           difficulty: aiDifficulty,
           num_modules: aiModules,
-          audience: "profissionais e estudantes de TI no Brasil",
+          description: aiDescription,
+          tone: aiTone,
+          target_audience: selectedAudience,
+          audience: audienceString,
           include_final_exam: includeFinalExam,
           final_exam_difficulty: finalExamDifficulty,
           final_exam_options: finalExamOptions,
           final_exam_questions: finalExamQuestions,
+          module_length_min: 2200,
+          module_length_max: 3200,
         },
       });
       if (error) throw error as any;
@@ -173,6 +195,18 @@ const AdminDashboard = () => {
                       placeholder="Ex.: Fundamentos de Cibersegurança em Cloud"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ai-description">Descrição do curso (opcional)</Label>
+                    <Textarea
+                      id="ai-description"
+                      value={aiDescription}
+                      onChange={(e) => setAiDescription(e.target.value)}
+                      placeholder="Descreva objetivos, foco e contexto do curso para orientar a IA"
+                      rows={4}
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="ai-difficulty">Nível</Label>
@@ -199,6 +233,54 @@ const AdminDashboard = () => {
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="ai-tone">Tom do curso</Label>
+                    <Select value={aiTone} onValueChange={setAiTone}>
+                      <SelectTrigger id="ai-tone">
+                        <SelectValue placeholder="Selecione o tom" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="profissional">Profissional/Neutro</SelectItem>
+                        <SelectItem value="técnico">Técnico</SelectItem>
+                        <SelectItem value="conversacional">Conversacional</SelectItem>
+                        <SelectItem value="inspirador">Inspirador</SelectItem>
+                        <SelectItem value="formal">Formal</SelectItem>
+                        <SelectItem value="informal">Informal</SelectItem>
+                        <SelectItem value="humor">Humor leve</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Público-alvo</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex items-center gap-2">
+                        <Checkbox checked={audCeo} onCheckedChange={(v) => setAudCeo(Boolean(v))} />
+                        <span>CEO</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <Checkbox checked={audRh} onCheckedChange={(v) => setAudRh(Boolean(v))} />
+                        <span>RH</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <Checkbox checked={audAdv} onCheckedChange={(v) => setAudAdv(Boolean(v))} />
+                        <span>Advogados</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <Checkbox checked={audOutrosChecked} onCheckedChange={(v) => setAudOutrosChecked(Boolean(v))} />
+                        <span>Outros</span>
+                      </label>
+                    </div>
+                    {audOutrosChecked && (
+                      <Input
+                        value={audOutrosText}
+                        onChange={(e) => setAudOutrosText(e.target.value)}
+                        placeholder="Digite a profissão para incluir"
+                      />
+                    )}
+                  </div>
+
                   <Separator />
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
