@@ -398,6 +398,27 @@ export default function CourseView() {
                     <div dangerouslySetInnerHTML={{ __html: getHtml(current.content_jsonb) }} />
                   </article>
 
+                  {!isFinalCurrent && current?.order_index !== 10 && moduleQuizzes.length > 0 && (
+                    <section className="rounded-md border p-4">
+                      <h3 className="font-medium">Quiz do módulo</h3>
+                      <ul className="mt-2 space-y-2">
+                        {moduleQuizzes.map((q) => (
+                          <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
+                            <div>
+                              <p className="font-medium">{q.title}</p>
+                              {q.description && (
+                                <p className="text-sm text-muted-foreground">{q.description}</p>
+                              )}
+                            </div>
+                            <Button variant="outline" onClick={() => setOpenQuiz(q)}>
+                              Responder
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
                   {isFinalCurrent && moduleQuizzes.length > 0 && (
                     <section className="rounded-md border p-4">
                       <h3 className="font-medium">Prova final</h3>
