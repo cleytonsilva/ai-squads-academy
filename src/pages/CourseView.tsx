@@ -178,6 +178,7 @@ export default function CourseView() {
   const quizzes: QuizRow[] = (data as any)?.quizzes || [];
 
   const finalQuizzes = useMemo(() => quizzes.filter((q) => !q.module_id), [quizzes]);
+  const finalExamQuiz = useMemo(() => finalQuizzes[0] || null, [finalQuizzes]);
 
   const finalExamModule = useMemo(() => {
     return (data?.modules || []).find((m: any) => m.module_type === "final_exam") || null;
@@ -455,48 +456,44 @@ export default function CourseView() {
                   {isFinalCurrent && moduleQuizzes.length > 0 && (
                     <section className="rounded-md border p-4">
                       <h3 className="font-medium">Prova final</h3>
-                      {!unlockedFinalExam && isFinalCurrent && (
+                      {!unlockedFinalExam && (
                         <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos para liberar a prova final.</p>
                       )}
-                      <ul className="mt-2 space-y-2">
-                        {moduleQuizzes.map((q) => (
-                          <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
-                            <div>
-                              <p className="font-medium">{q.title}</p>
-                              {q.description && (
-                                <p className="text-sm text-muted-foreground">{q.description}</p>
-                              )}
-                            </div>
-                            <Button variant="outline" onClick={() => setOpenQuiz(q)} disabled={isFinalCurrent && !unlockedFinalExam}>
-                              {isFinalCurrent ? (unlockedFinalExam ? "Iniciar" : "Bloqueado") : "Responder"}
-                            </Button>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between rounded-md border p-3">
+                          <div>
+                            <p className="font-medium">{moduleQuizzes[0]?.title}</p>
+                            {moduleQuizzes[0]?.description && (
+                              <p className="text-sm text-muted-foreground">{moduleQuizzes[0]?.description}</p>
+                            )}
+                          </div>
+                          <Button variant="outline" onClick={() => setOpenQuiz(moduleQuizzes[0]!)} disabled={!unlockedFinalExam}>
+                            {unlockedFinalExam ? "Iniciar a prova" : "Bloqueado"}
+                          </Button>
+                        </div>
+                      </div>
                     </section>
                   )}
 
-                    {!finalExamModule && selectedIndex === (displayModules?.length || 0) - 1 && finalQuizzes.length > 0 && (
+                    {!finalExamModule && selectedIndex === (displayModules?.length || 0) - 1 && finalExamQuiz && (
                       <section className="rounded-md border p-4">
                         <h3 className="font-medium">Prova final do curso</h3>
                         {!unlockedFinalExam && (
-                          <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos para liberar a prova final.</p>
+                          <p className="text-sm text-muted-foreground mt-1">Conclua todos os módulos para liberar.</p>
                         )}
-                        <ul className="mt-2 space-y-2">
-                          {finalQuizzes.map((q) => (
-                            <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
-                              <div>
-                                <p className="font-medium">{q.title}</p>
-                                {q.description && (
-                                  <p className="text-sm text-muted-foreground">{q.description}</p>
-                                )}
-                              </div>
-                              <Button onClick={() => setOpenQuiz(q)} disabled={!unlockedFinalExam}>
-                                {unlockedFinalExam ? "Iniciar" : "Bloqueado"}
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between rounded-md border p-3">
+                            <div>
+                              <p className="font-medium">{finalExamQuiz.title}</p>
+                              {finalExamQuiz.description && (
+                                <p className="text-sm text-muted-foreground">{finalExamQuiz.description}</p>
+                              )}
+                            </div>
+                            <Button onClick={() => setOpenQuiz(finalExamQuiz)} disabled={!unlockedFinalExam}>
+                              {unlockedFinalExam ? "Iniciar a prova" : "Bloqueado"}
+                            </Button>
+                          </div>
+                        </div>
                       </section>
                     )}
 
