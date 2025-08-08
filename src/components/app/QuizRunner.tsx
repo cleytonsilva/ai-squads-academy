@@ -74,7 +74,7 @@ function normalizeQuestions(raw: any[] = []): NormalizedQuestion[] {
   });
 }
 
-export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty }: { quiz: QuizRow; onClose?: () => void; courseId: string; courseDifficulty?: string | null }) {
+export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty, isFinalExam }: { quiz: QuizRow; onClose?: () => void; courseId: string; courseDifficulty?: string | null; isFinalExam?: boolean }) {
   const questions = useMemo(() => normalizeQuestions(quiz.questions || []), [quiz.questions]);
   const [answers, setAnswers] = useState<Record<number, number | null>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -149,7 +149,7 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty }
         }
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id,xp")
+          .select("id,xp,display_name")
           .eq("user_id", session.user.id)
           .maybeSingle();
 
@@ -166,14 +166,50 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty }
           explanation: q.explanation ?? null,
         }));
 
+        // Define passing threshold
+        const difficulty = String(courseDifficulty || "beginner").toLowerCase();
+        const threshold = difficulty.startsWith("inter")
+          ? 0.85
+          : (difficulty.startsWith("pro") || difficulty.startsWith("adv"))
+            ? 0.9
+            : 0.75; // beginner
+        const passLimit = Math.ceil((isFinalExam ? threshold : 0.7) * questions.length);
+        const isPassed = correct >= passLimit;
+
         await supabase.from("quiz_attempts").insert({
           user_id: profileId,
           quiz_id: quiz.id,
           score: correct,
-          is_passed: correct >= Math.ceil(0.7 * questions.length),
+          is_passed: isPassed,
           answers,
           feedback,
         });
+
+        // If module quiz passed, mark module as completed
+        if (profileId && quiz.module_id && isPassed) {
+          const { data: existingProg } = await supabase
+            .from("user_progress")
+            .select("id,is_completed")
+            .eq("user_id", profileId)
+            .eq("course_id", courseId)
+            .eq("module_id", quiz.module_id)
+            .maybeSingle();
+          if (existingProg?.id) {
+            await supabase
+              .from("user_progress")
+              .update({ is_completed: true, completed_at: new Date().toISOString(), last_accessed_at: new Date().toISOString() })
+              .eq("id", existingProg.id);
+          } else {
+            await supabase.from("user_progress").insert({
+              user_id: profileId,
+              course_id: courseId,
+              module_id: quiz.module_id,
+              is_completed: true,
+              completed_at: new Date().toISOString(),
+              last_accessed_at: new Date().toISOString(),
+            });
+          }
+        }
 
         if (profileId) {
           const newXp = Math.max(0, (profile?.xp || 0) + delta);
@@ -182,6 +218,53 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty }
             title: delta >= 0 ? `+${delta} XP` : `${delta} XP`,
             description: delta >= 0 ? "Bom trabalho!" : "Pontos deduzidos pelo desempenho.",
           });
+        }
+
+        // Issue certificate if final exam passed
+        if (profileId && isFinalExam && isPassed) {
+          // Skip if already has a certificate
+          const { data: existingCert } = await supabase
+            .from("certificates")
+            .select("id")
+            .eq("user_id", profileId)
+            .eq("course_id", courseId)
+            .maybeSingle();
+          if (!existingCert?.id) {
+            // Sum total time in course
+            const { data: times } = await supabase
+              .from("user_progress")
+              .select("time_spent")
+              .eq("user_id", profileId)
+              .eq("course_id", courseId);
+            const totalSeconds = (times || []).reduce((acc: number, r: any) => acc + (r.time_spent || 0), 0);
+
+            const human = (s: number) => {
+              const h = Math.floor(s / 3600);
+              const m = Math.floor((s % 3600) / 60);
+              const sec = s % 60;
+              return `${h}h ${m}m ${sec}s`;
+            };
+
+            await supabase.from("certificates").insert({
+              user_id: profileId,
+              course_id: courseId,
+              certificate_number: Math.random().toString(36).slice(2, 10).toUpperCase(),
+              metadata: {
+                display_name: profile?.display_name || null,
+                difficulty,
+                final_exam: {
+                  score: correct,
+                  total: questions.length,
+                  threshold: passLimit,
+                },
+                time_spent_seconds: totalSeconds,
+                time_spent_human: human(totalSeconds),
+                issued_reason: "final_exam_pass",
+              },
+            });
+
+            toast({ title: "Certificado emitido!", description: "Você pode visualizá-lo em Conquistas." });
+          }
         }
 
         setSaved(true);

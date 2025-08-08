@@ -223,6 +223,13 @@ export default function CourseView() {
     return nonFinalModules.length > 0 && completedNonFinalCount >= nonFinalModules.length && passedAllModuleQuizzes;
   }, [nonFinalModules.length, completedNonFinalCount, passedAllModuleQuizzes]);
 
+  const isFinalExamForOpen = useMemo(() => {
+    if (!openQuiz) return false;
+    if (isFinalCurrent) return true;
+    if (!finalExamModule && !openQuiz.module_id) return true;
+    return false;
+  }, [openQuiz, isFinalCurrent, finalExamModule]);
+
   useEffect(() => {
     const saveLastAccess = async () => {
       if (!profileId || !current?.id || !id) return;
@@ -456,7 +463,7 @@ export default function CourseView() {
           <DialogHeader>
             <DialogTitle>{openQuiz?.title || "Quiz"}</DialogTitle>
           </DialogHeader>
-          {openQuiz && <QuizRunner quiz={openQuiz} onClose={() => setOpenQuiz(null)} courseId={id!} courseDifficulty={data?.course?.difficulty_level || null} />}
+          {openQuiz && <QuizRunner quiz={openQuiz} onClose={() => setOpenQuiz(null)} courseId={id!} courseDifficulty={data?.course?.difficulty_level || null} isFinalExam={isFinalExamForOpen} />}
         </DialogContent>
       </Dialog>
     </main>
