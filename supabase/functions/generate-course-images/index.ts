@@ -72,12 +72,11 @@ async function generateImageWithOpenAI(prompt: string, size: string = "1536x1024
 async function generateImageWithGemini(prompt: string, width: number = 1536, height: number = 1024): Promise<string> {
   const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
   if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY for image generation");
-  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/images:generate?key=${GEMINI_API_KEY}`,
-  {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0:generateImages?key=${GEMINI_API_KEY}`;
+  const resp = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "imagen-3.0",
       prompt: { text: prompt },
       imageGenerationConfig: { numberOfImages: 1, width, height }
     }),
@@ -87,11 +86,16 @@ async function generateImageWithGemini(prompt: string, width: number = 1536, hei
     throw new Error(`Gemini image error ${resp.status}: ${text}`);
   }
   const data = await resp.json();
-  // Try to parse common response shapes
-  const img = data?.images?.[0];
-  if (img?.content) {
-    const mime = img?.mimeType || "image/png";
-    return `data:${mime};base64,${img.content}`;
+  // Response compatibility parsing
+  const img1 = data?.images?.[0];
+  if (img1?.content) {
+    const mime = img1?.mimeType || "image/png";
+    return `data:${mime};base64,${img1.content}`;
+  }
+  const img2 = data?.generatedImages?.[0];
+  if (img2?.image?.bytesBase64Encoded) {
+    const mime = img2?.mimeType || "image/png";
+    return `data:${mime};base64,${img2.image.bytesBase64Encoded}`;
   }
   const cand = data?.candidates?.[0]?.content?.parts?.find?.((p: any) => p?.inline_data?.data);
   if (cand?.inline_data?.data) {
