@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import TrackBuilder from "@/components/app/TrackBuilder";
 import ProgressOverview from "@/components/app/ProgressOverview";
 import Achievements from "@/components/app/Achievements";
+import { Link } from "react-router-dom";
 
 const AppDashboard = () => {
   const { xp, level } = useAppStore();
@@ -47,7 +48,7 @@ const AppDashboard = () => {
         </CardHeader>
         <CardContent>
           <Button variant="outline" asChild>
-            <a href="/courses">Explorar cursos</a>
+            <Link to="/courses">Explorar cursos</Link>
           </Button>
         </CardContent>
       </Card>
