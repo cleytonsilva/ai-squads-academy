@@ -64,6 +64,8 @@ const AdminDashboard = () => {
   const [finalExamOptions, setFinalExamOptions] = useState<number>(4);
   const [finalExamQuestions, setFinalExamQuestions] = useState<number>(20);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [imgLoadingCourse, setImgLoadingCourse] = useState<string | null>(null);
+
 
   const handleStartAIGeneration = async () => {
     try {
@@ -108,6 +110,27 @@ const AdminDashboard = () => {
     }
     toast.success("Curso criado com sucesso.");
     refetch();
+  };
+
+  const handleGenerateImages = async (courseId: string) => {
+    try {
+      setImgLoadingCourse(courseId);
+      const { data, error } = await supabase.functions.invoke("generate-course-images", {
+        body: { courseId },
+      });
+      if (error) throw error as any;
+      if ((data as any)?.requiresSecret) {
+        toast.error("Chave da API Corcel não configurada.");
+      } else {
+        toast.success("Capas geradas com IA. Atualizando...");
+      }
+      setTimeout(() => refetch(), 1500);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Falha ao gerar capas com IA");
+    } finally {
+      setImgLoadingCourse(null);
+    }
   };
 
   return (
@@ -247,8 +270,15 @@ const AdminDashboard = () => {
                       loading="lazy"
                       className="h-40 w-full object-cover"
                     />
-                  ) : (
-                    <div className="h-40 w-full bg-muted" aria-label="Sem imagem" />
+                   ) : (
+                    <button
+                      className="h-40 w-full bg-muted flex items-center justify-center hover:opacity-90 transition"
+                      aria-label="Gerar capa do curso"
+                      onClick={() => handleGenerateImages(course.id)}
+                      disabled={imgLoadingCourse === course.id}
+                    >
+                      {imgLoadingCourse === course.id ? "Gerando capa..." : "Gerar capa com IA"}
+                    </button>
                   )}
                   <CardHeader>
                     <CardTitle className="line-clamp-1">{course.title}</CardTitle>

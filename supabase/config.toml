@@ -13,3 +13,7 @@ verify_jwt = true
 
 [functions.ai-generate-certifications]
 verify_jwt = true
+
+[functions.generate-course-images]
+verify_jwt = true
+
