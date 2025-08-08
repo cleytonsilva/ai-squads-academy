@@ -73,11 +73,19 @@ export default function TopNav() {
   return (
     <header className="w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto h-14 flex items-center justify-between">
-        <Link to="/" className="font-semibold text-base">Esquads</Link>
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/lovable-uploads/aeca3981-62ec-4107-85c4-2f118d51554d.png" alt="Esquads logo" className="h-6 w-6" />
+          <span className="sr-only">Esquads</span>
+        </Link>
         <nav className="hidden md:flex items-center gap-1">
           <NavLink to="/courses" className={linkCls} end>Courses</NavLink>
           <NavLink to="/app" className={linkCls} end>Minha jornada</NavLink>
-          {isAdmin && <NavLink to="/admin" className={linkCls} end>Admin</NavLink>}
+          {isAdmin && (
+            <>
+              <NavLink to="/admin" className={linkCls} end>Admin</NavLink>
+              <NavLink to="/admin/monitoring" className={linkCls} end>Monitor</NavLink>
+            </>
+          )}
         </nav>
         <div className="flex items-center gap-2">
           {loading ? (

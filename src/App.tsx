@@ -14,6 +14,8 @@ import AppLayout from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import RequireAuth, { RequireRole } from "@/components/auth/RequireAuth";
 import AdminTracks from "./pages/AdminTracks";
+import GenerationJob from "./pages/GenerationJob";
+import AdminMonitoring from "./pages/AdminMonitoring";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -37,6 +39,8 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/courses/:id" element={<AdminCourseEditor />} />
               <Route path="/admin/tracks" element={<AdminTracks />} />
+              <Route path="/admin/generation/:jobId" element={<GenerationJob />} />
+              <Route path="/admin/monitoring" element={<AdminMonitoring />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

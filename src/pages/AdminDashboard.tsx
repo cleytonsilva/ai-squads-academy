@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 type Course = {
   id: string;
   title: string;
@@ -28,6 +28,7 @@ type Course = {
 };
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     document.title = "Admin — Esquads";
   }, []);
@@ -105,10 +106,16 @@ const [audOutrosText, setAudOutrosText] = useState("");
         },
       });
       if (error) throw error as any;
-      toast.success("Geração iniciada. Atualize em alguns segundos.");
-      setAiOpen(false);
-      // Tenta refetch depois de alguns segundos
-      setTimeout(() => refetch(), 5000);
+      const jobId = (data as any)?.job_id;
+      if (jobId) {
+        toast.success("Geração iniciada. Acompanhe o progresso.");
+        setAiOpen(false);
+        navigate(`/admin/generation/${jobId}`);
+      } else {
+        toast.success("Geração iniciada. Atualize em alguns segundos.");
+        setAiOpen(false);
+        setTimeout(() => refetch(), 5000);
+      }
     } catch (err: any) {
       console.error(err);
       toast.error("Falha ao iniciar geração por IA.");

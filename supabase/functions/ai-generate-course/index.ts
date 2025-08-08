@@ -142,6 +142,16 @@ serve(async (req) => {
         console.log("[AI-GEN] Processing job", jobId);
         await updateJob({ status: "processing" });
 
+        // Initialize in-memory progress log that we persist on each step
+        let jobOutput: any = { events: [], progress_modules: [] };
+        const logEvent = async (message: string) => {
+          try {
+            jobOutput.events.push({ message, at: new Date().toISOString() });
+            await updateJob({ output: jobOutput });
+          } catch (_) { /* noop */ }
+        };
+        await logEvent("Processamento iniciado");
+
         const promptTitle = title || (topic ? `Curso: ${topic}` : "Curso de Cibersegurança");
 
         const system = `Você é um gerador de cursos da plataforma Esquads. Gere JSON válido e conciso.\nRegras:\n- Domínio: Cibersegurança/TI/Negócios\n- Idioma: pt-BR\n- Estrutura: {\n  "title": string,\n  "description": string,\n  "estimated_minutes": number,\n  "modules": [\n    { "title": string, "summary": string, "content_html": string, "quiz": {\n        "title": string, "description": string,\n        "questions": [ {"q": string, "options": [string,string,string,string], "answer": number, "explanation": string } ]\n      }\n    }\n  ]\n}\n- Mínimo: 8 módulos, Máximo: ${Math.max(8, Math.min(20, Number(num_modules) || 12))}.`;
@@ -167,6 +177,7 @@ serve(async (req) => {
         if (!parsed || !parsed.modules || !Array.isArray(parsed.modules)) {
           throw new Error("Resposta da IA inválida (sem módulos)");
         }
+        await logEvent(`Conteúdo IA recebido: ${parsed.modules.length} módulos`);
 
         const estimated_minutes = Number(parsed.estimated_minutes || parsed.modules.length * 15);
 
@@ -191,6 +202,7 @@ serve(async (req) => {
         }
 
         const courseId = courseRow.id as string;
+        await logEvent(`Curso criado: ${courseId}`);
 
         // Insert modules and quizzes
         for (let i = 0; i < parsed.modules.length; i++) {
@@ -218,6 +230,11 @@ serve(async (req) => {
 
           const moduleId = modRow.id as string;
 
+          // Update job progress with the module title
+          jobOutput.progress_modules.push({ index: i, title: m.title || `Módulo ${i + 1}` });
+          await updateJob({ output: jobOutput });
+          await logEvent(`Módulo ${i + 1} criado: ${m.title || `Módulo ${i + 1}`}`);
+
           if (m.quiz && Array.isArray(m.quiz?.questions) && m.quiz.questions.length > 0) {
             const quizTitle = m.quiz.title || `Quiz do módulo ${i + 1}`;
             const quizDescription = m.quiz.description || "Avalie seus conhecimentos";
@@ -242,6 +259,7 @@ serve(async (req) => {
         // Final exam generation (optional)
         if (include_final_exam) {
           try {
+            await logEvent("Gerando prova final...");
             const fed = (typeof final_exam_difficulty === "string" && final_exam_difficulty) ? final_exam_difficulty : difficulty;
             const optCount = Math.max(2, Math.min(6, Number(final_exam_options) || 4));
             const qCount = Math.max(5, Math.min(50, Number(final_exam_questions) || 20));
@@ -296,13 +314,14 @@ serve(async (req) => {
                 questions: qNormalized,
               });
             if (fQuizErr) throw fQuizErr;
+            await logEvent("Prova final criada");
           } catch (e) {
             console.error("[AI-GEN] Final exam generation failed:", e);
             // Continue without failing the whole job
           }
         }
 
-        await updateJob({ status: "completed", output: { course_id: courseId } });
+        await updateJob({ status: "completed", output: { ...jobOutput, course_id: courseId } });
         console.log("[AI-GEN] Job completed", jobId, courseId);
       } catch (err: any) {
         console.error("[AI-GEN] Job failed", jobId, err?.message || err);
