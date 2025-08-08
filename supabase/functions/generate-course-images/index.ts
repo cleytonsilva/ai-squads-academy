@@ -40,7 +40,7 @@ async function generateImageWithCorcel(prompt: string, apiKey: string): Promise<
   return url;
 }
 
-async function generateImageWithOpenAI(prompt: string, size: string = "1792x1024"): Promise<string> {
+async function generateImageWithOpenAI(prompt: string, size: string = "1536x1024"): Promise<string> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
   if (!OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY for fallback");
   const resp = await fetch("https://api.openai.com/v1/images/generations", {
