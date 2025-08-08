@@ -11,22 +11,29 @@ type ModuleRow = { id: string; title: string; order_index: number; content_jsonb
 
 type Course = { id: string; title: string; description: string | null; thumbnail_url: string | null };
 
-async function generateImageWithCorcel(prompt: string, apiKey: string): Promise<string> {
-  // NOTE: Endpoint and payload derived from Corcel docs. Adjust if needed.
-  const resp = await fetch("https://api.corcel.io/v1/image/generate", {
+async function generateImageWithCorcel(
+  prompt: string,
+  apiKey: string,
+  engine: string = "proteus",
+  width: number = 1536,
+  height: number = 1024,
+  steps: number = 8,
+  cfgScale: number = 2
+): Promise<string> {
+  const resp = await fetch("https://api.corcel.io/v1/image/vision/text-to-image", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "accept": "application/json",
     },
     body: JSON.stringify({
-      prompt,
-      // Suggest realistic, tech/cybersecurity style
-      style: "realistic",
-      guidance: 7.0,
-      steps: 28,
-      width: 1024,
-      height: 576,
+      text_prompts: [{ text: prompt }],
+      cfg_scale: cfgScale,
+      height: String(height),
+      width: String(width),
+      steps,
+      engine,
     }),
   });
   if (!resp.ok) {
@@ -34,10 +41,12 @@ async function generateImageWithCorcel(prompt: string, apiKey: string): Promise<
     throw new Error(`Corcel error ${resp.status}: ${text}`);
   }
   const data = await resp.json();
-  // Try common shapes: {imageUrl} or {data: { url }} or { images: [{url}] }
+  // Common response shapes
   const url = data?.imageUrl || data?.data?.url || data?.images?.[0]?.url || data?.output?.[0] || data?.url;
-  if (!url || typeof url !== "string") throw new Error("Resposta da Corcel sem URL de imagem");
-  return url;
+  const b64 = data?.artifacts?.[0]?.base64 || data?.images?.[0]?.base64;
+  if (url && typeof url === "string") return url;
+  if (b64 && typeof b64 === "string") return `data:image/png;base64,${b64}`;
+  throw new Error("Resposta da Corcel sem imagem (url/base64)");
 }
 
 async function generateImageWithOpenAI(prompt: string, size: string = "1536x1024"): Promise<string> {
@@ -127,6 +136,14 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const courseId: string | undefined = body?.courseId || body?.course_id;
+    const requestedEngineRaw: string | undefined = body?.engine || body?.imageEngine || body?.corcel_engine;
+    const engine = (() => {
+      const v = String(requestedEngineRaw || '').toLowerCase();
+      if (v.includes('flux')) return 'flux-schnell';
+      if (v.includes('dream')) return 'dreamshaper';
+      if (v.includes('proteus')) return 'proteus';
+      return 'proteus';
+    })();
     if (!courseId) {
       return new Response(JSON.stringify({ error: "Missing courseId" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -166,43 +183,21 @@ serve(async (req) => {
       prompt: `Imagem realista relacionada a tecnologia e cibersegurança para capítulo: ${m.title}. Visual profissional, foco no tema, sem texto. Aspect ratio 16:9.`,
     }));
 
-    // Generate images (sequential to avoid rate limits) with fallback: Corcel -> Gemini -> OpenAI
+    // Generate images (sequential to avoid rate limits) - Corcel only (no fallback)
     let courseImageUrl: string | null = null;
     try {
-      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY);
+      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY, engine, 1536, 1024, 8, 2);
     } catch (err) {
-      console.warn("Corcel course image failed, falling back to Gemini:", err?.toString?.());
-      try {
-        courseImageUrl = await generateImageWithGemini(coursePrompt, 1536, 1024);
-      } catch (e2) {
-        console.warn("Gemini fallback failed for course image, trying OpenAI:", e2?.toString?.());
-        try {
-          courseImageUrl = await generateImageWithOpenAI(coursePrompt, "1536x1024");
-        } catch (e3) {
-          console.error("All providers failed for course image:", e3);
-        }
-      }
+      console.error("Corcel course image failed:", err?.toString?.());
     }
 
     const moduleResults: Record<string, string> = {};
     for (const mp of modulePrompts) {
       try {
-        const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY);
+        const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY, engine, 1536, 1024, 8, 2);
         moduleResults[mp.id] = url;
       } catch (e) {
-        console.warn("Corcel module image failed, falling back to Gemini", mp.id, e?.toString?.());
-        try {
-          const url2 = await generateImageWithGemini(mp.prompt, 1536, 1024);
-          moduleResults[mp.id] = url2;
-        } catch (e2) {
-          console.warn("Gemini module fallback failed, trying OpenAI", mp.id, e2?.toString?.());
-          try {
-            const url3 = await generateImageWithOpenAI(mp.prompt, "1536x1024");
-            moduleResults[mp.id] = url3;
-          } catch (e3) {
-            console.error("All providers failed for module", mp.id, e3);
-          }
-        }
+        console.error("Corcel module image failed", mp.id, e?.toString?.());
       }
     }
 
