@@ -40,6 +40,35 @@ async function generateImageWithCorcel(prompt: string, apiKey: string): Promise<
   return url;
 }
 
+async function generateImageWithOpenAI(prompt: string, size: string = "1792x1024"): Promise<string> {
+  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+  if (!OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY for fallback");
+  const resp = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-image-1",
+      prompt,
+      n: 1,
+      size,
+    }),
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`OpenAI image error ${resp.status}: ${text}`);
+  }
+  const data = await resp.json();
+  const b64 = data?.data?.[0]?.b64_json;
+  const url = data?.data?.[0]?.url;
+  if (url && typeof url === "string") return url;
+  if (!b64) throw new Error("OpenAI response without image");
+  return `data:image/png;base64,${b64}`;
+}
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -101,8 +130,14 @@ serve(async (req) => {
       prompt: `Imagem realista relacionada a tecnologia e cibersegurança para capítulo: ${m.title}. Visual profissional, foco no tema, sem texto. Aspect ratio 16:9.`,
     }));
 
-    // Generate images (sequential to avoid rate limits)
-    const courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY);
+    // Generate images (sequential to avoid rate limits) with fallback
+    let courseImageUrl: string | null = null;
+    try {
+      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY);
+    } catch (err) {
+      console.warn("Corcel course image failed, falling back to OpenAI:", err?.toString?.());
+      courseImageUrl = await generateImageWithOpenAI(coursePrompt);
+    }
 
     const moduleResults: Record<string, string> = {};
     for (const mp of modulePrompts) {
@@ -110,7 +145,13 @@ serve(async (req) => {
         const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY);
         moduleResults[mp.id] = url;
       } catch (e) {
-        console.error("Module image generation failed", mp.id, e);
+        console.warn("Corcel module image failed, falling back to OpenAI", mp.id, e?.toString?.());
+        try {
+          const url2 = await generateImageWithOpenAI(mp.prompt);
+          moduleResults[mp.id] = url2;
+        } catch (e2) {
+          console.error("Module image fallback failed", mp.id, e2);
+        }
       }
     }
 
