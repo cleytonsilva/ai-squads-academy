@@ -1,0 +1,34 @@
+
+CREATE TABLE user_certificates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  certificate_id INTEGER NOT NULL,
+  course_id INTEGER,
+  issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  certificate_url TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_progress (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  course_id INTEGER NOT NULL,
+  module_id INTEGER,
+  quiz_id INTEGER,
+  progress_percentage INTEGER DEFAULT 0,
+  completed_at DATETIME,
+  score INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_challenges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  challenge_id INTEGER NOT NULL,
+  completed_at DATETIME,
+  points_earned INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

@@ -12,6 +12,7 @@ interface Course {
   title: string;
   description: string | null;
   thumbnail_url: string | null;
+  cover_image_url: string | null; // Preferential cover image field
   updated_at: string;
 }
 
@@ -23,7 +24,7 @@ const Courses = () => {
     queryFn: async (): Promise<Course[]> => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id,title,description,thumbnail_url,updated_at")
+        .select("id,title,description,thumbnail_url,cover_image_url,updated_at")
         .eq("is_published", true)
         .order("updated_at", { ascending: false })
         .limit(24);
@@ -63,25 +64,28 @@ const Courses = () => {
         </div>
       ) : data && data.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {data.map((course) => (
-            <Link key={course.id} to={`/courses/${course.id}`} className="block group">
-              <Card className="overflow-hidden hover-scale cursor-pointer">
-                {course.thumbnail_url ? (
-                  <img src={course.thumbnail_url} alt={`Capa do curso ${course.title}`} loading="lazy" className="h-40 w-full object-cover" />
-                ) : (
-                  <div className="h-40 w-full bg-muted" aria-label="Sem imagem" />
-                )}
-                <CardHeader>
-                  <CardTitle className="line-clamp-1">{course.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">{course.description || "Sem descrição"}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between">
-                  <Badge>Publicado</Badge>
-                  <span className="text-xs text-muted-foreground">Atualizado {new Date(course.updated_at).toLocaleDateString()}</span>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          {data.map((course) => {
+            const imageUrl = course.cover_image_url || course.thumbnail_url; // Fallback para compatibilidade
+            return (
+              <Link key={course.id} to={`/courses/${course.id}`} className="block group">
+                <Card className="overflow-hidden hover-scale cursor-pointer">
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={`Capa do curso ${course.title}`} loading="lazy" className="h-40 w-full object-cover" />
+                  ) : (
+                    <div className="h-40 w-full bg-muted" aria-label="Sem imagem" />
+                  )}
+                  <CardHeader>
+                    <CardTitle className="line-clamp-1">{course.title}</CardTitle>
+                    <CardDescription className="line-clamp-2">{course.description || "Sem descrição"}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between">
+                    <Badge>Publicado</Badge>
+                    <span className="text-xs text-muted-foreground">Atualizado {new Date(course.updated_at).toLocaleDateString()}</span>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       ) : (
         <Card className="p-8 text-center">

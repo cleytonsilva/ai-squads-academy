@@ -1,3 +1,4 @@
+/// <reference types="https://deno.land/x/deno@v1.28.2/lib/deno.d.ts" />
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
@@ -7,9 +8,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type ModuleRow = { id: string; title: string; order_index: number; content_jsonb: any | null };
+type JsonContent = Record<string, unknown> | null;
+type ModuleRow = { id: string; title: string; order_index: number; content_jsonb: JsonContent };
 
-type Course = { id: string; title: string; description: string | null; thumbnail_url: string | null };
+type Course = { 
+  id: string; 
+  title: string; 
+  description: string | null; 
+  cover_image_url: string | null;
+  thumbnail_url: string | null; // Campo legado para compatibilidade
+};
 
 async function generateImageWithCorcel(
   prompt: string,
@@ -47,12 +55,14 @@ async function generateImageWithCorcel(
     try {
       const j = JSON.parse(text);
       text = JSON.stringify(j);
-    } catch {}
+    } catch {
+      // Parse error - keep original text
+    }
     throw new Error(`Corcel error ${resp.status}: ${text}`);
   }
   const data = await resp.json();
-  // Common response shapes
-  const url = data?.imageUrl || data?.data?.url || data?.images?.[0]?.url || data?.output?.[0] || data?.url;
+  // Corcel response format: { signed_urls: ["https://..."] }
+  const url = data?.signed_urls?.[0] || data?.imageUrl || data?.data?.url || data?.images?.[0]?.url || data?.output?.[0] || data?.url;
   const b64 = data?.artifacts?.[0]?.base64 || data?.images?.[0]?.base64;
   if (url && typeof url === "string") return url;
   if (b64 && typeof b64 === "string") return `data:image/png;base64,${b64}`;
@@ -83,7 +93,7 @@ async function generateImageWithOpenAI(prompt: string, size: string = "1536x1024
   const b64 = data?.data?.[0]?.b64_json;
   const url = data?.data?.[0]?.url;
   if (url && typeof url === "string") return url;
-  if (!b64) throw new Error("OpenAI response without image");
+  if (!b4) throw new Error("OpenAI response without image");
   return `data:image/png;base64,${b64}`;
 }
 
@@ -116,12 +126,178 @@ async function generateImageWithGemini(prompt: string, width: number = 1536, hei
     const mime = img2?.mimeType || "image/png";
     return `data:${mime};base64,${img2.image.bytesBase64Encoded}`;
   }
-  const cand = data?.candidates?.[0]?.content?.parts?.find?.((p: any) => p?.inline_data?.data);
+  const cand = data?.candidates?.[0]?.content?.parts?.find?.((p: JsonContent) => p?.inline_data?.data);
   if (cand?.inline_data?.data) {
     const mime = cand?.inline_data?.mime_type || "image/png";
     return `data:${mime};base64,${cand.inline_data.data}`;
   }
   throw new Error("Gemini response without image");
+}
+
+async function generateImageWithReplicate(
+  prompt: string,
+  aspectRatio: string = "16:9",
+  outputFormat: string = "webp",
+  outputQuality: number = 80,
+  safetyTolerance: number = 2,
+  promptUpsampling: boolean = true
+): Promise<string> {
+  const REPLICATE_API_TOKEN = Deno.env.get("REPLICATE_API_TOKEN");
+  if (!REPLICATE_API_TOKEN) throw new Error("Missing REPLICATE_API_TOKEN for image generation");
+
+  // Debug: Log token info (sem expor o token completo)
+  console.log(`[DEBUG] Token exists: ${!!REPLICATE_API_TOKEN}`);
+  console.log(`[DEBUG] Token length: ${REPLICATE_API_TOKEN?.length || 0}`);
+  console.log(`[DEBUG] Token starts with r8_: ${REPLICATE_API_TOKEN?.startsWith('r8_') || false}`);
+
+  const requestBody = {
+    input: {
+      prompt,
+      aspect_ratio: aspectRatio,
+      output_format: outputFormat,
+      output_quality: outputQuality,
+      safety_tolerance: safetyTolerance,
+      prompt_upsampling: promptUpsampling,
+    },
+  };
+
+  console.log(`[DEBUG] Request body:`, JSON.stringify(requestBody, null, 2));
+
+  const resp = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${REPLICATE_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  console.log(`[DEBUG] Response status: ${resp.status}`);
+  console.log(`[DEBUG] Response headers:`, Object.fromEntries(resp.headers.entries()));
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    console.error(`[DEBUG] Error response body:`, text);
+    throw new Error(`Replicate API error ${resp.status}: ${text}`);
+  }
+
+  const prediction = await resp.json();
+  const predictionId = prediction.id;
+
+  // Poll for completion
+  let result;
+  let attempts = 0;
+  const maxAttempts = 60; // 5 minutes timeout
+
+  while (attempts < maxAttempts) {
+    const statusResp = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+      headers: {
+        "Authorization": `Bearer ${REPLICATE_API_TOKEN}`,
+      },
+    });
+
+    if (!statusResp.ok) {
+      throw new Error(`Failed to check prediction status: ${statusResp.status}`);
+    }
+
+    result = await statusResp.json();
+
+    if (result.status === "succeeded") {
+      break;
+    } else if (result.status === "failed") {
+      throw new Error(`Replicate prediction failed: ${result.error || "Unknown error"}`);
+    }
+
+    // Wait 5 seconds before next poll
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    attempts++;
+  }
+
+  if (attempts >= maxAttempts) {
+    throw new Error("Replicate prediction timed out");
+  }
+
+  const imageUrl = result.output;
+  if (!imageUrl || typeof imageUrl !== "string") {
+    throw new Error("Replicate response without valid image URL");
+  }
+
+  return imageUrl;
+}
+
+async function generateImageWithIdeogram(
+  prompt: string,
+  aspectRatio: string = "16:9",
+  resolution: string = "None",
+  styleType: string = "None",
+  magicPromptOption: string = "Auto"
+): Promise<string> {
+  const REPLICATE_API_TOKEN = Deno.env.get("REPLICATE_API_TOKEN");
+  if (!REPLICATE_API_TOKEN) throw new Error("Missing REPLICATE_API_TOKEN for image generation");
+
+  const resp = await fetch("https://api.replicate.com/v1/models/ideogram-ai/ideogram-v3-turbo/predictions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${REPLICATE_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      input: {
+        prompt,
+        aspect_ratio: aspectRatio,
+        resolution,
+        style_type: styleType,
+        magic_prompt_option: magicPromptOption,
+      },
+    }),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Replicate API error ${resp.status}: ${text}`);
+  }
+
+  const prediction = await resp.json();
+  const predictionId = prediction.id;
+
+  // Poll for completion
+  let result;
+  let attempts = 0;
+  const maxAttempts = 60; // 5 minutes timeout
+
+  while (attempts < maxAttempts) {
+    const statusResp = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+      headers: {
+        "Authorization": `Bearer ${REPLICATE_API_TOKEN}`,
+      },
+    });
+
+    if (!statusResp.ok) {
+      throw new Error(`Failed to check prediction status: ${statusResp.status}`);
+    }
+
+    result = await statusResp.json();
+
+    if (result.status === "succeeded") {
+      break;
+    } else if (result.status === "failed") {
+      throw new Error(`Ideogram prediction failed: ${result.error || "Unknown error"}`);
+    }
+
+    // Wait 5 seconds before next poll
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    attempts++;
+  }
+
+  if (attempts >= maxAttempts) {
+    throw new Error("Ideogram prediction timed out");
+  }
+
+  if (!result || !result.output) {
+    throw new Error("Ideogram response without image URL");
+  }
+
+  return result.output;
 }
 
 serve(async (req) => {
@@ -147,6 +323,14 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const courseId: string | undefined = body?.courseId || body?.course_id;
     const requestedEngineRaw: string | undefined = body?.engine || body?.imageEngine || body?.corcel_engine;
+    const imageProvider = (() => {
+      const v = String(requestedEngineRaw || '').toLowerCase();
+      if (v.includes('replicate') || v.includes('flux-1.1-pro')) return 'replicate';
+      if (v.includes('ideogram') || v.includes('v3-turbo')) return 'ideogram';
+      if (v.includes('openai') || v.includes('dall-e')) return 'openai';
+      if (v.includes('gemini') || v.includes('imagen')) return 'gemini';
+      return 'corcel'; // default
+    })();
     const engine = (() => {
       const v = String(requestedEngineRaw || '').toLowerCase();
       if (v.includes('flux')) return 'flux-schnell';
@@ -170,15 +354,15 @@ serve(async (req) => {
 
     // Load course + modules
     const [{ data: course, error: cErr }, { data: modules, error: mErr }] = await Promise.all([
-      service.from("courses").select("id,title,description,thumbnail_url").eq("id", courseId).maybeSingle(),
+      service.from("courses").select("id,title,description,cover_image_url,thumbnail_url").eq("id", courseId).maybeSingle(),
       service.from("modules").select("id,title,order_index,content_jsonb").eq("course_id", courseId).order("order_index", { ascending: true }),
     ]);
     if (cErr) throw cErr;
     if (mErr) throw mErr;
     if (!course) return new Response(JSON.stringify({ error: "Course not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    if (!CORCEL_API_KEY) {
-      // If key is missing, return requirement so UI can prompt
+    // Verificar se a chave necessária está disponível
+    if (imageProvider === 'corcel' && !CORCEL_API_KEY) {
       return new Response(JSON.stringify({
         error: "Missing CORCEL_API_KEY",
         requiresSecret: true,
@@ -193,29 +377,48 @@ serve(async (req) => {
       prompt: `Imagem realista relacionada a tecnologia e cibersegurança para capítulo: ${m.title}. Visual profissional, foco no tema, sem texto. Aspect ratio 16:9.`,
     }));
 
-    // Generate images (sequential to avoid rate limits) - Corcel only (no fallback)
+    // Função auxiliar para gerar imagem baseada no provider
+    async function generateImage(prompt: string): Promise<string> {
+      switch (imageProvider) {
+        case 'replicate':
+          return await generateImageWithReplicate(prompt, "16:9", "webp", 80, 2, true);
+        case 'ideogram':
+          return await generateImageWithIdeogram(prompt, "16:9", "None", "None", "Auto");
+        case 'openai':
+          return await generateImageWithOpenAI(prompt, "1024x576");
+        case 'gemini':
+          return await generateImageWithGemini(prompt, 1024, 576);
+        case 'corcel':
+        default:
+          return await generateImageWithCorcel(prompt, CORCEL_API_KEY!, engine, 1024, 576, 8, 2);
+      }
+    }
+
+    // Generate images (sequential to avoid rate limits)
     let courseImageUrl: string | null = null;
     try {
-      courseImageUrl = await generateImageWithCorcel(coursePrompt, CORCEL_API_KEY, engine, 1024, 576, 8, 2);
+      courseImageUrl = await generateImage(coursePrompt);
     } catch (err) {
-      console.error("Corcel course image failed:", err?.toString?.());
+      console.error(`${imageProvider} course image failed:`, err?.toString?.());
     }
 
     const moduleResults: Record<string, string> = {};
     for (const mp of modulePrompts) {
       try {
-        const url = await generateImageWithCorcel(mp.prompt, CORCEL_API_KEY, engine, 1024, 576, 8, 2);
+        const url = await generateImage(mp.prompt);
         moduleResults[mp.id] = url;
       } catch (e) {
-        console.error("Corcel module image failed", mp.id, e?.toString?.());
+        console.error(`${imageProvider} module image failed`, mp.id, e?.toString?.());
       }
     }
 
-    // Persist: course thumbnail
-    await service.from("courses").update({ thumbnail_url: courseImageUrl }).eq("id", courseId);
+    // Persist: course cover image (dual write: cover_image_url + thumbnail_url legacy)
+    if (courseImageUrl) {
+      await service.from("courses").update({ cover_image_url: courseImageUrl, thumbnail_url: courseImageUrl }).eq("id", courseId);
+    }
 
     // Persist: prepend image tag at top of module HTML
-    const toUpdates: { id: string; content_jsonb: any }[] = [];
+    const toUpdates: { id: string; content_jsonb: JsonContent }[] = [];
     (modules as ModuleRow[]).forEach((m) => {
       const url = moduleResults[m.id];
       if (!url) return;
@@ -235,9 +438,10 @@ serve(async (req) => {
       courseImageUrl,
       moduleImages: moduleResults,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("generate-course-images error", e);
-    return new Response(JSON.stringify({ error: e?.message || "Unexpected error" }), {
+    const errorMessage = e instanceof Error ? e.message : "Unexpected error";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

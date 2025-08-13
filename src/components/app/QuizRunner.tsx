@@ -144,7 +144,7 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty, 
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
-          toast({ title: "Faça login", description: "Autenticação necessária.", variant: "destructive" });
+          toast.error('Autenticação necessária. Faça login para continuar.');
           return;
         }
         const { data: profile } = await supabase
@@ -214,10 +214,11 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty, 
         if (profileId) {
           const newXp = Math.max(0, (profile?.xp || 0) + delta);
           await supabase.from("profiles").update({ xp: newXp }).eq("id", profileId);
-          toast({
-            title: delta >= 0 ? `+${delta} XP` : `${delta} XP`,
-            description: delta >= 0 ? "Bom trabalho!" : "Pontos deduzidos pelo desempenho.",
-          });
+          if (delta >= 0) {
+            toast.success(`+${delta} XP - Bom trabalho!`);
+          } else {
+            toast.error(`${delta} XP - Pontos deduzidos pelo desempenho.`);
+          }
         }
 
         // Issue certificate if final exam passed
@@ -263,14 +264,14 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty, 
               },
             });
 
-            toast({ title: "Certificado emitido!", description: "Você pode visualizá-lo em Conquistas." });
+            toast.success('Certificado emitido! Você pode visualizá-lo em Conquistas.');
           }
         }
 
         setSaved(true);
       } catch (err) {
         console.error("Salvar tentativa de quiz:", err);
-        toast({ title: "Erro ao salvar tentativa", description: "Tente novamente depois.", variant: "destructive" });
+        toast.error('Erro ao salvar tentativa. Tente novamente depois.');
       } finally {
         setSaving(false);
       }

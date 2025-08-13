@@ -74,19 +74,76 @@ export default function TopNav() {
     <header className="w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/lovable-uploads/aeca3981-62ec-4107-85c4-2f118d51554d.png" alt="Esquads logo" className="h-6 w-6" />
+          <img src="/lovable-uploads/aeca3981-62ec-4107-85c4-2f118d51554d.png" alt="Esquads logo" className="h-10 w-10" />
           <span className="sr-only">Esquads</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-1">
-          <NavLink to="/courses" className={linkCls} end>Courses</NavLink>
-          <NavLink to="/app" className={linkCls} end>Minha jornada</NavLink>
-          {isAdmin && (
-            <>
-              <NavLink to="/admin" className={linkCls} end>Admin</NavLink>
-              <NavLink to="/admin/monitoring" className={linkCls} end>Monitor</NavLink>
-            </>
+        
+        <div className="flex items-center gap-4">
+          {/* Navegação apenas para usuários logados */}
+          {role && (
+            <nav className="hidden md:flex items-center gap-1">
+              <NavLink to="/courses" className={linkCls} end>Courses</NavLink>
+              <NavLink to="/achievements" className={linkCls} end>Achievements</NavLink>
+              <NavLink to="/badges" className={linkCls} end>Badges</NavLink>
+              <NavLink to="/ranking" className={linkCls} end>Ranking</NavLink>
+              <NavLink to="/challenges" className={linkCls} end>Desafios</NavLink>
+            </nav>
           )}
-        </nav>
+          
+          {/* Navegação para visitantes */}
+          {!role && (
+            <nav className="hidden md:flex items-center gap-6">
+              <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Recursos
+              </a>
+              <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Preços
+              </a>
+              <a href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                FAQ
+              </a>
+            </nav>
+          )}
+          
+          {/* Menu Admin para usuários logados */}
+          {role && isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className={cn(
+                "px-3 py-2 rounded-md text-sm transition",
+                location.pathname.startsWith('/admin') ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/50"
+              )}>
+                Admin
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/admin">Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin?tab=users">Usuários</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin?tab=templates">Templates</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/achievements">Gerenciar Achievements</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/monitoring">Monitoramento</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/ranking">Ranking</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin?tab=challenges">Desafios</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/tracks">Trilhas</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        
         <div className="flex items-center gap-2">
           {loading ? (
             <div className="h-8 w-24 rounded-md bg-accent animate-pulse" />

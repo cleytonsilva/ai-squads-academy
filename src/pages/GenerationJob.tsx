@@ -54,8 +54,13 @@ export default function GenerationJob() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {status === "failed" && (
+            <Alert variant="destructive">
+              <AlertTitle>Falha na geração do curso</AlertTitle>
+              <AlertDescription>{data?.error || "Tente novamente mais tarde."}</AlertDescription>
+            </Alert>
+          )}
           <section>
-            <h2 className="text-sm font-medium text-muted-foreground mb-2">Módulos criados</h2>
             {modules.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aguardando criação dos primeiros módulos...</p>) : (
               <ul className="list-disc pl-5 space-y-1">

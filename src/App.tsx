@@ -16,6 +16,13 @@ import RequireAuth, { RequireRole } from "@/components/auth/RequireAuth";
 import AdminTracks from "./pages/AdminTracks";
 import GenerationJob from "./pages/GenerationJob";
 import AdminMonitoring from "./pages/AdminMonitoring";
+import AchievementManagement from "./pages/admin/AchievementManagement";
+import BadgeManagement from "./pages/admin/BadgeManagement";
+import AdminChallengeManagement from "./pages/admin/ChallengeManagement";
+import Achievements from "./pages/achievements";
+import Challenges from "./pages/challenges";
+import Ranking from "./pages/ranking";
+import Badges from "./pages/badges";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -33,6 +40,10 @@ const App = () => (
               <Route path="/app" element={<AppDashboard />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseView />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/challenges" element={<Challenges />} />
+              <Route path="/ranking" element={<Ranking />} />
+              <Route path="/badges" element={<Badges />} />
             </Route>
 
             <Route element={<RequireRole roles={["admin", "instructor"]} />}>
@@ -41,6 +52,9 @@ const App = () => (
               <Route path="/admin/tracks" element={<AdminTracks />} />
               <Route path="/admin/generation/:jobId" element={<GenerationJob />} />
               <Route path="/admin/monitoring" element={<AdminMonitoring />} />
+              <Route path="/admin/achievements" element={<AchievementManagement />} />
+              <Route path="/admin/badges" element={<BadgeManagement />} />
+              <Route path="/admin/challenges" element={<AdminChallengeManagement />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

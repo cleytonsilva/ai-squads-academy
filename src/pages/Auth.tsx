@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     // Listener keeps UI in sync with auth state
@@ -118,7 +120,31 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password-login">Senha</Label>
-                    <Input id="password-login" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <div className="relative">
+                      <Input 
+                        id="password-login" 
+                        type={showPassword ? "text" : "password"} 
+                        autoComplete="current-password" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        required 
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>{loading ? "Entrando..." : "Entrar"}</Button>
                 </form>
@@ -132,13 +158,35 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password-signup">Senha</Label>
-                    <Input id="password-signup" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <div className="relative">
+                      <Input 
+                        id="password-signup" 
+                        type={showPassword ? "text" : "password"} 
+                        autoComplete="new-password" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        required 
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cadastrando..." : "Cadastrar"}</Button>
                 </form>
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Para testes: cadastre-se com <strong>admin@esquads.dev</strong> para acessar o dashboard Admin ou qualquer outro email para perfil Estudante.
-                </p>
+
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -27,6 +27,7 @@ interface Course {
   is_published: boolean;
   status: string;
   thumbnail_url: string | null;
+  cover_image_url: string | null; // Campo principal para imagem do curso
 }
 
 interface ModuleRow {
@@ -125,7 +126,7 @@ export default function AdminCourseEditor() {
     enabled: !!id,
     queryFn: async () => {
       const [{ data: course, error: cErr }, { data: modules, error: mErr }] = await Promise.all([
-        supabase.from("courses").select("id,title,description,is_published,status,thumbnail_url").eq("id", id!).maybeSingle(),
+        supabase.from("courses").select("id,title,description,is_published,status,thumbnail_url,cover_image_url").eq("id", id!).maybeSingle(),
         supabase.from("modules").select("id,course_id,title,order_index,content_jsonb").eq("course_id", id!).order("order_index", { ascending: true }),
       ]);
       if (cErr) throw cErr;

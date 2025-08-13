@@ -16,11 +16,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
+import { Palette } from "lucide-react";
+import ImageGenerationWrapper from "@/components/admin/ImageGenerationWrapper";
+import { useImageGenerationDialog } from "@/components/admin/ImageGenerationDialog";
 type Course = {
   id: string;
   title: string;
   description: string | null;
   thumbnail_url: string | null;
+  cover_image_url: string | null; // Campo principal para imagem do curso
   status: string;
   is_published: boolean;
   updated_at: string;
@@ -38,7 +42,7 @@ const AdminDashboard = () => {
     queryFn: async (): Promise<Course[]> => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id,title,description,thumbnail_url,status,is_published,updated_at,estimated_duration")
+        .select("id,title,description,thumbnail_url,cover_image_url,status,is_published,updated_at,estimated_duration")
         .order("updated_at", { ascending: false })
         .limit(24);
       if (error) throw error;
@@ -67,7 +71,6 @@ const AdminDashboard = () => {
   const [finalExamOptions, setFinalExamOptions] = useState<number>(4);
   const [finalExamQuestions, setFinalExamQuestions] = useState<number>(20);
   const [isGenerating, setIsGenerating] = useState(false);
-const [imgLoadingCourse, setImgLoadingCourse] = useState<string | null>(null);
 const [aiDescription, setAiDescription] = useState("");
 const [aiTone, setAiTone] = useState("profissional");
 const [audCeo, setAudCeo] = useState(false);
@@ -75,6 +78,8 @@ const [audRh, setAudRh] = useState(false);
 const [audAdv, setAudAdv] = useState(false);
 const [audOutrosChecked, setAudOutrosChecked] = useState(false);
 const [audOutrosText, setAudOutrosText] = useState("");
+
+  const imageDialog = useImageGenerationDialog();
 
 
   const handleStartAIGeneration = async () => {
@@ -142,24 +147,10 @@ const [audOutrosText, setAudOutrosText] = useState("");
   };
 
   const handleGenerateImages = async (courseId: string) => {
-    try {
-      setImgLoadingCourse(courseId);
-      const { data, error } = await supabase.functions.invoke("generate-course-images", {
-        body: { courseId },
-      });
-      if (error) throw error as any;
-      if ((data as any)?.requiresSecret) {
-        toast.error("Chave da API Corcel não configurada.");
-      } else {
-        toast.success("Capas geradas com IA. Atualizando...");
-      }
-      setTimeout(() => refetch(), 1500);
-    } catch (e: any) {
-      console.error(e);
-      toast.error("Falha ao gerar capas com IA");
-    } finally {
-      setImgLoadingCourse(null);
-    }
+    // Busca o título do curso
+    const course = data?.find(c => c.id === courseId);
+    const courseTitle = course?.title || 'Curso';
+    imageDialog.openDialog(courseId, courseTitle, () => refetch());
   };
 
   return (
@@ -352,23 +343,26 @@ const [audOutrosText, setAudOutrosText] = useState("");
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {data.map((course) => (
                 <Card key={course.id} className="overflow-hidden">
-                  {course.thumbnail_url ? (
-                    <img
-                      src={course.thumbnail_url}
-                      alt={`Capa do curso ${course.title}`}
-                      loading="lazy"
-                      className="h-40 w-full object-cover"
-                    />
-                   ) : (
-                    <button
-                      className="h-40 w-full bg-muted flex items-center justify-center hover:opacity-90 transition"
-                      aria-label="Gerar capa do curso"
-                      onClick={() => handleGenerateImages(course.id)}
-                      disabled={imgLoadingCourse === course.id}
-                    >
-                      {imgLoadingCourse === course.id ? "Gerando capa..." : "Gerar capa com IA"}
-                    </button>
-                  )}
+                  {(() => {
+                    const imageUrl = course.cover_image_url || course.thumbnail_url; // Fallback para compatibilidade
+                    return imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={`Capa do curso ${course.title}`}
+                        loading="lazy"
+                        className="h-40 w-full object-cover"
+                      />
+                    ) : (
+                      <button
+                        className="h-40 w-full bg-muted flex flex-col items-center justify-center hover:opacity-90 transition gap-2"
+                        aria-label="Gerar capa do curso"
+                        onClick={() => handleGenerateImages(course.id)}
+                      >
+                        <Palette className="h-6 w-6" />
+                        <span className="text-sm">Gerar capa com IA</span>
+                      </button>
+                    );
+                  })()}
                   <CardHeader>
                     <CardTitle className="line-clamp-1">{course.title}</CardTitle>
                     <CardDescription className="line-clamp-2">
@@ -404,6 +398,14 @@ const [audOutrosText, setAudOutrosText] = useState("");
           ))}
         </section>
       </main>
+      
+      <ImageGenerationWrapper
+        isOpen={imageDialog.isOpen}
+        onClose={imageDialog.closeDialog}
+        courseId={imageDialog.courseId}
+        courseTitle={imageDialog.courseTitle}
+        onSuccess={imageDialog.onSuccess}
+      />
     </>
   );
 };
