@@ -29,6 +29,24 @@ const safeJsonParse = (text: string): any => {
   }
 };
 
+function validateFinalExam(exam: any): boolean {
+  if (!exam || !Array.isArray(exam.questions)) {
+    return false;
+  }
+  for (const q of exam.questions) {
+    if (
+      typeof q.question !== 'string' ||
+      !Array.isArray(q.options) ||
+      q.options.length === 0 ||
+      typeof q.correct_answer !== 'string' ||
+      !q.options.includes(q.correct_answer) // Ensure correct_answer is one of the options
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // OpenAI helper
 async function callOpenAI(messages: any[], temperature: number = 0.6): Promise<string> {
   const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -287,9 +305,9 @@ serve(async (req) => {
             const optCount = Math.max(2, Math.min(6, Number(final_exam_options) || 4));
             const qCount = Math.max(5, Math.min(50, Number(final_exam_questions) || 20));
 
-            const system2 = `Gere apenas JSON válido para uma prova final. Estrutura: { "questions": [ { "question": string, "options": string[], "correct_answer": string, "explanation": string } ] }`;
+            const system2 = `Gere apenas JSON válido para uma prova final. Estrutura: { "questions": [ { "question": string, "options": string[], "correct_answer": string, "explanation": string } ] }. A 'correct_answer' DEVE corresponder exatamente a um dos valores em 'options'.`;
             const topics = Array.isArray(parsed.modules) ? parsed.modules.map((m: any) => m.title).join("; ") : "";
-            const user2 = `Crie ${qCount} questões de múltipla escolha (nível: ${fed}) para a prova final do curso "${parsed.title || promptTitle}".\n- Cada questão deve ter ${optCount} opções.\n- Evite respostas ambíguas.\n- Inclua explicação curta.\n- Use pt-BR.\n- Foco nos tópicos: ${topics}`;
+            const user2 = `Crie ${qCount} questões de múltipla escolha (nível: ${fed}) para a prova final do curso "${parsed.title || promptTitle}".\n- Cada questão deve ter ${optCount} opções.\n- A resposta em 'correct_answer' deve ser idêntica a um dos itens em 'options'.\n- Inclua explicação curta.\n- Use pt-BR.\n- Foco nos tópicos: ${topics}`;
 
             let contentText2: string | null = null;
             try {
@@ -305,46 +323,42 @@ serve(async (req) => {
               );
             }
 
-            const parsed2 = safeJsonParse(contentText2) || { questions: [] };
-            const questions = Array.isArray(parsed2.questions) ? parsed2.questions : [];
+            const finalExamJson = safeJsonParse(contentText2);
 
-            // Create final exam module
-            const { data: finalMod, error: fModErr } = await serviceClient
-              .from("modules")
-              .insert({
-                course_id: courseId,
-                title: "Prova Final",
-                order_index: parsed.modules.length,
-                module_type: "final_exam",
-                content_jsonb: { html: `<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>` },
-              })
-              .select("id")
-              .single();
-            if (fModErr || !finalMod?.id) throw new Error("Falha ao criar módulo de prova final");
+            if (!validateFinalExam(finalExamJson)) {
+              await logEvent("O conteúdo do curso foi gerado, mas a prova final falhou na validação.");
+              console.error("[AI-GEN] Final exam validation failed. Raw content:", contentText2);
+            } else {
+              // Create final exam module
+              const { data: finalMod, error: fModErr } = await serviceClient
+                .from("modules")
+                .insert({
+                  course_id: courseId,
+                  title: "Prova Final",
+                  order_index: parsed.modules.length,
+                  module_type: "final_exam",
+                  content_jsonb: { html: `<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>` },
+                })
+                .select("id")
+                .single();
+              if (fModErr || !finalMod?.id) throw new Error("Falha ao criar módulo de prova final");
 
-            // Insert final exam quiz
-            const qNormalized = questions.map((q: any) => ({
-              question: String(q.question || q.q || "Pergunta"),
-              options: Array.isArray(q.options) ? q.options.slice(0, optCount).map((o: any) => String(o)) : [],
-              correct_answer: typeof q.correct_answer === "string" ? q.correct_answer : (Array.isArray(q.options) ? String(q.options[0]) : ""),
-              explanation: q.explanation ? String(q.explanation) : "",
-              type: "multiple_choice",
-            }));
-
-            const { error: fQuizErr } = await serviceClient
-              .from("quizzes")
-              .insert({
-                course_id: courseId,
-                module_id: finalMod.id,
-                title: "Prova final do curso",
-                description: `Nível: ${fed}. Você precisa atingir a nota de corte definida pelo curso para obter o certificado.`,
-                questions: qNormalized,
-              });
-            if (fQuizErr) throw fQuizErr;
-            await logEvent("Prova final criada");
+              // Insert final exam quiz
+              const { error: fQuizErr } = await serviceClient
+                .from("quizzes")
+                .insert({
+                  course_id: courseId,
+                  module_id: finalMod.id,
+                  title: "Prova final do curso",
+                  description: `Nível: ${fed}. Você precisa atingir a nota de corte definida pelo curso para obter o certificado.`,
+                  questions: finalExamJson.questions, // Use validated JSON directly
+                });
+              if (fQuizErr) throw fQuizErr;
+              await logEvent("Prova final criada com sucesso.");
+            }
           } catch (e) {
             console.error("[AI-GEN] Final exam generation failed:", e);
-            // Continue without failing the whole job
+            await logEvent(`O conteúdo do curso foi gerado, mas a prova final falhou: ${e.message}`);
           }
         }
 
