@@ -44,105 +44,112 @@ export default function CoverImageUpload({
    * @param file - Arquivo a ser enviado
    * @returns URL da imagem ou null em caso de erro
    */
-  const uploadFileToStorage = async (file: File): Promise<string | null> => {
+  const deleteFromStorage = async (filePath: string) => {
     try {
-      // Validar tipo de arquivo
+      const { error } = await supabase.storage.from('course_covers').remove([filePath]);
+      if (error) {
+        console.error('[CLEANUP] Falha ao remover arquivo órfão:', error);
+        toast.error('Falha ao limpar arquivo antigo após erro. Contate o suporte.');
+      } else {
+        console.log('[CLEANUP] Arquivo órfão removido com sucesso:', filePath);
+      }
+    } catch (error: any) {
+      console.error('[CLEANUP] Erro inesperado ao remover arquivo órfão:', error);
+    }
+  };
+
+  const uploadFileToStorage = async (file: File): Promise<{ publicUrl: string; path: string } | null> => {
+    try {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!allowedTypes.includes(file.type)) {
         toast.error('Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou GIF.');
         return null;
       }
-
-      // Validar tamanho (máximo 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
         toast.error('Arquivo muito grande. Máximo 10MB.');
         return null;
       }
-
-      // Gerar nome único para o arquivo
-      const fileExt = file.name.split('.').pop();
-      const fileName = `course-covers/${courseId}-${Date.now()}.${fileExt}`;
-
-      console.log('[UPLOAD] Enviando arquivo:', fileName);
-
-      // Upload para o Supabase Storage
+      const fileExt = file.name.split('.').pop() || 'png';
+      const filePath = `public/${courseId}-${Date.now()}.${fileExt}`;
+      console.log('[UPLOAD] Enviando arquivo para:', filePath);
       const { data, error } = await supabase.storage
-        .from('course-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
+        .from('course_covers')
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
       if (error) {
         console.error('[UPLOAD] Erro no upload:', error);
-        toast.error('Erro ao fazer upload da imagem');
+        toast.error(`Falha no upload da capa: ${error.message}`);
         return null;
       }
-
-      // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
-        .from('course-images')
+        .from('course_covers')
         .getPublicUrl(data.path);
-
       console.log('[UPLOAD] Upload concluído:', publicUrl);
-      return publicUrl;
-    } catch (error) {
+      return { publicUrl, path: data.path };
+    } catch (error: any) {
       console.error('[UPLOAD] Erro inesperado:', error);
-      toast.error('Erro inesperado no upload');
+      toast.error(`Falha no upload da capa: ${error.message}`);
       return null;
     }
   };
 
-  /**
-   * Atualiza a capa do curso no banco de dados
-   * @param newImageUrl - Nova URL da imagem
-   */
-  const updateCourseImage = async (newImageUrl: string) => {
+  const updateCourseImage = async (newImageUrl: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('courses')
         .update({
           cover_image_url: newImageUrl,
-          thumbnail_url: newImageUrl, // Compatibilidade
+          thumbnail_url: newImageUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', courseId);
-
       if (error) {
         console.error('[UPDATE] Erro ao atualizar curso:', error);
-        toast.error('Erro ao atualizar capa do curso');
-        return;
+        toast.error(`Falha ao atualizar a capa no banco de dados: ${error.message}`);
+        return false;
       }
-
       console.log('[UPDATE] Capa do curso atualizada com sucesso');
       onImageUpdated(newImageUrl);
       toast.success('Capa do curso atualizada com sucesso!');
       setIsOpen(false);
       setImageUrl('');
-    } catch (error) {
+      return true;
+    } catch (error: any) {
       console.error('[UPDATE] Erro inesperado:', error);
-      toast.error('Erro inesperado ao atualizar curso');
+      toast.error(`Falha inesperada ao atualizar a capa: ${error.message}`);
+      return false;
     }
   };
 
-  /**
-   * Manipula o upload de arquivo
-   * @param event - Evento do input de arquivo
-   */
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // O estado de 'isUploading' desabilita os botões na UI para prevenir cliques duplos.
     setIsUploading(true);
+    let uploadResult: { publicUrl: string; path: string } | null = null;
+
     try {
-      const uploadedUrl = await uploadFileToStorage(file);
-      if (uploadedUrl) {
-        await updateCourseImage(uploadedUrl);
+      uploadResult = await uploadFileToStorage(file);
+
+      if (uploadResult) {
+        const updateSuccess = await updateCourseImage(uploadResult.publicUrl);
+
+        // Se a atualização do banco de dados falhar, remove o arquivo recém-enviado do storage.
+        if (!updateSuccess) {
+          console.log(`[CLEANUP] A atualização do DB falhou. Removendo arquivo órfão: ${uploadResult.path}`);
+          await deleteFromStorage(uploadResult.path);
+        }
+      }
+    } catch (error: any) {
+      console.error('[UPLOAD_PROCESS] Erro geral no processo de upload:', error);
+      toast.error(`Ocorreu um erro inesperado: ${error.message}`);
+      // Tenta limpar o arquivo se um erro inesperado ocorrer após o upload.
+      if (uploadResult) {
+          await deleteFromStorage(uploadResult.path);
       }
     } finally {
       setIsUploading(false);
-      // Limpar o input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
