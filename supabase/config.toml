@@ -1,19 +1,55 @@
-project_id = "ncrlojjfkhevjotchhxi"
+# Configuração Otimizada do Supabase
+# Focada em performance e redução de recursos
 
-[functions]
+project_id = "ai-squads-academy"
 
-[functions.openai-ephemeral]
-verify_jwt = false
+[api]
+enabled = true
+port = 8081
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
 
-[functions.ai-generate-course]
-verify_jwt = true
+[db]
+port = 8082
+major_version = 17
 
-[functions.ai-extend-module]
-verify_jwt = true
+[studio]
+enabled = true
+port = 8083
+api_url = "http://127.0.0.1:8081"
 
-[functions.ai-generate-certifications]
-verify_jwt = true
+[inbucket]
+enabled = false
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
 
-[functions.generate-course-images]
-verify_jwt = true
+[storage]
+enabled = true
+file_size_limit = "50MiB"
 
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:8080"
+additional_redirect_urls = ["https://127.0.0.1:8080"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[realtime]
+enabled = false
+ip_version = "IPv4"
+
+[analytics]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[db.pooler]
+enabled = false

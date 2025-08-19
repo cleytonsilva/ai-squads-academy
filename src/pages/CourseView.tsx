@@ -327,7 +327,7 @@ export default function CourseView() {
       const newXP = (prof?.xp || 0) + 50;
       await supabase.from("profiles").update({ xp: newXP }).eq("id", profileId);
       addXP(50);
-      toast({ title: "Módulo concluído", description: "+50 XP ganhos" });
+      toast.success('Módulo concluído! +50 XP ganhos');
 
       const total = data?.modules?.length || 0;
       if (total > 0 && (completedIds.size + 1) >= total) {
@@ -339,7 +339,7 @@ export default function CourseView() {
         const newXP2 = (prof2?.xp || 0) + 200;
         await supabase.from("profiles").update({ xp: newXP2 }).eq("id", profileId);
         addXP(200);
-        toast({ title: "Curso concluído!", description: "Parabéns! +200 XP" });
+        toast.success('Curso concluído! Parabéns! +200 XP');
       }
     } catch (e) {
       console.error("Erro ao concluir módulo:", e);
@@ -392,7 +392,7 @@ export default function CourseView() {
                     key={m.id}
                     onClick={() => {
                       if ((m as any).module_type === "final_exam" && !unlockedFinalExam) {
-                        toast({ title: "Prova final bloqueada", description: "Conclua todos os módulos para liberar." });
+                        toast.error('Prova final bloqueada. Conclua todos os módulos para liberar.');
                         return;
                       }
                       setSelectedIndex(idx);

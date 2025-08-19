@@ -116,4 +116,20 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground font-sans;
   }
+
+  /* Transições suaves para ícones e elementos interativos */
+  .icon-transition {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  /* Prevenir piscagem durante transições */
+  .no-flicker {
+    @apply transform-gpu;
+    backface-visibility: hidden;
+  }
+
+  /* Aplicar transições suaves aos ícones do lucide-react */
+  svg[data-lucide] {
+    @apply transition-transform duration-200 ease-in-out transform-gpu;
+  }
 }

@@ -1,65 +1,42 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { signIn, signUp, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState(() => {
+    const mode = searchParams.get('mode');
+    return mode === 'register' ? 'signup' : 'login';
+  });
 
+  // Redirecionar se já estiver autenticado
   useEffect(() => {
-    // Listener keeps UI in sync with auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        // Defer profile fetch to avoid deadlocks
-        setTimeout(async () => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role, display_name")
-            .eq("user_id", session.user.id)
-            .single();
-
-          const role = profile?.role ?? "student";
-          toast("Login realizado", { description: `Bem-vindo(a) ${profile?.display_name ?? ""}` });
-          if (role === "admin" || role === "instructor") navigate("/admin", { replace: true });
-          else navigate("/courses", { replace: true });
-        }, 0);
-      }
-    });
-
-    // Also check existing session
-    supabase.auth.getSession().then(async ({ data }) => {
-      const session = data.session;
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single();
-        const role = profile?.role ?? "student";
-        if (role === "admin" || role === "instructor") navigate("/admin", { replace: true });
-        else navigate("/courses", { replace: true });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (isAuthenticated && !authLoading) {
+      // O redirecionamento será feito automaticamente pelo useAuth
+      return;
+    }
+  }, [isAuthenticated, authLoading]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const normalizedEmail = email.trim().toLowerCase();
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
-      if (error) throw error;
+      await signIn(email, password);
+      toast("Login realizado", { description: "Bem-vindo de volta!" });
     } catch (err: any) {
       toast("Erro ao entrar", { description: err.message, className: "destructive" });
     } finally {
@@ -70,15 +47,8 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const normalizedEmail = email.trim().toLowerCase();
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      const { error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: { emailRedirectTo: redirectUrl, data: { display_name: normalizedEmail.split("@")[0] } },
-      });
-      if (error) throw error;
+      await signUp(email, password);
       toast("Confirme seu email", { description: "Enviamos um link de confirmação." });
     } catch (err: any) {
       toast("Erro no cadastro", { description: err.message, className: "destructive" });
@@ -104,7 +74,7 @@ const Auth = () => {
             <CardDescription>Entre ou crie sua conta para começar.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Entrar</TabsTrigger>
                 <TabsTrigger value="signup">Cadastrar</TabsTrigger>
@@ -118,7 +88,31 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password-login">Senha</Label>
-                    <Input id="password-login" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <div className="relative">
+                      <Input 
+                        id="password-login" 
+                        type={showPassword ? "text" : "password"} 
+                        autoComplete="current-password" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        required 
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>{loading ? "Entrando..." : "Entrar"}</Button>
                 </form>
@@ -132,13 +126,35 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password-signup">Senha</Label>
-                    <Input id="password-signup" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <div className="relative">
+                      <Input 
+                        id="password-signup" 
+                        type={showPassword ? "text" : "password"} 
+                        autoComplete="new-password" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        required 
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cadastrando..." : "Cadastrar"}</Button>
                 </form>
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Para testes: cadastre-se com <strong>admin@esquads.dev</strong> para acessar o dashboard Admin ou qualquer outro email para perfil Estudante.
-                </p>
+
               </TabsContent>
             </Tabs>
           </CardContent>

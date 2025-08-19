@@ -42,31 +42,98 @@ export default function TrackMissionManager({ trackId }: { trackId: string }) {
     }
   });
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ["track-missions", trackId, courseIds.join(",")],
     enabled: courseIds.length > 0,
     queryFn: async (): Promise<Mission[]> => {
-      const { data, error } = await supabase
-        .from("missions")
-        .select("id,title,status,points,course_id")
-        .in("course_id", courseIds)
-        .order("order_index", { ascending: true });
-      if (error) throw error;
-      return data as any;
-    }
+      try {
+        const { data, error } = await supabase
+          .from("missions")
+          .select("id,title,status,points,course_id")
+          .in("course_id", courseIds)
+          .order("order_index", { ascending: true });
+        
+        if (error) {
+          console.error("Error fetching track missions:", error);
+          // Se a tabela não existe, retorna array vazio em vez de erro
+          if (error.message?.includes("relation \"public.missions\" does not exist") || 
+              error.message?.includes("404")) {
+            console.warn("Missions table not found, returning empty array");
+            return [];
+          }
+          throw error;
+        }
+        
+        return data as any;
+      } catch (err) {
+        console.error("Failed to fetch track missions:", err);
+        throw err;
+      }
+    },
+    retry: (failureCount, error: any) => {
+      // Não tentar novamente se a tabela não existe
+      if (error?.message?.includes("relation \"public.missions\" does not exist") ||
+          error?.message?.includes("404")) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   const createMission = async () => {
     if (!courseId) return toast("Escolha um curso da trilha");
-    const { error } = await supabase.from("missions").insert({ course_id: courseId, title: title.trim() || "Nova Missão", status, points, order_index: (data?.length || 0) + 1, requirements: [] });
-    if (error) return toast("Erro ao criar missão");
-    setTitle(""); setPoints(50); setStatus("available"); refetch();
+    
+    try {
+      const { error } = await supabase.from("missions").insert({ 
+        course_id: courseId, 
+        title: title.trim() || "Nova Missão", 
+        status, 
+        points, 
+        order_index: (data?.length || 0) + 1, 
+        requirements: [] 
+      });
+      
+      if (error) {
+        console.error("Error creating track mission:", error);
+        if (error.message?.includes("relation \"public.missions\" does not exist")) {
+          toast("Tabela de missões não encontrada. Verifique a configuração do banco de dados.");
+        } else {
+          toast(`Erro ao criar missão: ${error.message}`);
+        }
+        return;
+      }
+      
+      toast("Missão criada com sucesso");
+      setTitle(""); 
+      setPoints(50); 
+      setStatus("available"); 
+      refetch();
+    } catch (err) {
+      console.error("Failed to create track mission:", err);
+      toast("Erro inesperado ao criar missão");
+    }
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("missions").delete().eq("id", id);
-    if (error) return toast("Erro ao remover");
-    refetch();
+    try {
+      const { error } = await supabase.from("missions").delete().eq("id", id);
+      
+      if (error) {
+        console.error("Error removing track mission:", error);
+        if (error.message?.includes("relation \"public.missions\" does not exist")) {
+          toast("Tabela de missões não encontrada. Verifique a configuração do banco de dados.");
+        } else {
+          toast(`Erro ao remover missão: ${error.message}`);
+        }
+        return;
+      }
+      
+      toast("Missão removida com sucesso");
+      refetch();
+    } catch (err) {
+      console.error("Failed to remove track mission:", err);
+      toast("Erro inesperado ao remover missão");
+    }
   };
 
   return (
@@ -98,6 +165,24 @@ export default function TrackMissionManager({ trackId }: { trackId: string }) {
         <Separator />
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando missões...</p>
+        ) : queryError ? (
+          <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-md">
+            <p className="text-sm text-yellow-800 font-medium">Aviso: Problema ao carregar missões da trilha</p>
+            <p className="text-xs text-yellow-700 mt-1">
+              {queryError.message?.includes("relation \"public.missions\" does not exist") || 
+               queryError.message?.includes("404") 
+                ? "A tabela de missões ainda não foi criada no banco de dados. As funcionalidades de missões estarão disponíveis após a configuração."
+                : `Erro: ${queryError.message}`}
+            </p>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="mt-2" 
+              onClick={() => refetch()}
+            >
+              Tentar novamente
+            </Button>
+          </div>
         ) : (data && data.length > 0 ? (
           <ul className="space-y-2">
             {data.map((m) => (

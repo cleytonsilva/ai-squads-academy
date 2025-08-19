@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import ReactQuillWrapper from '@/components/ui/react-quill-wrapper';
+import type { ReactQuillProps } from '@/components/ui/react-quill-wrapper';
 
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -18,15 +18,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import QuizManager from "@/components/admin/QuizManager";
 import MissionManager from "@/components/admin/MissionManager";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { ImageIcon } from "lucide-react";
 import AIGenerationDialog from "@/components/admin/AIGenerationDialog";
 import AIModuleExtendDialog from "@/components/admin/AIModuleExtendDialog";
+import DashboardLayout from "@/components/admin/DashboardLayout";
+import CourseCoverManager from "@/components/admin/CourseCoverManager";
 interface Course {
   id: string;
   title: string;
   description: string | null;
   is_published: boolean;
   status: string;
-  thumbnail_url: string | null;
+  cover_image_url: string | null; // Campo principal para imagem do curso
 }
 
 interface ModuleRow {
@@ -125,7 +128,7 @@ export default function AdminCourseEditor() {
     enabled: !!id,
     queryFn: async () => {
       const [{ data: course, error: cErr }, { data: modules, error: mErr }] = await Promise.all([
-        supabase.from("courses").select("id,title,description,is_published,status,thumbnail_url").eq("id", id!).maybeSingle(),
+        supabase.from("courses").select("id,title,description,is_published,status,cover_image_url").eq("id", id!).maybeSingle(),
         supabase.from("modules").select("id,course_id,title,order_index,content_jsonb").eq("course_id", id!).order("order_index", { ascending: true }),
       ]);
       if (cErr) throw cErr;
@@ -133,6 +136,10 @@ export default function AdminCourseEditor() {
       return { course, modules } as { course: Course; modules: ModuleRow[] };
     },
   });
+
+  // Estado para criação de novo curso
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+  const isNewCourse = !id; // Se não há ID, é um novo curso
 
   useEffect(() => {
     if (data?.course) {
@@ -158,7 +165,44 @@ export default function AdminCourseEditor() {
 
   const currentModule = data?.modules?.find((m) => m.id === selectedModuleId) || null;
 
+  const handleCreateCourse = async () => {
+    if (!courseTitle.trim()) {
+      toast.error("Título do curso é obrigatório");
+      return;
+    }
+
+    try {
+      setIsCreatingCourse(true);
+      const { data: newCourse, error } = await supabase
+        .from("courses")
+        .insert({
+          title: courseTitle,
+          description: courseDesc || null,
+          is_published: isPublished,
+          status: status,
+          difficulty_level: 'beginner',
+          ai_generated: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success("Curso criado com sucesso!");
+      navigate(`/admin/courses/${newCourse.id}/edit`);
+    } catch (error: any) {
+      toast.error("Erro ao criar curso", { description: error?.message });
+    } finally {
+      setIsCreatingCourse(false);
+    }
+  };
+
   const handleSaveCourse = async () => {
+    if (isNewCourse) {
+      await handleCreateCourse();
+      return;
+    }
+
     if (!id) return;
     const { error } = await supabase
       .from("courses")
@@ -226,45 +270,55 @@ export default function AdminCourseEditor() {
   };
 
   return (
-    <>
+    <DashboardLayout>
       <Helmet>
         <title>Editor do Curso — {courseTitle || "Carregando"} | Esquads</title>
         <meta name="description" content="Editor WYSIWYG do curso para administradores." />
         <link rel="canonical" href={canonical} />
       </Helmet>
 
-      <main className="container mx-auto py-8">
+      <div className="container mx-auto">
         <header className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Editar curso</h1>
-            <p className="text-muted-foreground">Atualize informações e conteúdo dos módulos.</p>
+            <h1 className="text-2xl font-bold">{isNewCourse ? 'Criar novo curso' : 'Editar curso'}</h1>
+            <p className="text-muted-foreground">{isNewCourse ? 'Crie um novo curso preenchendo as informações básicas.' : 'Atualize informações e conteúdo dos módulos.'}</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Publicado</span>
-              <Switch checked={isPublished} onCheckedChange={setIsPublished} />
-            </div>
-            <Button variant="secondary" onClick={() => refetch()}>Recarregar</Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={deleting}>Excluir</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir curso?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso removerá o curso permanentemente. Se existirem módulos/quizzes/missões vinculados, a exclusão pode falhar.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteCourse} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Confirmar exclusão
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button variant="hero" onClick={handleSaveCourse}>Salvar curso</Button>
+            {!isNewCourse && (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">Publicado</span>
+                  <Switch checked={isPublished} onCheckedChange={setIsPublished} />
+                </div>
+                <Button variant="secondary" onClick={() => refetch()}>Recarregar</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={deleting}>Excluir</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir curso?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso removerá o curso permanentemente. Se existirem módulos/quizzes/missões vinculados, a exclusão pode falhar.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteCourse} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Confirmar exclusão
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+            <Button 
+              variant="hero" 
+              onClick={handleSaveCourse}
+              disabled={isCreatingCourse}
+            >
+              {isCreatingCourse ? 'Criando...' : (isNewCourse ? 'Criar curso' : 'Salvar curso')}
+            </Button>
           </div>
         </header>
 
@@ -300,6 +354,41 @@ export default function AdminCourseEditor() {
                         <Textarea value={courseDesc} onChange={(e) => setCourseDesc(e.target.value)} rows={4} />
                       </div>
                       <Separator />
+                      
+                      {/* Seção de Capa do Curso */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">Capa do Curso</label>
+                          {id && (
+                            <CourseCoverManager
+                              courseId={id}
+                              currentImageUrl={data?.course?.cover_image_url}
+                              onImageUpdated={(newUrl) => {
+                                // Atualizar o estado local e refetch dos dados
+                                refetch();
+                              }}
+                            />
+                          )}
+                        </div>
+                        {data?.course?.cover_image_url ? (
+                          <div className="relative">
+                            <img
+                              src={data.course.cover_image_url}
+                              alt={`Capa do curso ${courseTitle}`}
+                              className="w-full h-32 object-cover rounded-md border"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-32 bg-muted rounded-md border flex items-center justify-center">
+                            <div className="text-center text-muted-foreground">
+                              <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                              <p className="text-sm">Nenhuma capa definida</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <Separator />
+                      
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Status</span>
                         <span className="text-sm font-medium">{isPublished ? "published" : status || "draft"}</span>
@@ -346,13 +435,14 @@ export default function AdminCourseEditor() {
                             <Input value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} />
                           </div>
                           <div className="rounded-md border">
-                            <ReactQuill
+                            <ReactQuillWrapper
                               ref={quillRef}
                               theme="snow"
                               value={moduleHtml}
                               onChange={setModuleHtml}
                               modules={quillModules}
                               formats={quillFormats}
+                              placeholder="Digite o conteúdo do módulo..."
                             />
                           </div>
                           <div className="flex items-center gap-2 justify-between">
@@ -471,7 +561,7 @@ export default function AdminCourseEditor() {
               )}
             </TabsContent>
           </Tabs>
-      </main>
-    </>
+      </div>
+    </DashboardLayout>
   );
 }

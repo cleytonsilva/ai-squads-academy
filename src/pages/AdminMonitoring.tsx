@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import DashboardLayout from "@/components/admin/DashboardLayout";
 
 export default function AdminMonitoring() {
   const canonical = useMemo(() => {
@@ -37,12 +38,14 @@ export default function AdminMonitoring() {
   });
 
   return (
-    <main className="container mx-auto py-10 space-y-8">
+    <DashboardLayout>
       <Helmet>
         <title>Monitoramento — Usuários e Ranking | Esquads</title>
         <meta name="description" content="Acompanhe criação de usuários, ranking por XP e evolução básica." />
         <link rel="canonical" href={canonical} />
       </Helmet>
+
+      <div className="container mx-auto space-y-8">
 
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -109,6 +112,7 @@ export default function AdminMonitoring() {
           </CardContent>
         </Card>
       </section>
-    </main>
+      </div>
+    </DashboardLayout>
   );
 }

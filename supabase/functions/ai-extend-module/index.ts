@@ -57,10 +57,11 @@ serve(async (req) => {
     };
 
     const models = [
-      "qwen/qwen2.5-vl-72b-instruct:free",
-      "openai/gpt-oss-20b:free",
-      "z-ai/glm-4.5-air:free",
-      "deepseek/deepseek-r1-0528-qwen3-8b:free",
+      "google/gemma-3-27b-it:free",
+      "deepseek/deepseek-r1-zero:free",
+      "deepseek/deepseek-chat-v3-0324:free",
+      "meta-llama/llama-3.3-70b-instruct:free",
+      "qwen/qwq-32b:free",
     ];
 
     let extendedHtml = "";

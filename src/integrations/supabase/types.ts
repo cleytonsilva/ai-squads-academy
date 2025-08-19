@@ -92,6 +92,7 @@ export type Database = {
           is_published: boolean
           status: string
           thumbnail_url: string | null
+          cover_image_url: string | null
           title: string
           updated_at: string
         }
@@ -106,6 +107,7 @@ export type Database = {
           is_published?: boolean
           status?: string
           thumbnail_url?: string | null
+          cover_image_url?: string | null
           title: string
           updated_at?: string
         }
@@ -120,6 +122,7 @@ export type Database = {
           is_published?: boolean
           status?: string
           thumbnail_url?: string | null
+          cover_image_url?: string | null
           title?: string
           updated_at?: string
         }
