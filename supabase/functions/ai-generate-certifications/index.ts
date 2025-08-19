@@ -1,71 +1,54 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function extractJsonArray(text: string): any[] | null {
+// --- Zod Schemas ---
+const missionSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  points: z.number(),
+  status: z.string().optional(),
+  order_index: z.number().optional(),
+  requirements: z.array(z.string()),
+});
+
+const quizQuestionSchema = z.object({
+    question: z.string(),
+    type: z.string().optional(),
+    options: z.array(z.string()).min(2),
+    correct_answer: z.string(),
+    explanation: z.string().optional(),
+}).refine(data => data.options.includes(data.correct_answer), {
+    message: "correct_answer must be one of the provided options",
+    path: ["correct_answer"],
+});
+
+const quizSchema = z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    is_active: z.boolean().optional(),
+    questions: z.array(quizQuestionSchema),
+});
+
+const certificationsSchema = z.array(z.union([missionSchema, quizSchema]));
+
+// --- Helper ---
+const safeJsonParse = (text: string): any => {
   try {
-    // Try direct parse first
-    const parsed = JSON.parse(text);
-    return Array.isArray(parsed) ? parsed : [parsed];
-  } catch {}
-
-  // Try fenced code block
-  const codeMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (codeMatch) {
-    try {
-      const parsed = JSON.parse(codeMatch[1]);
-      return Array.isArray(parsed) ? parsed : [parsed];
-    } catch {}
-  }
-
-  // Try to locate the first JSON array in the text
-  const start = text.indexOf('[');
-  const end = text.lastIndexOf(']');
-  if (start !== -1 && end !== -1 && end > start) {
-    try {
-      return JSON.parse(text.slice(start, end + 1));
-    } catch {}
-  }
-
-  return null;
-}
-
-// --- Validation Functions ---
-function validateMission(item: any): boolean {
-  return (
-    typeof item.title === 'string' &&
-    typeof item.description === 'string' &&
-    typeof item.points === 'number' &&
-    Array.isArray(item.requirements)
-  );
-}
-
-function validateQuiz(item: any): boolean {
-  if (
-    typeof item.title !== 'string' ||
-    !Array.isArray(item.questions) ||
-    item.questions.length === 0
-  ) {
-    return false;
-  }
-  for (const q of item.questions) {
-    if (
-      typeof q.question !== 'string' ||
-      !Array.isArray(q.options) ||
-      q.options.length < 2 ||
-      typeof q.correct_answer !== 'string'
-    ) {
-      return false;
+    return JSON.parse(text);
+  } catch {
+    const match = text.match(/```json\s*([\s\S]*?)\s*```/);
+    if (match) {
+      try { return JSON.parse(match[1]); } catch { /* ignore */ }
     }
+    return null;
   }
-  return true;
-}
-
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -171,38 +154,39 @@ serve(async (req) => {
     let systemPrompt = ''
     let userPrompt = ''
 
+    let systemPrompt = ''
+    let userPrompt = ''
+    let schema;
+
     if (type === 'missions') {
-      systemPrompt = `Você é um especialista em criação de missões de certificação. Sua resposta deve ser apenas um array JSON válido, sem nenhum texto adicional.
-A estrutura de cada objeto no array deve ser:
+      schema = z.array(missionSchema);
+      systemPrompt = `Você é um especialista em criação de missões de certificação. Retorne um array JSON com objetos de missão.
+Estrutura de cada objeto:
 {
-  "title": "string (obrigatório)",
-  "description": "string (obrigatório)",
-  "points": "number (obrigatório)",
-  "status": "string (opcional, padrão 'available')",
-  "order_index": "number (opcional)",
-  "requirements": "array de strings (obrigatório)"
+  "title": "string",
+  "description": "string",
+  "points": "number",
+  "requirements": ["string"]
 }
-Siga esta estrutura estritamente.`;
+Siga esta estrutura estritamente. Não inclua texto ou formatação fora do array JSON.`;
       userPrompt = `Crie ${count} missões de certificação com dificuldade ${difficulty} baseadas no conteúdo abaixo. Tipo: ${missionType}. Pontos base: ${basePoints}.
 \nConteúdo:\n${contextContent}`
     } else if (type === 'quizzes') {
-      systemPrompt = `Você é um especialista em criação de quizzes. Sua resposta deve ser apenas um array JSON válido, sem nenhum texto adicional.
-A estrutura de cada objeto no array deve ser:
+      schema = z.array(quizSchema);
+      systemPrompt = `Você é um especialista em criação de quizzes. Retorne um array JSON com objetos de quiz.
+Estrutura de cada objeto:
 {
-  "title": "string (obrigatório)",
-  "description": "string (opcional)",
-  "is_active": "boolean (opcional, padrão 'true')",
+  "title": "string",
   "questions": [
     {
-      "question": "string (obrigatório)",
-      "type": "string (opcional, padrão 'multiple_choice')",
-      "options": "array de strings (obrigatório, mínimo 2)",
-      "correct_answer": "string (obrigatório, deve corresponder a um item em 'options')",
-      "explanation": "string (opcional)"
+      "question": "string",
+      "options": ["string", "string", ...],
+      "correct_answer": "string (deve ser um dos valores em 'options')",
+      "explanation": "string"
     }
   ]
 }
-Siga esta estrutura estritamente.`;
+Siga esta estrutura estritamente. Não inclua texto ou formatação fora do array JSON.`;
       const typesList = Array.isArray(questionTypes) && questionTypes.length ? questionTypes.join(', ') : 'multiple_choice'
       userPrompt = `Crie ${count} quizzes de certificação (dificuldade ${difficulty}) com tipos de questão: ${typesList}, baseados no conteúdo abaixo. Inclua explicações para as respostas.
 \nConteúdo:\n${contextContent}`
@@ -221,6 +205,7 @@ Siga esta estrutura estritamente.`;
         ],
         temperature: 0.5,
         max_tokens: 4000,
+        response_format: { type: 'json_object' },
       }),
     })
 
@@ -232,24 +217,20 @@ Siga esta estrutura estritamente.`;
 
     const aiJson = await aiRes.json()
     const content: string = aiJson.choices?.[0]?.message?.content ?? ''
-    const parsed = extractJsonArray(content)
+    const parsedJson = safeJsonParse(content);
 
-    if (!parsed) {
-      console.error('[ai-gen] Failed to parse JSON from AI response.', { content });
-      return new Response(JSON.stringify({ error: 'Não foi possível interpretar a resposta da IA.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
+    const validationResult = schema.safeParse(parsedJson);
 
-    // --- Validate the structure of the AI's response ---
-    const validationFn = type === 'missions' ? validateMission : validateQuiz;
-    const isValid = parsed.every(validationFn);
-
-    if (!isValid) {
+    if (!validationResult.success) {
       console.error('[ai-gen] AI response failed validation.', {
         type,
-        response: content, // Log the original, problematic content
+        error: validationResult.error.flatten(),
+        response: content,
       });
       return new Response(JSON.stringify({ error: 'A resposta da IA falhou na validação da estrutura.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
+    const validatedData = validationResult.data;
 
     // Prepare inserts, replicating the generated items for each target course
     let totalInserted = 0
@@ -257,7 +238,7 @@ Siga esta estrutura estritamente.`;
     if (type === 'missions') {
       const all: any[] = []
       for (const cid of targetCourseIds) {
-        parsed.forEach((m: any, idx: number) => {
+        validatedData.forEach((m: any, idx: number) => {
           all.push({
             title: m.title,
             description: m.description,
@@ -277,7 +258,7 @@ Siga esta estrutura estritamente.`;
     } else {
       const all: any[] = []
       for (const cid of targetCourseIds) {
-        parsed.forEach((q: any) => {
+        validatedData.forEach((q: any) => {
           all.push({
             title: q.title,
             description: q.description ?? null,

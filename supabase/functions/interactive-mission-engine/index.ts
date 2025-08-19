@@ -86,10 +86,11 @@ serve(async (req) => {
 
     if (historyError) throw historyError;
 
-    // 4. Construct the prompt for the AI
+    // 4. Construct the prompt for the AI (with history optimization)
+    const recentHistory = chatHistory.slice(-6); // Get the last 6 messages
     const messages = [
       { role: 'system', content: attempt.scenario.ai_system_prompt },
-      ...chatHistory,
+      ...recentHistory,
       { role: 'user', content: userResponse },
       { role: 'system', content: 'Avalie a resposta do usuário. A resposta está correta, parcialmente correta ou incorreta? Responda com um JSON contendo: {"evaluation": "correct" | "partial" | "incorrect", "reason": "explicação", "response": "sua resposta para continuar o cenário", "xp_change": valor_do_xp}. O valor de xp_change deve ser positivo para correct/partial e negativo para incorrect.' }
     ];
@@ -118,33 +119,28 @@ serve(async (req) => {
        throw new Error(`Invalid JSON response from AI: ${aiResponseText}`);
     }
 
-    // 6. Analyze AI response and update attempt
+    // 6. Analyze AI response and update attempt state via RPC for atomicity
     const { evaluation, reason, response, xp_change } = aiData;
-    let newXp = attempt.xp_earned;
-    let newLives = attempt.lives_remaining;
-    let newStatus = attempt.status;
+    let livesChange = 0;
+    let xpChange = 0;
 
     if (evaluation === 'correct' || evaluation === 'partial') {
-      newXp += Math.abs(xp_change || 0);
+      xpChange = Math.abs(xp_change || 0);
     } else if (evaluation === 'incorrect') {
-      newXp -= Math.abs(xp_change || 0);
-      newLives -= 1;
+      xpChange = -Math.abs(xp_change || 0);
+      livesChange = -1;
     }
 
-    if (newLives <= 0) {
-      newStatus = 'failed';
-    }
+    const { data: newState, error: rpcError } = await adminClient.rpc(
+      'update_mission_attempt_state',
+      {
+        p_attempt_id: attemptId,
+        p_xp_change: xpChange,
+        p_lives_change: livesChange,
+      }
+    );
 
-    const { error: updateError } = await adminClient
-      .from('mission_attempts')
-      .update({
-        xp_earned: newXp,
-        lives_remaining: newLives,
-        status: newStatus,
-      })
-      .eq('id', attemptId);
-
-    if (updateError) throw updateError;
+    if (rpcError) throw rpcError;
 
     // 7. Log the conversation
     const { error: logError } = await adminClient
@@ -156,15 +152,15 @@ serve(async (req) => {
 
     if (logError) throw logError;
 
-    // 8. Return the AI's response to the frontend
+    // 8. Return the AI's response and the new state to the frontend
     return new Response(JSON.stringify({
       success: true,
       evaluation,
       reason,
       response,
-      xp_earned: newXp,
-      lives_remaining: newLives,
-      status: newStatus,
+      xp_earned: newState.new_xp_earned,
+      lives_remaining: newState.new_lives_remaining,
+      status: newState.new_status,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

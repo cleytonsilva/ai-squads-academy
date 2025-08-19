@@ -4,9 +4,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // Interface para os dados do certificado
 interface CertificateData {
   userCertificateId: string;
-  userId: string;
-  userName?: string;
-  userEmail?: string;
+  userId: string; // This is the auth.users.id
+  courseId?: string; // Optional courseId to check for completion
+  trackId?: string; // Optional trackId to check for completion
+  customData?: {
+    userName: string;
+    courseTitle: string;
+    issueDate: string;
+  }
 }
 
 interface CertificateTemplate {
@@ -72,23 +77,49 @@ serve(async (req) => {
     }
 
     // Obter dados da requisição
-    const { userCertificateId, userId }: CertificateData = await req.json();
+    const { userCertificateId, userId, courseId, trackId, customData }: CertificateData = await req.json();
 
-    if (!userCertificateId || !userId) {
-      throw new Error('ID do certificado e do usuário são obrigatórios');
+    if (!userId || (!courseId && !trackId)) {
+      return new Response(JSON.stringify({ error: 'userId and either courseId or trackId are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Verificar se o usuário tem permissão para acessar este certificado
+    // Admins or the user themselves can request the certificate
     if (user.id !== userId) {
-      // Verificar se é admin ou instrutor
-      const { data: profile } = await supabase
+      const { data: requesterProfile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
-      if (!profile || !['admin', 'instructor'].includes(profile.role)) {
-        throw new Error('Sem permissão para acessar este certificado');
+      if (!requesterProfile || !['admin', 'instructor'].includes(requesterProfile.role)) {
+        return new Response(JSON.stringify({ error: 'Permission denied to access this certificate' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
+    // --- 1. Validação de Conclusão ---
+    // First, get the profile ID for the user requesting the certificate
+    const { data: targetProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !targetProfile) {
+      return new Response(JSON.stringify({ error: 'Target user profile not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const profileId = targetProfile.id;
+
+    // TODO: Implement track completion logic if needed
+    if (trackId) {
+       console.warn("Track completion validation is not yet implemented.");
+    }
+
+    if (courseId) {
+      const { completed, error: completionError } = await checkCourseCompletion(supabase, profileId, courseId);
+      if (completionError) throw completionError;
+
+      if (!completed) {
+        return new Response(JSON.stringify({ error: 'Usuário não concluiu os requisitos para este certificado' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
     }
 
@@ -151,8 +182,21 @@ serve(async (req) => {
 
     let certificateHtml;
     try {
+      // --- 2. Integridade dos Dados ---
+      const fallbackData = {
+        userName: customData?.userName || targetProfile.full_name,
+        courseTitle: customData?.courseTitle || cert.certificate.course.title,
+        issueDate: customData?.issueDate || new Date().toLocaleDateString('pt-BR'),
+      };
+
+      // If course title is still missing, fetch it
+      if (!fallbackData.courseTitle && courseId) {
+        const { data: courseData } = await supabase.from('courses').select('title').eq('id', courseId).single();
+        fallbackData.courseTitle = courseData?.title || 'Curso Desconhecido';
+      }
+
       // Generate certificate HTML
-      certificateHtml = generateCertificateHtml(cert);
+      certificateHtml = generateCertificateHtml(cert, fallbackData);
 
       // PDF generation logic would go here.
       // For now, we simulate generation and return a mock URL.
@@ -213,21 +257,50 @@ serve(async (req) => {
   }
 });
 
-function generateCertificateHtml(userCertificate: UserCertificate): string {
-  const { certificate, user, issued_at } = userCertificate;
-  
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
+async function checkCourseCompletion(supabase: any, profileId: string, courseId: string): Promise<{ completed: boolean, error: Error | null }> {
+  try {
+    // 1. Get all quizzes for the course
+    const { data: quizzes, error: quizzesError } = await supabase
+      .from('quizzes')
+      .select('id')
+      .eq('course_id', courseId);
+
+    if (quizzesError) throw quizzesError;
+    if (!quizzes || quizzes.length === 0) {
+      // If there are no quizzes, course is considered completable by default
+      return { completed: true, error: null };
+    }
+
+    const quizIds = quizzes.map(q => q.id);
+
+    // 2. Get all *passed* quiz attempts for this user for these quizzes
+    const { data: passedAttempts, error: attemptsError } = await supabase
+      .from('quiz_attempts')
+      .select('quiz_id')
+      .eq('user_id', profileId)
+      .in('quiz_id', quizIds)
+      .eq('is_passed', true);
+
+    if (attemptsError) throw attemptsError;
+
+    // 3. Check if the user has passed all quizzes
+    const passedQuizIds = new Set(passedAttempts.map(a => a.quiz_id));
+    const completed = quizIds.every(id => passedQuizIds.has(id));
+
+    return { completed, error: null };
+  } catch (error) {
+    console.error('Error checking course completion:', error);
+    return { completed: false, error };
+  }
+}
+
+function generateCertificateHtml(userCertificate: UserCertificate, fallbackData: any): string {
+  const { certificate } = userCertificate;
 
   const mainText = certificate.main_text
-    .replace('{user_name}', user.full_name)
-    .replace('{course_title}', certificate.course.title)
-    .replace('{issue_date}', formatDate(issued_at));
+    .replace('{user_name}', fallbackData.userName)
+    .replace('{course_title}', fallbackData.courseTitle)
+    .replace('{issue_date}', fallbackData.issueDate);
 
   return `
     <!DOCTYPE html>
