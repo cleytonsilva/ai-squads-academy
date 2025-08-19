@@ -42,6 +42,7 @@ import { useAuth } from '@/hooks/useAuth';
 import TemplateManagement from '@/components/admin/TemplateManagement';
 import BadgeManagement from '@/components/admin/BadgeManagement';
 import ChallengeManagement from '@/components/admin/ChallengeManagement';
+import MissionScenarioEditor from './MissionScenarioEditor';
 
 // Interfaces para tipagem
 interface AdminStats {
@@ -156,7 +157,7 @@ export default function AdminDashboard() {
   
   // Deep link das abas do admin via query string (?tab=)
   const [searchParams, setSearchParams] = useSearchParams();
-  const allowedTabs = useMemo(() => new Set(['overview','users','courses','templates','challenges','analytics','settings']), []);
+  const allowedTabs = useMemo(() => new Set(['overview','users','courses','templates','challenges', 'mission_scenarios', 'analytics','settings']), []);
   const getTabFromSearch = () => {
     const tab = searchParams.get('tab');
     return tab && allowedTabs.has(tab) ? tab : 'overview';
@@ -664,12 +665,13 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="courses">Cursos</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="challenges">Desafios</TabsTrigger>
+            <TabsTrigger value="mission_scenarios">Cenários de Missão</TabsTrigger>
             <TabsTrigger value="analytics">Análises</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
@@ -1003,6 +1005,11 @@ export default function AdminDashboard() {
               <ChallengeManagement />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Mission Scenarios */}
+        <TabsContent value="mission_scenarios" className="space-y-6">
+          <MissionScenarioEditor />
         </TabsContent>
 
         {/* Análises */}
