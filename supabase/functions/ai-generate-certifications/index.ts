@@ -35,6 +35,38 @@ function extractJsonArray(text: string): any[] | null {
   return null;
 }
 
+// --- Validation Functions ---
+function validateMission(item: any): boolean {
+  return (
+    typeof item.title === 'string' &&
+    typeof item.description === 'string' &&
+    typeof item.points === 'number' &&
+    Array.isArray(item.requirements)
+  );
+}
+
+function validateQuiz(item: any): boolean {
+  if (
+    typeof item.title !== 'string' ||
+    !Array.isArray(item.questions) ||
+    item.questions.length === 0
+  ) {
+    return false;
+  }
+  for (const q of item.questions) {
+    if (
+      typeof q.question !== 'string' ||
+      !Array.isArray(q.options) ||
+      q.options.length < 2 ||
+      typeof q.correct_answer !== 'string'
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -140,41 +172,37 @@ serve(async (req) => {
     let userPrompt = ''
 
     if (type === 'missions') {
-      systemPrompt = `Você é um especialista em criação de missões de certificação para plataformas de ensino. Crie missões práticas focadas em resultados.
-
-Retorne apenas JSON válido como um array com este formato:
-[
-  {
-    "title": "Título da missão",
-    "description": "Descrição detalhada da missão",
-    "points": 50,
-    "status": "available",
-    "order_index": 1,
-    "requirements": ["Requisito 1", "Requisito 2"]
-  }
-]`;
+      systemPrompt = `Você é um especialista em criação de missões de certificação. Sua resposta deve ser apenas um array JSON válido, sem nenhum texto adicional.
+A estrutura de cada objeto no array deve ser:
+{
+  "title": "string (obrigatório)",
+  "description": "string (obrigatório)",
+  "points": "number (obrigatório)",
+  "status": "string (opcional, padrão 'available')",
+  "order_index": "number (opcional)",
+  "requirements": "array de strings (obrigatório)"
+}
+Siga esta estrutura estritamente.`;
       userPrompt = `Crie ${count} missões de certificação com dificuldade ${difficulty} baseadas no conteúdo abaixo. Tipo: ${missionType}. Pontos base: ${basePoints}.
 \nConteúdo:\n${contextContent}`
     } else if (type === 'quizzes') {
-      systemPrompt = `Você é um especialista em criação de quizzes de certificação. Gere perguntas que avaliem teoria e prática.
-
-Retorne apenas JSON válido como um array com este formato:
-[
-  {
-    "title": "Título do Quiz",
-    "description": "Descrição do quiz",
-    "is_active": true,
-    "questions": [
-      {
-        "question": "Pergunta aqui?",
-        "type": "multiple_choice",
-        "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
-        "correct_answer": "Opção A",
-        "explanation": "Por quê"
-      }
-    ]
-  }
-]`;
+      systemPrompt = `Você é um especialista em criação de quizzes. Sua resposta deve ser apenas um array JSON válido, sem nenhum texto adicional.
+A estrutura de cada objeto no array deve ser:
+{
+  "title": "string (obrigatório)",
+  "description": "string (opcional)",
+  "is_active": "boolean (opcional, padrão 'true')",
+  "questions": [
+    {
+      "question": "string (obrigatório)",
+      "type": "string (opcional, padrão 'multiple_choice')",
+      "options": "array de strings (obrigatório, mínimo 2)",
+      "correct_answer": "string (obrigatório, deve corresponder a um item em 'options')",
+      "explanation": "string (opcional)"
+    }
+  ]
+}
+Siga esta estrutura estritamente.`;
       const typesList = Array.isArray(questionTypes) && questionTypes.length ? questionTypes.join(', ') : 'multiple_choice'
       userPrompt = `Crie ${count} quizzes de certificação (dificuldade ${difficulty}) com tipos de questão: ${typesList}, baseados no conteúdo abaixo. Inclua explicações para as respostas.
 \nConteúdo:\n${contextContent}`
@@ -205,9 +233,22 @@ Retorne apenas JSON válido como um array com este formato:
     const aiJson = await aiRes.json()
     const content: string = aiJson.choices?.[0]?.message?.content ?? ''
     const parsed = extractJsonArray(content)
+
     if (!parsed) {
-      console.error('[ai-gen] parse failed', content)
+      console.error('[ai-gen] Failed to parse JSON from AI response.', { content });
       return new Response(JSON.stringify({ error: 'Não foi possível interpretar a resposta da IA.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // --- Validate the structure of the AI's response ---
+    const validationFn = type === 'missions' ? validateMission : validateQuiz;
+    const isValid = parsed.every(validationFn);
+
+    if (!isValid) {
+      console.error('[ai-gen] AI response failed validation.', {
+        type,
+        response: content, // Log the original, problematic content
+      });
+      return new Response(JSON.stringify({ error: 'A resposta da IA falhou na validação da estrutura.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Prepare inserts, replicating the generated items for each target course
@@ -218,12 +259,12 @@ Retorne apenas JSON válido como um array com este formato:
       for (const cid of targetCourseIds) {
         parsed.forEach((m: any, idx: number) => {
           all.push({
-            title: m.title ?? `Missão ${idx + 1}`,
-            description: m.description ?? null,
-            points: Number.isFinite(m.points) ? m.points : basePoints,
+            title: m.title,
+            description: m.description,
+            points: m.points,
             status: m.status ?? 'available',
-            order_index: Number.isFinite(m.order_index) ? m.order_index : idx,
-            requirements: Array.isArray(m.requirements) ? m.requirements : [],
+            order_index: m.order_index ?? idx,
+            requirements: m.requirements,
             course_id: cid,
             track_id: trackId ?? null,
             module_id: m.module_id ?? null,
@@ -238,10 +279,10 @@ Retorne apenas JSON válido como um array com este formato:
       for (const cid of targetCourseIds) {
         parsed.forEach((q: any) => {
           all.push({
-            title: q.title ?? 'Quiz de Certificação',
+            title: q.title,
             description: q.description ?? null,
-            is_active: typeof q.is_active === 'boolean' ? q.is_active : true,
-            questions: Array.isArray(q.questions) ? q.questions : [],
+            is_active: q.is_active ?? true,
+            questions: q.questions,
             course_id: cid,
             track_id: trackId ?? null,
             module_id: q.module_id ?? null,

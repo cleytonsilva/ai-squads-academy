@@ -127,18 +127,21 @@ serve(async (req) => {
       .single();
 
     if (certError || !userCertificate) {
-      throw new Error('Certificado não encontrado');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Certificado não encontrado' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
+        }
+      );
     }
 
     const cert = userCertificate as UserCertificate;
 
-    // Se já existe URL do certificado, retornar ela
+    // If a certificate URL already exists, return it
     if (cert.certificate_url) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          certificateUrl: cert.certificate_url 
-        }),
+        JSON.stringify({ success: true, certificateUrl: cert.certificate_url }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -146,42 +149,57 @@ serve(async (req) => {
       );
     }
 
-    // Gerar HTML do certificado
-    const certificateHtml = generateCertificateHtml(cert);
+    let certificateHtml;
+    try {
+      // Generate certificate HTML
+      certificateHtml = generateCertificateHtml(cert);
 
-    // Aqui você pode integrar com um serviço de geração de PDF
-    // Por exemplo: Puppeteer, jsPDF, ou um serviço externo como HTMLtoPDF
-    
-    // Por enquanto, vamos simular a geração e retornar uma URL fictícia
-    // Em produção, você deve implementar a geração real do PDF
-    
-    const mockPdfUrl = `https://example.com/certificates/${cert.id}.pdf`;
-    
-    // Atualizar o registro com a URL do certificado
-    const { error: updateError } = await supabase
-      .from('user_certificates')
-      .update({ certificate_url: mockPdfUrl })
-      .eq('id', userCertificateId);
+      // PDF generation logic would go here.
+      // For now, we simulate generation and return a mock URL.
+      // In production, you should implement actual PDF generation.
 
-    if (updateError) {
-      console.error('Erro ao atualizar URL do certificado:', updateError);
-    }
+      const mockPdfUrl = `https://example.com/certificates/${cert.id}.pdf`;
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        certificateUrl: mockPdfUrl,
-        html: certificateHtml // Para debug/preview
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+      // Update the record with the certificate URL
+      const { error: updateError } = await supabase
+        .from('user_certificates')
+        .update({ certificate_url: mockPdfUrl })
+        .eq('id', userCertificateId);
+
+      if (updateError) {
+        console.error('Erro ao atualizar URL do certificado:', updateError);
+        // Decide if this should be a fatal error or just a warning
       }
-    );
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          certificateUrl: mockPdfUrl,
+          html: certificateHtml // For debug/preview
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
+    } catch (pdfError) {
+      console.error('Falha ao gerar o arquivo PDF do certificado:', pdfError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Falha ao gerar o arquivo PDF do certificado'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      );
+    }
 
   } catch (error) {
     console.error('Erro na geração do certificado:', error);
     
+    // General error handler for issues like auth, bad input, etc.
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -189,7 +207,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 400, // Bad Request is a reasonable default
       }
     );
   }
