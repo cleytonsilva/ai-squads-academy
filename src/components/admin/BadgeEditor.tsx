@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, Save, Eye } from 'lucide-react';
+import { Trash2, Plus, Save, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Course {
@@ -19,18 +19,14 @@ interface Course {
 interface BadgeTemplate {
   id?: string;
   name: string;
-  description: string;
+  description?: string;
   course_id: string;
+  criteria?: string;
   design_config: {
     background_color: string;
     text_color: string;
     border_style: string;
     icon: string;
-  };
-  requirements: {
-    completion_percentage: number;
-    min_score?: number;
-    required_modules: string[];
   };
   is_active: boolean;
 }
@@ -59,6 +55,8 @@ export default function BadgeEditor() {
   const [badgeTemplates, setBadgeTemplates] = useState<BadgeTemplate[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingBadge, setEditingBadge] = useState<BadgeTemplate | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -72,11 +70,6 @@ export default function BadgeEditor() {
       text_color: '#ffffff',
       border_style: 'solid',
       icon: 'trophy'
-    },
-    requirements: {
-      completion_percentage: 100,
-      min_score: undefined,
-      required_modules: []
     },
     is_active: true
   });
@@ -140,16 +133,12 @@ export default function BadgeEditor() {
 
   const handleSave = async () => {
     if (!formData.name.trim() || !selectedCourse) {
-      toast({
-        title: 'Erro',
-        description: 'Nome e curso são obrigatórios',
-        variant: 'destructive'
-      });
+      toast.error('Nome e curso são obrigatórios');
       return;
     }
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
       const dataToSave = {
         ...formData,
         course_id: selectedCourse
@@ -163,10 +152,7 @@ export default function BadgeEditor() {
           .eq('id', editingBadge.id);
 
         if (error) throw error;
-        toast({
-          title: 'Sucesso',
-          description: 'Template de badge atualizado com sucesso'
-        });
+        toast.success('Template de badge atualizado com sucesso');
       } else {
         // Create new badge template
         const { error } = await supabase
@@ -174,10 +160,7 @@ export default function BadgeEditor() {
           .insert([dataToSave]);
 
         if (error) throw error;
-        toast({
-          title: 'Sucesso',
-          description: 'Template de badge criado com sucesso'
-        });
+        toast.success('Template de badge criado com sucesso');
       }
 
       // Reset form and reload templates
@@ -185,13 +168,9 @@ export default function BadgeEditor() {
       loadBadgeTemplates();
     } catch (error) {
       console.error('Erro ao salvar template de badge:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível salvar o template de badge',
-        variant: 'destructive'
-      });
+      toast.error('Não foi possível salvar o template de badge');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -201,7 +180,7 @@ export default function BadgeEditor() {
     }
 
     try {
-      setIsLoading(true);
+      setDeletingId(id);
       const { error } = await supabase
         .from('badge_templates')
         .delete()
@@ -209,21 +188,14 @@ export default function BadgeEditor() {
 
       if (error) throw error;
       
-      toast({
-        title: 'Sucesso',
-        description: 'Template de badge excluído com sucesso'
-      });
+      toast.success('Template de badge excluído com sucesso');
       
       loadBadgeTemplates();
     } catch (error) {
       console.error('Erro ao excluir template de badge:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível excluir o template de badge',
-        variant: 'destructive'
-      });
+      toast.error('Não foi possível excluir o template de badge');
     } finally {
-      setIsLoading(false);
+      setDeletingId(null);
     }
   };
 
@@ -243,11 +215,6 @@ export default function BadgeEditor() {
         text_color: '#ffffff',
         border_style: 'solid',
         icon: 'trophy'
-      },
-      requirements: {
-        completion_percentage: 100,
-        min_score: undefined,
-        required_modules: []
       },
       is_active: true
     });
@@ -459,12 +426,16 @@ export default function BadgeEditor() {
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={handleSave} disabled={isLoading}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {editingBadge ? 'Atualizar' : 'Criar'} Badge
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {isSaving ? 'Salvando...' : (editingBadge ? 'Atualizar' : 'Criar')} Badge
                 </Button>
                 {editingBadge && (
-                  <Button variant="outline" onClick={resetForm}>
+                  <Button variant="outline" onClick={resetForm} disabled={isSaving}>
                     Cancelar
                   </Button>
                 )}
@@ -492,6 +463,7 @@ export default function BadgeEditor() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleEdit(badge)}
+                              disabled={isSaving || deletingId === badge.id}
                             >
                               Editar
                             </Button>
@@ -499,8 +471,13 @@ export default function BadgeEditor() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleDelete(badge.id!)}
+                              disabled={deletingId === badge.id || isSaving}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {deletingId === badge.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </Button>
                           </div>
                         </div>

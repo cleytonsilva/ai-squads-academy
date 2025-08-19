@@ -22,6 +22,11 @@ interface BadgeTemplate {
   image_url: string | null; // Campo correto para imagem
   key: string | null; // Campo adicional da tabela badges
   style: any; // Campo JSON da tabela badges
+  category?: string;
+  is_active?: boolean;
+  color?: string;
+  criteria?: string;
+  course_id?: string;
   created_at: string;
   updated_at: string;
 }

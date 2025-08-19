@@ -25,6 +25,9 @@ interface ImageGenerationDialogProps {
   onGenerate: (engine: string) => Promise<void>;
   courseTitle: string;
   isLoading?: boolean;
+  authChecked?: boolean;
+  isAuthenticated?: boolean;
+  userRole?: string | null;
 }
 
 type EngineOption = {
@@ -78,7 +81,10 @@ export default function ImageGenerationDialog({
   onOpenChange,
   onGenerate,
   courseTitle,
-  isLoading = false
+  isLoading = false,
+  authChecked = true,
+  isAuthenticated = false,
+  userRole = null,
 }: ImageGenerationDialogProps) {
   const [selectedEngine, setSelectedEngine] = useState<string>('flux-1.1-pro');
 
@@ -166,31 +172,51 @@ export default function ImageGenerationDialog({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleGenerate}
-            disabled={isLoading}
-            className="min-w-[120px]"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Gerando...
-              </>
-            ) : (
-              <>
-                <Palette className="h-4 w-4 mr-2" />
-                Gerar Imagens
-              </>
-            )}
-          </Button>
+        <DialogFooter className="flex flex-col gap-3">
+          {/* Status de autenticação */}
+          {authChecked && (
+            <div className="flex items-center justify-center text-sm">
+              {isAuthenticated ? (
+                <span className="text-green-600 flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Autenticado como {userRole}
+                </span>
+              ) : (
+                <span className="text-red-600 flex items-center gap-1">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  Login necessário (admin ou instructor)
+                </span>
+              )}
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleGenerate}
+              disabled={isLoading || !authChecked || !isAuthenticated}
+              className="min-w-[120px]"
+            >
+              {!authChecked ? (
+                'Verificando...'
+              ) : !isAuthenticated ? (
+                'Login necessário'
+              ) : isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Gerando...
+                </>
+              ) : (
+                'Gerar Imagens'
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

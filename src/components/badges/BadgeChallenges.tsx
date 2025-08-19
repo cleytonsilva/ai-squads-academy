@@ -78,11 +78,64 @@ export default function BadgeChallenges({
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('active');
   const [selectedChallenge, setSelectedChallenge] = useState<BadgeChallenge | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  // Carregar desafios
+  // Controlar montagem do componente e carregamento inicial
   useEffect(() => {
-    loadChallenges();
-  }, [category, difficulty, userId]);
+    setMounted(true);
+    const timer = setTimeout(() => {
+      loadChallenges();
+    }, 500); // Delay aumentado para garantir montagem e transições suaves
+    
+    return () => {
+      clearTimeout(timer);
+      setMounted(false);
+    };
+  }, [category, difficulty, loadChallenges, userId]);
+
+  // Função para renderizar ícone com animação suave
+  const AnimatedIcon = ({ icon: Icon, className = '' }) => (
+    <Icon 
+      className={cn(
+        'icon-transition no-flicker',
+        className
+      )} 
+    />
+  );
+
+  // Prevenir renderização antes da montagem
+  if (!mounted) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="flex justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                </div>
+                <Skeleton className="h-8 w-16" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-2 w-full mb-4" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+
 
   const loadChallenges = async () => {
     try {
@@ -100,7 +153,7 @@ export default function BadgeChallenges({
       }
 
       // Criar desafios baseados nos badges disponíveis
-      const challengesFromBadges: BadgeChallenge[] = badges?.map((badge, index) => ({
+      const challengesFromBadges: BadgeChallenge[] = badges?.map((badge, _index) => ({
         id: badge.id,
         title: `Conquiste o ${badge.name}`,
         description: badge.description || `Complete os requisitos para conquistar o badge ${badge.name}`,
@@ -224,9 +277,19 @@ export default function BadgeChallenges({
     return (
       <motion.div
         key={challenge.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+        transition={{ 
+          type: "spring",
+          stiffness: 150,
+          damping: 25,
+          mass: 1,
+          duration: 0.5
+        }}
+        layout
+        layoutId={`challenge-${challenge.id}`}
+        className="will-change-transform transform-gpu"
       >
         <Card className={cn(
           'transition-all duration-200 hover:shadow-lg cursor-pointer',
@@ -238,8 +301,8 @@ export default function BadgeChallenges({
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <CardTitle className="text-lg">{challenge.title}</CardTitle>
-                  {challenge.is_locked && <Lock className="w-4 h-4 text-muted-foreground" />}
-                  {challenge.is_completed && <CheckCircle className="w-4 h-4 text-green-600" />}
+                  {challenge.is_locked && <AnimatedIcon icon={Lock} className="w-4 h-4 text-muted-foreground" />}
+                  {challenge.is_completed && <AnimatedIcon icon={CheckCircle} className="w-4 h-4 text-green-600" />}
                 </div>
                 
                 <p className="text-sm text-muted-foreground mb-3">
@@ -261,7 +324,7 @@ export default function BadgeChallenges({
                   
                   {daysLeft && daysLeft > 0 && (
                     <Badge variant="outline" className="text-orange-600">
-                      <Timer className="w-3 h-3 mr-1" />
+                      <AnimatedIcon icon={Timer} className="w-3 h-3 mr-1" />
                       {daysLeft}d restantes
                     </Badge>
                   )}
@@ -305,11 +368,11 @@ export default function BadgeChallenges({
             {/* Estatísticas */}
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
               <span className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
+                <AnimatedIcon icon={Users} className="w-3 h-3" />
                 {challenge.participants_count} participantes
               </span>
               <span className="flex items-center gap-1">
-                <Target className="w-3 h-3" />
+                <AnimatedIcon icon={Target} className="w-3 h-3" />
                 {challenge.completion_rate}% concluído
               </span>
             </div>
@@ -318,12 +381,12 @@ export default function BadgeChallenges({
             <div className="flex gap-2">
               {challenge.is_locked ? (
                 <Button variant="outline" disabled className="flex-1">
-                  <Lock className="w-4 h-4 mr-2" />
+                  <AnimatedIcon icon={Lock} className="w-4 h-4 mr-2" />
                   Bloqueado
                 </Button>
               ) : challenge.is_completed ? (
                 <Button variant="outline" disabled className="flex-1">
-                  <CheckCircle className="w-4 h-4 mr-2" />
+                  <AnimatedIcon icon={CheckCircle} className="w-4 h-4 mr-2" />
                   Concluído
                 </Button>
               ) : (
@@ -346,7 +409,7 @@ export default function BadgeChallenges({
                     onClick={() => joinChallenge(challenge.id)}
                     className="flex-1"
                   >
-                    <Flag className="w-4 h-4 mr-2" />
+                    <AnimatedIcon icon={Flag} className="w-4 h-4 mr-2" />
                     Participar
                   </Button>
                 </>
@@ -402,23 +465,23 @@ export default function BadgeChallenges({
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="active" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 animate-fade-in">
+          <TabsTrigger value="active" className="flex items-center gap-2 icon-transition">
             <Zap className="w-4 h-4" />
             Ativos ({activeChallenges.length})
           </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center gap-2">
+          <TabsTrigger value="completed" className="flex items-center gap-2 icon-transition">
             <CheckCircle className="w-4 h-4" />
             Concluídos ({completedChallenges.length})
           </TabsTrigger>
-          <TabsTrigger value="locked" className="flex items-center gap-2">
+          <TabsTrigger value="locked" className="flex items-center gap-2 icon-transition">
             <Lock className="w-4 h-4" />
             Bloqueados ({lockedChallenges.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active" className="space-y-4 mt-6">
-          <AnimatePresence>
+          <AnimatePresence mode="wait" initial={false} presenceAffectsLayout>
             {activeChallenges.map(challenge => renderChallengeCard(challenge))}
           </AnimatePresence>
           
@@ -436,7 +499,7 @@ export default function BadgeChallenges({
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-4 mt-6">
-          <AnimatePresence>
+          <AnimatePresence mode="wait" initial={false} presenceAffectsLayout>
             {completedChallenges.map(challenge => renderChallengeCard(challenge))}
           </AnimatePresence>
           
@@ -454,7 +517,7 @@ export default function BadgeChallenges({
         </TabsContent>
 
         <TabsContent value="locked" className="space-y-4 mt-6">
-          <AnimatePresence>
+          <AnimatePresence mode="wait" initial={false} presenceAffectsLayout>
             {lockedChallenges.map(challenge => renderChallengeCard(challenge))}
           </AnimatePresence>
           

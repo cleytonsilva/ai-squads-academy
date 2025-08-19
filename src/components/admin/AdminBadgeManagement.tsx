@@ -43,6 +43,10 @@ interface BadgeTemplate {
   style: any;
   category: string;
   key: string;
+  is_active?: boolean;
+  color?: string;
+  criteria?: string;
+  course_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -89,6 +93,10 @@ export default function AdminBadgeManagement() {
     style: { color: '#3B82F6', icon: 'award' },
     category: 'achievement',
     key: '',
+    is_active: true,
+    color: '#3B82F6',
+    criteria: '',
+    course_id: undefined,
   });
 
   // Ícones disponíveis
@@ -189,11 +197,7 @@ export default function AdminBadgeManagement() {
         user_id,
         badge_id,
         earned_at,
-        user:profiles!user_badges_user_id_fkey (
-          full_name,
-          email
-        ),
-        badge:badges (
+        badges (
           id,
           name,
           description,
@@ -619,7 +623,7 @@ function BadgeForm({
               <SelectValue placeholder="Selecione um curso" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum curso específico</SelectItem>
+              <SelectItem value="none">Nenhum curso específico</SelectItem>
               {courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
                   {course.title}

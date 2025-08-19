@@ -62,7 +62,8 @@ export default function GenerationJob() {
           )}
           <section>
             {modules.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aguardando criação dos primeiros módulos...</p>) : (
+              <p className="text-sm text-muted-foreground">Aguardando criação dos primeiros módulos...</p>
+            ) : (
               <ul className="list-disc pl-5 space-y-1">
                 {modules.map((m: any) => (
                   <li key={m.index} className="text-sm">{m.index + 1}. {m.title}</li>

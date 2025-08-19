@@ -5,19 +5,19 @@ project_id = "ai-squads-academy"
 
 [api]
 enabled = true
-port = 54321
+port = 8081
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-port = 54322
+port = 8082
 major_version = 17
 
 [studio]
 enabled = true
-port = 54323
-api_url = "http://127.0.0.1:54321"
+port = 8083
+api_url = "http://127.0.0.1:8081"
 
 [inbucket]
 enabled = false
@@ -31,8 +31,8 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+site_url = "http://127.0.0.1:8080"
+additional_redirect_urls = ["https://127.0.0.1:8080"]
 jwt_expiry = 3600
 enable_signup = true
 

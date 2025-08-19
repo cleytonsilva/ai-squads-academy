@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import TrackQuizManager from "@/components/admin/TrackQuizManager";
 import TrackMissionManager from "@/components/admin/TrackMissionManager";
 import AIGenerationDialog from "@/components/admin/AIGenerationDialog";
+import DashboardLayout from "@/components/admin/DashboardLayout";
 
 interface Track { id: string; title: string; is_public: boolean; is_certifiable: boolean; created_by: string | null; updated_at: string; }
 interface Course { id: string; title: string; }
@@ -94,13 +95,14 @@ export default function AdminTracks() {
   };
 
   return (
-    <main className="min-h-screen container mx-auto py-10">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Trilhas</h1>
-          <p className="text-muted-foreground">Crie e gerencie trilhas (coleções de cursos).</p>
-        </div>
-      </header>
+    <DashboardLayout>
+      <div className="container mx-auto">
+        <header className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Trilhas</h1>
+            <p className="text-muted-foreground">Crie e gerencie trilhas (coleções de cursos).</p>
+          </div>
+        </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1">
@@ -235,6 +237,7 @@ export default function AdminTracks() {
           </CardContent>
         </Card>
       </div>
-    </main>
+      </div>
+    </DashboardLayout>
   );
 }

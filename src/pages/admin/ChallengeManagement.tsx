@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChallengeManagement from '@/components/admin/ChallengeManagement';
 import { Target, Trophy, Users } from 'lucide-react';
+import DashboardLayout from '@/components/admin/DashboardLayout';
 
 const AdminChallengeManagement = () => {
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <DashboardLayout>
+      <div className="container mx-auto space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <Target className="h-8 w-8 text-primary" />
         <div>
@@ -77,7 +79,8 @@ const AdminChallengeManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 

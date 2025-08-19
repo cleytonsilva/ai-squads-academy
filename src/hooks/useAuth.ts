@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -14,25 +15,119 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
+  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
 }
 
 export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const signOut = async () => {
+    try {
+      // Limpar estado local primeiro
+      setUser(null);
+      
+      // Tentar logout no Supabase com timeout
+      const logoutPromise = supabase.auth.signOut({ scope: 'local' });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      try {
+        await Promise.race([logoutPromise, timeoutPromise]);
+      } catch (logoutError) {
+        console.warn('Erro no logout do Supabase (continuando com logout local):', logoutError);
+        // Limpar storage local manualmente se o logout falhar
+        localStorage.removeItem('supabase.auth.token');
+        localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
+      }
+      
+      // Navegar para página de auth
+      navigate('/auth', { replace: true });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      // Mesmo com erro, limpar estado e redirecionar
+      setUser(null);
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
+      navigate('/auth', { replace: true });
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email: email.trim().toLowerCase(), 
+      password 
+    });
+    if (error) throw error;
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: { 
+        emailRedirectTo: redirectUrl, 
+        data: { display_name: email.split('@')[0] } 
+      },
+    });
+    if (error) throw error;
+  };
 
   useEffect(() => {
-    // Verificar sessão atual
-    const checkAuth = async () => {
+    let mounted = true;
+    
+    const checkSession = async () => {
       try {
+        console.log('🔍 useAuth.ts:90 Iniciando verificação de sessão...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Erro ao verificar sessão:', error);
-          setUser(null);
+          console.error('❌ useAuth.ts:94 Erro ao obter sessão:', error);
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (!session) {
+          console.log('⚠️ useAuth.ts:103 Nenhuma sessão encontrada');
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Log detalhado da sessão
+        console.log('📊 useAuth.ts:112 Sessão encontrada:', {
+          user_id: session.user?.id,
+          email: session.user?.email,
+          expires_at: session.expires_at,
+          current_time: Math.floor(Date.now() / 1000),
+          time_until_expiry: session.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 'N/A',
+          access_token_length: session.access_token?.length || 0
+        });
+
+        // Verificar se o token expirou
+        const now = Math.floor(Date.now() / 1000);
+        if (session.expires_at && session.expires_at <= now) {
+          console.log('⏰ useAuth.ts:123 Token expirado, fazendo logout...', {
+            expires_at: session.expires_at,
+            current_time: now,
+            difference: now - session.expires_at
+          });
+          await signOut();
           return;
         }
 
         if (session?.user) {
+          console.log('👤 useAuth.ts:130 Sessão encontrada, buscando dados do usuário...');
           // Buscar dados adicionais do usuário na tabela profiles
           const { data: userData, error: userError } = await supabase
             .from('profiles')
@@ -41,60 +136,148 @@ export function useAuth(): AuthState {
             .single();
 
           if (userError) {
-            console.error('Erro ao buscar dados do usuário:', userError);
+            console.warn('❌ useAuth.ts:138 Erro ao buscar dados do usuário:', userError);
             // Usar dados básicos da sessão se não encontrar na tabela
-            setUser({
+            const fallbackUser = {
               id: session.user.id,
               email: session.user.email || '',
-              name: session.user.user_metadata?.name
-            });
+              name: session.user.user_metadata?.name,
+              role: 'student'
+            };
+            console.log('🔄 useAuth.ts:146 Usando dados fallback:', fallbackUser);
+            if (mounted) {
+              setUser(fallbackUser);
+            }
           } else {
-            setUser(userData);
+            console.log('✅ useAuth.ts:151 Dados do usuário encontrados:', userData);
+            if (mounted) {
+              setUser(userData);
+            }
           }
         } else {
-          setUser(null);
+          console.log('❌ useAuth.ts:157 Nenhum usuário na sessão');
+          if (mounted) {
+            setUser(null);
+          }
         }
       } catch (error) {
-        console.error('Erro ao verificar autenticação:', error);
-        setUser(null);
+        console.error('❌ useAuth.ts:164 Erro ao verificar autenticação:', error);
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          console.log('✅ useAuth.ts:171 Verificação de sessão concluída');
+        }
       }
     };
 
-    checkAuth();
+    checkSession();
 
     // Escutar mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 useAuth.ts:180 Auth state change:', {
+          event,
+          user_email: session?.user?.email,
+          session_exists: !!session,
+          expires_at: session?.expires_at,
+          current_time: Math.floor(Date.now() / 1000),
+          time_until_expiry: session?.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 'N/A'
+        });
+        
         if (session?.user) {
+          console.log('✅ useAuth.ts:190 Processando evento com sessão válida...');
+          
+          // Verificar se o token já está expirado
+          const now = Math.floor(Date.now() / 1000);
+          if (session.expires_at && session.expires_at <= now) {
+            console.log('⚠️ useAuth.ts:195 Token já expirado no evento:', {
+              expires_at: session.expires_at,
+              current_time: now,
+              difference: now - session.expires_at
+            });
+            return;
+          }
+          
           // Buscar dados do usuário quando logar
-          const { data: userData } = await supabase
+          console.log('👤 useAuth.ts:203 Buscando dados do usuário...');
+          const { data: userData, error: userError } = await supabase
             .from('profiles')
             .select('id, name, email, avatar_url, role')
             .eq('user_id', session.user.id)
             .single();
 
-          setUser(userData || {
+          const userProfile = userData || {
             id: session.user.id,
             email: session.user.email || '',
-            name: session.user.user_metadata?.name
-          });
+            name: session.user.user_metadata?.name,
+            role: 'student'
+          };
+
+          console.log('👤 useAuth.ts:216 Perfil do usuário:', userProfile);
+          
+          if (mounted) {
+            setUser(userProfile);
+          }
+
+          // Redirecionamento automático após login
+          if (event === 'SIGNED_IN') {
+            console.log('🔄 useAuth.ts:225 Login detectado, redirecionando...');
+            const role = userProfile.role || 'student';
+            
+            // Aguardar um pequeno delay para garantir que o estado seja atualizado
+            setTimeout(() => {
+              if (role === 'admin' || role === 'instructor') {
+                console.log('➡️ useAuth.ts:231 Redirecionando para /admin');
+                navigate('/admin', { replace: true });
+              } else {
+                console.log('➡️ useAuth.ts:234 Redirecionando para /app');
+                navigate('/app', { replace: true });
+              }
+            }, 100);
+          }
         } else {
-          setUser(null);
+          console.log('❌ useAuth.ts:240 Processando evento sem sessão...');
+          if (mounted) {
+            setUser(null);
+          }
+          // Redirecionar para auth apenas se não estiver já lá
+          if (window.location.pathname !== '/auth' && window.location.pathname !== '/') {
+            console.log('➡️ useAuth.ts:246 Redirecionando para /auth');
+            navigate('/auth', { replace: true });
+          }
         }
-        setLoading(false);
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('🔄 useAuth.ts:252 Token refreshed:', {
+            expires_at: session?.expires_at,
+            current_time: Math.floor(Date.now() / 1000),
+            time_until_expiry: session?.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 'N/A'
+          });
+        } else if (event === 'SIGNED_OUT') {
+          console.log('❌ useAuth.ts:258 Processando SIGNED_OUT...');
+        }
+        
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   return {
     user,
     loading,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    signOut,
+    signIn,
+    signUp
   };
 }

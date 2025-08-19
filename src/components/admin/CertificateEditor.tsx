@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, Save, Eye, Download } from 'lucide-react';
+import { Trash2, Plus, Save, Eye, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Course {
@@ -72,6 +72,8 @@ export default function CertificateEditor() {
   const [certificateTemplates, setCertificateTemplates] = useState<CertificateTemplate[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingCertificate, setEditingCertificate] = useState<CertificateTemplate | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -170,7 +172,7 @@ export default function CertificateEditor() {
     }
 
     try {
-      setIsLoading(true);
+      setIsSaving(true);
       const dataToSave = {
         ...formData,
         course_id: selectedCourse
@@ -212,7 +214,7 @@ export default function CertificateEditor() {
         variant: 'destructive'
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -222,7 +224,7 @@ export default function CertificateEditor() {
     }
 
     try {
-      setIsLoading(true);
+      setDeletingId(id);
       const { error } = await supabase
         .from('certificate_templates')
         .delete()
@@ -244,7 +246,7 @@ export default function CertificateEditor() {
         variant: 'destructive'
       });
     } finally {
-      setIsLoading(false);
+      setDeletingId(null);
     }
   };
 
@@ -607,12 +609,16 @@ export default function CertificateEditor() {
               )}
 
               <div className="flex gap-2">
-                <Button onClick={handleSave} disabled={isLoading}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {editingCertificate ? 'Atualizar' : 'Criar'} Template
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {isSaving ? 'Salvando...' : (editingCertificate ? 'Atualizar' : 'Criar')} Template
                 </Button>
                 {editingCertificate && (
-                  <Button variant="outline" onClick={resetForm}>
+                  <Button variant="outline" onClick={resetForm} disabled={isSaving}>
                     Cancelar
                   </Button>
                 )}
@@ -637,6 +643,7 @@ export default function CertificateEditor() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleEdit(certificate)}
+                              disabled={isSaving || deletingId === certificate.id}
                             >
                               Editar
                             </Button>
@@ -644,8 +651,13 @@ export default function CertificateEditor() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleDelete(certificate.id!)}
+                              disabled={deletingId === certificate.id || isSaving}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {deletingId === certificate.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </Button>
                           </div>
                         </div>

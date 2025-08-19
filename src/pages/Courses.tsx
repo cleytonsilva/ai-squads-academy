@@ -11,7 +11,6 @@ interface Course {
   id: string;
   title: string;
   description: string | null;
-  thumbnail_url: string | null;
   cover_image_url: string | null; // Preferential cover image field
   updated_at: string;
 }
@@ -24,7 +23,7 @@ const Courses = () => {
     queryFn: async (): Promise<Course[]> => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id,title,description,thumbnail_url,cover_image_url,updated_at")
+        .select("id,title,description,cover_image_url,updated_at")
         .eq("is_published", true)
         .order("updated_at", { ascending: false })
         .limit(24);
@@ -65,7 +64,7 @@ const Courses = () => {
       ) : data && data.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {data.map((course) => {
-            const imageUrl = course.cover_image_url || course.thumbnail_url; // Fallback para compatibilidade
+            const imageUrl = course.cover_image_url; // Usando apenas cover_image_url
             return (
               <Link key={course.id} to={`/courses/${course.id}`} className="block group">
                 <Card className="overflow-hidden hover-scale cursor-pointer">

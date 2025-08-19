@@ -19,16 +19,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { Palette } from "lucide-react";
 import ImageGenerationWrapper from "@/components/admin/ImageGenerationWrapper";
 import { useImageGenerationDialog } from "@/components/admin/ImageGenerationDialog";
+import DashboardLayout from "@/components/admin/DashboardLayout";
 type Course = {
   id: string;
   title: string;
   description: string | null;
-  thumbnail_url: string | null;
   cover_image_url: string | null; // Campo principal para imagem do curso
   status: string;
   is_published: boolean;
   updated_at: string;
-  estimated_duration: number | null;
 };
 
 const AdminDashboard = () => {
@@ -42,7 +41,7 @@ const AdminDashboard = () => {
     queryFn: async (): Promise<Course[]> => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id,title,description,thumbnail_url,cover_image_url,status,is_published,updated_at,estimated_duration")
+        .select("id,title,description,cover_image_url,status,is_published,updated_at")
         .order("updated_at", { ascending: false })
         .limit(24);
       if (error) throw error;
@@ -154,17 +153,17 @@ const [audOutrosText, setAudOutrosText] = useState("");
   };
 
   return (
-    <>
+    <DashboardLayout>
       <Helmet>
-        <title>Admin — Gerenciar cursos | Esquads</title>
-        <meta name="description" content="Dashboard administrativo Esquads: gerencie cursos, rascunhos e publicações." />
+        <title>Gerenciar Cursos — Admin | Esquads</title>
+        <meta name="description" content="Gerencie cursos, rascunhos e publicações na plataforma Esquads." />
         <link rel="canonical" href={canonical} />
       </Helmet>
 
-      <main className="min-h-screen container mx-auto py-10">
+      <div className="container mx-auto">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Administração</h1>
+            <h1 className="text-3xl font-bold">Gerenciamento de Cursos</h1>
             <p className="text-muted-foreground">Gerencie cursos e publique conteúdos para os alunos.</p>
           </div>
           <div className="flex gap-2">
@@ -344,7 +343,7 @@ const [audOutrosText, setAudOutrosText] = useState("");
               {data.map((course) => (
                 <Card key={course.id} className="overflow-hidden">
                   {(() => {
-                    const imageUrl = course.cover_image_url || course.thumbnail_url; // Fallback para compatibilidade
+                    const imageUrl = course.cover_image_url; // Usando apenas cover_image_url
                     return imageUrl ? (
                       <img
                         src={imageUrl}
@@ -397,7 +396,7 @@ const [audOutrosText, setAudOutrosText] = useState("");
             </Card>
           ))}
         </section>
-      </main>
+      </div>
       
       <ImageGenerationWrapper
         isOpen={imageDialog.isOpen}
@@ -406,7 +405,7 @@ const [audOutrosText, setAudOutrosText] = useState("");
         courseTitle={imageDialog.courseTitle}
         onSuccess={imageDialog.onSuccess}
       />
-    </>
+    </DashboardLayout>
   );
 };
 

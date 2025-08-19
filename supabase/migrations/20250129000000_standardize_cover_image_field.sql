@@ -15,10 +15,19 @@ BEGIN
 END $$;
 
 -- 2. Sincronizar dados existentes: copiar thumbnail_url para cover_image_url onde aplicável
-UPDATE courses 
-SET cover_image_url = thumbnail_url 
-WHERE thumbnail_url IS NOT NULL 
-  AND (cover_image_url IS NULL OR cover_image_url = '');
+DO $$ 
+BEGIN
+    IF EXISTS (
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='courses' AND column_name='thumbnail_url'
+    ) THEN
+        UPDATE courses 
+        SET cover_image_url = thumbnail_url 
+        WHERE thumbnail_url IS NOT NULL 
+          AND (cover_image_url IS NULL OR cover_image_url = '');
+    END IF;
+END $$;
 
 -- 3. Criar função para sincronização bidirecional durante a transição
 CREATE OR REPLACE FUNCTION sync_course_image_fields()

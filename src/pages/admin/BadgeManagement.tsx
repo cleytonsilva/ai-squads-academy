@@ -5,10 +5,12 @@ import AdminBadgeManagement from '@/components/admin/AdminBadgeManagement';
 import BadgeEditor from '@/components/admin/BadgeEditor';
 import CertificateEditor from '@/components/admin/CertificateEditor';
 import { Shield, Award } from 'lucide-react';
+import DashboardLayout from '@/components/admin/DashboardLayout';
 
 const BadgeManagement = () => {
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <DashboardLayout>
+      <div className="container mx-auto space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <Shield className="h-8 w-8 text-primary" />
         <div>
@@ -75,7 +77,8 @@ const BadgeManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 

@@ -11,6 +11,11 @@ interface BadgeTemplate {
   image_url: string | null;
   key: string | null;
   style: any;
+  category?: string;
+  is_active?: boolean;
+  color?: string;
+  criteria?: string;
+  course_id?: string;
   created_at: string;
   updated_at: string;
   category?: string;

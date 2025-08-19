@@ -7,6 +7,7 @@ import CertificateEditor from '@/components/admin/CertificateEditor';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import DashboardLayout from '@/components/admin/DashboardLayout';
 
 interface AchievementStats {
   total_badges_awarded: number;
@@ -144,7 +145,8 @@ export default function AchievementManagement() {
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <DashboardLayout>
+      <div className="container mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Gerenciamento de Conquistas</h1>
@@ -245,6 +247,7 @@ export default function AchievementManagement() {
           <CertificateEditor />
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

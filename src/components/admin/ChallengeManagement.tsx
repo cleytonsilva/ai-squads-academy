@@ -226,7 +226,7 @@ function ChallengeForm({
           </Button>
         </div>
         
-        {formData.requirements.map((requirement, index) => (
+        {formData.requirements && formData.requirements.map((requirement, index) => (
           <Card key={index} className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="space-y-2">
@@ -273,7 +273,7 @@ function ChallengeForm({
                 onClick={() => removeRequirement(index)}
                 size="sm"
                 variant="destructive"
-                disabled={formData.requirements.length === 1}
+                disabled={!formData.requirements || formData.requirements.length === 1}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -392,7 +392,8 @@ export default function ChallengeManagement() {
       : 'bg-gray-100 text-gray-800';
   };
 
-  if (loading || statsLoading) {
+  // Só mostra loading se realmente não há dados ainda
+  if ((loading && challenges.length === 0) || (statsLoading && !stats)) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
