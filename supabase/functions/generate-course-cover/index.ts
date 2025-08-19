@@ -214,17 +214,27 @@ async function callReplicateAPI(
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        const error = new Error(`API Error ${response.status}: ${errorText}`);
+        let errorDetail = `Status ${response.status}: ${response.statusText}`;
+        try {
+            const errorBody = await response.json();
+            if (errorBody && errorBody.detail) {
+                errorDetail = errorBody.detail;
+            }
+        } catch (e) {
+            // Se o corpo não for JSON ou não tiver 'detail', usa o texto plano
+            errorDetail = await response.text();
+        }
+
+        const error = new Error(`API Error: ${errorDetail}`);
         
         // Não retry para erros 4xx (exceto 429 - rate limit)
         if (response.status >= 400 && response.status < 500 && response.status !== 429) {
-          console.error('[REPLICATE] Erro não recuperável:', response.status, errorText);
-          return { error: `Erro na API do Replicate: ${response.status} - ${errorText}` };
+          console.error('[REPLICATE] Erro não recuperável:', response.status, errorDetail);
+          return { error: `Erro na API do Replicate: ${errorDetail}` };
         }
         
         lastError = error;
-        console.error(`[REPLICATE] Tentativa ${attempt + 1} falhou:`, response.status, errorText);
+        console.error(`[REPLICATE] Tentativa ${attempt + 1} falhou:`, response.status, errorDetail);
         
         if (attempt < maxRetries) {
           await delay(attempt);
@@ -348,21 +358,29 @@ serve(async (req) => {
   }
 
   try {
-    // Configurações do ambiente
+    // Validação de chaves de ambiente
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const REPLICATE_API_TOKEN = Deno.env.get("REPLICATE_API_TOKEN");
-    const REPLICATE_WEBHOOK_SECRET = Deno.env.get("REPLICATE_WEBHOOK_SECRET");
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error("Configurações do Supabase não encontradas");
-    }
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !REPLICATE_API_TOKEN) {
+      const missingVars = [];
+      if (!SUPABASE_URL) missingVars.push("SUPABASE_URL");
+      if (!SUPABASE_SERVICE_ROLE_KEY) missingVars.push("SUPABASE_SERVICE_ROLE_KEY");
+      if (!REPLICATE_API_TOKEN) missingVars.push("REPLICATE_API_TOKEN");
 
-    if (!REPLICATE_API_TOKEN) {
-      throw new Error("REPLICATE_API_TOKEN não configurado");
+      console.error(`[ENV] Variável de ambiente essencial não configurada: ${missingVars.join(', ')}`);
+      return new Response(
+        JSON.stringify({ error: "Variável de ambiente essencial não configurada no servidor." }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Lê e valida o corpo da requisição
+    console.log('[REQUEST] Iniciando validação da requisição.');
     const body = await req.json();
     const validation = validateRequest(body);
     
@@ -377,6 +395,7 @@ serve(async (req) => {
     }
 
     const { courseId, engine, regenerate } = validation.data!;
+    console.log('[REQUEST] Validação bem-sucedida:', { courseId, engine, regenerate });
 
     // Cria cliente do Supabase
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -417,6 +436,7 @@ serve(async (req) => {
       
       // Verifica permissões do usuário
       const { authorized, role } = await checkUserPermissions(supabase, user.id);
+      console.log(`[AUTH] Verificação de permissão para userId: ${user.id}. Resultado: ${authorized ? 'Autorizado' : 'Não autorizado'} (Role: ${role})`);
       if (!authorized) {
         return new Response(
           JSON.stringify({ 
@@ -434,6 +454,7 @@ serve(async (req) => {
     }
 
     // Busca dados do curso
+    console.log(`[COURSE] Buscando dados para o cursoId: ${courseId}.`);
     const course = await getCourseData(supabase, courseId);
     if (!course) {
       return new Response(
@@ -444,6 +465,7 @@ serve(async (req) => {
         }
       );
     }
+    console.log('[COURSE] Dados do curso encontrados:', { id: course.id, title: course.title });
 
     // Verifica se já existe capa e se deve regenerar
     if (course.cover_image_url && !regenerate) {
@@ -520,7 +542,8 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error("[GENERATION] Erro inesperado:", error);
+    console.error("[GENERATION] Erro inesperado na função principal:", error.message);
+    console.error("[GENERATION] Stack Trace:", error.stack);
     return new Response(
       JSON.stringify({ 
         error: "Erro interno do servidor",
