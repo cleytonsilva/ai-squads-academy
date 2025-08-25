@@ -9,6 +9,15 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
+      '/courses': {
+        target: `${process.env.VITE_SUPABASE_URL}/functions/v1/get-courses`,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/courses/, ''),
+        headers: {
+          'Authorization': `Bearer ${process.env.VITE_SUPABASE_ANON_KEY || ''}`,
+          'apikey': process.env.VITE_SUPABASE_ANON_KEY || ''
+        }
+      },
       '/api/courses/generate': {
         target: `${process.env.VITE_SUPABASE_URL}/functions/v1/ai-generate-course`,
         changeOrigin: true,

@@ -11,13 +11,19 @@ interface User {
   role?: string;
 }
 
+interface UserMetadata {
+  username?: string;
+  full_name?: string;
+  display_name?: string;
+}
+
 interface AuthState {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: UserMetadata) => Promise<void>;
 }
 
 export function useAuth(): AuthState {
@@ -65,14 +71,23 @@ export function useAuth(): AuthState {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, metadata?: UserMetadata) => {
     const redirectUrl = `${window.location.origin}/`;
+    
+    // Preparar dados do usuário
+    const userData = {
+      display_name: metadata?.display_name || metadata?.full_name || email.split('@')[0],
+      username: metadata?.username,
+      full_name: metadata?.full_name,
+      ...metadata
+    };
+    
     const { error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: { 
         emailRedirectTo: redirectUrl, 
-        data: { display_name: email.split('@')[0] } 
+        data: userData
       },
     });
     if (error) throw error;

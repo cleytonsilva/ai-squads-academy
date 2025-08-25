@@ -12,6 +12,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QuizRunner from "@/components/app/QuizRunner";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
+import { useTheme } from "@/contexts/theme-context";
 
 interface Course {
   id: string;
@@ -46,6 +47,8 @@ export default function CourseView() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [openQuiz, setOpenQuiz] = useState<QuizRow | null>(null);
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
   const { data, isLoading, error } = useQuery({
     queryKey: ["course-view", id],
     enabled: !!id,
@@ -356,7 +359,7 @@ export default function CourseView() {
     setSelectedIndex((i) => Math.min((displayModules?.length || 1) - 1, i + 1));
   };
   return (
-    <main className="container mx-auto py-8">
+    <main className={`container mx-auto py-8 transition-colors duration-300 ${themeColors.background}`}>
       <Helmet>
         <title>{data?.course?.title ? `${data.course.title} | Esquads` : "Carregando curso | Esquads"}</title>
         <meta name="description" content={data?.course?.description || "Visualização do curso para estudantes."} />
@@ -365,27 +368,27 @@ export default function CourseView() {
 
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-1"><Skeleton className="h-96" /></Card>
-          <Card className="lg:col-span-2"><Skeleton className="h-96" /></Card>
+          <Card className={`lg:col-span-1 transition-colors duration-300 ${themeColors.card} ${themeColors.border}`}><Skeleton className="h-96" /></Card>
+          <Card className={`lg:col-span-2 transition-colors duration-300 ${themeColors.card} ${themeColors.border}`}><Skeleton className="h-96" /></Card>
         </div>
       ) : error ? (
-        <Card className="p-8 text-center">
+        <Card className={`p-8 text-center transition-colors duration-300 ${themeColors.card} ${themeColors.border}`}>
           <CardHeader>
-            <CardTitle>Erro ao carregar</CardTitle>
-            <CardDescription>Tente novamente mais tarde.</CardDescription>
+            <CardTitle className={themeColors.foreground}>Erro ao carregar</CardTitle>
+            <CardDescription className={themeColors.mutedForeground}>Tente novamente mais tarde.</CardDescription>
           </CardHeader>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-1">
+          <Card className={`lg:col-span-1 transition-colors duration-300 ${themeColors.card} ${themeColors.border}`}>
             <CardHeader>
-              <CardTitle>{data?.course?.title || "Curso"}</CardTitle>
-              <CardDescription className="line-clamp-3">{data?.course?.description}</CardDescription>
+              <CardTitle className={`transition-colors duration-300 ${themeColors.foreground}`}>{data?.course?.title || "Curso"}</CardTitle>
+              <CardDescription className={`line-clamp-3 transition-colors duration-300 ${themeColors.mutedForeground}`}>{data?.course?.description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link to="/courses" className="text-sm underline">Voltar para cursos</Link>
-              <Separator />
-              <h2 className="font-medium">Módulos</h2>
+              <Link to="/courses" className={`text-sm underline transition-colors duration-300 ${themeColors.primary} ${themeColors.primaryHover}`}>Voltar para cursos</Link>
+              <Separator className={`transition-colors duration-300 ${themeColors.border}`} />
+              <h2 className={`font-medium transition-colors duration-300 ${themeColors.foreground}`}>Módulos</h2>
               <div className="space-y-2 max-h-[55vh] overflow-auto pr-1">
                 {displayModules?.map((m, idx) => (
                   <button
@@ -397,7 +400,7 @@ export default function CourseView() {
                       }
                       setSelectedIndex(idx);
                     }}
-                    className={`w-full text-left rounded-md border px-3 py-2 text-sm transition ${idx === selectedIndex ? "bg-accent" : "hover:bg-accent/50"}`}
+                    className={`w-full text-left rounded-md border px-3 py-2 text-sm transition-all duration-300 ${themeColors.border} ${idx === selectedIndex ? `${themeColors.accent} ${themeColors.accentForeground}` : `${themeColors.cardForeground} hover:${themeColors.muted}`}`}
                     aria-current={idx === selectedIndex}
                     disabled={(m as any).module_type === "final_exam" && !unlockedFinalExam}
                   >
@@ -405,43 +408,43 @@ export default function CourseView() {
                       <span className="truncate">{idx + 1}. {m.title}</span>
                       <span className="ml-2">
                         {(m as any).module_type === "final_exam" ? (
-                          unlockedFinalExam ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Lock className="h-4 w-4 text-muted-foreground" />
+                          unlockedFinalExam ? <CheckCircle2 className={`h-4 w-4 transition-colors duration-300 ${themeColors.primary}`} /> : <Lock className={`h-4 w-4 transition-colors duration-300 ${themeColors.mutedForeground}`} />
                         ) : (
-                          completedIds.has(m.id) ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Circle className="h-4 w-4 text-muted-foreground" />
+                          completedIds.has(m.id) ? <CheckCircle2 className={`h-4 w-4 transition-colors duration-300 ${themeColors.primary}`} /> : <Circle className={`h-4 w-4 transition-colors duration-300 ${themeColors.mutedForeground}`} />
                         )}
                       </span>
                     </div>
                   </button>
                 ))}
                 {(!displayModules || displayModules.length === 0) && (
-                  <p className="text-sm text-muted-foreground">Nenhum módulo disponível.</p>
+                  <p className={`text-sm transition-colors duration-300 ${themeColors.mutedForeground}`}>Nenhum módulo disponível.</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="lg:col-span-2">
+          <Card className={`lg:col-span-2 transition-colors duration-300 ${themeColors.card} ${themeColors.border}`}>
             <CardHeader>
-              <CardTitle>{current ? current.title : "Selecione um módulo"}</CardTitle>
-              <CardDescription>Visualização do aluno</CardDescription>
+              <CardTitle className={`transition-colors duration-300 ${themeColors.foreground}`}>{current ? current.title : "Selecione um módulo"}</CardTitle>
+              <CardDescription className={`transition-colors duration-300 ${themeColors.mutedForeground}`}>Visualização do aluno</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {current ? (
                 <div className="space-y-4">
-                  <article className="rounded-md border p-4">
-                    <div dangerouslySetInnerHTML={{ __html: getHtml(current.content_jsonb) }} />
+                  <article className={`rounded-md border p-4 transition-colors duration-300 ${themeColors.border} ${themeColors.card}`}>
+                    <div className={`transition-colors duration-300 ${themeColors.foreground}`} dangerouslySetInnerHTML={{ __html: getHtml(current.content_jsonb) }} />
                   </article>
 
                   {!isFinalCurrent && current?.order_index !== 10 && moduleQuizzes.length > 0 && (
-                    <section className="rounded-md border p-4">
-                      <h3 className="font-medium">Quiz do módulo</h3>
+                    <section className={`rounded-md border p-4 transition-colors duration-300 ${themeColors.border} ${themeColors.card}`}>
+                      <h3 className={`font-medium transition-colors duration-300 ${themeColors.foreground}`}>Quiz do módulo</h3>
                       <ul className="mt-2 space-y-2">
                         {moduleQuizzes.map((q) => (
-                          <li key={q.id} className="flex items-center justify-between rounded-md border p-3">
+                          <li key={q.id} className={`flex items-center justify-between rounded-md border p-3 transition-colors duration-300 ${themeColors.border} ${themeColors.muted}`}>
                             <div>
-                              <p className="font-medium">{q.title}</p>
+                              <p className={`font-medium transition-colors duration-300 ${themeColors.foreground}`}>{q.title}</p>
                               {q.description && (
-                                <p className="text-sm text-muted-foreground">{q.description}</p>
+                                <p className={`text-sm transition-colors duration-300 ${themeColors.mutedForeground}`}>{q.description}</p>
                               )}
                             </div>
                             <Button variant="outline" onClick={() => setOpenQuiz(q)}>
@@ -454,17 +457,17 @@ export default function CourseView() {
                   )}
 
                   {isFinalCurrent && moduleQuizzes.length > 0 && (
-                    <section className="rounded-md border p-4">
-                      <h3 className="font-medium">Prova final</h3>
+                    <section className={`rounded-md border p-4 transition-colors duration-300 ${themeColors.border} ${themeColors.card}`}>
+                      <h3 className={`font-medium transition-colors duration-300 ${themeColors.foreground}`}>Prova final</h3>
                       {!unlockedFinalExam && (
-                        <p className="text-sm text-muted-foreground mt-1">Finalize todos os módulos para liberar a prova final.</p>
+                        <p className={`text-sm mt-1 transition-colors duration-300 ${themeColors.mutedForeground}`}>Finalize todos os módulos para liberar a prova final.</p>
                       )}
                       <div className="mt-2">
-                        <div className="flex items-center justify-between rounded-md border p-3">
+                        <div className={`flex items-center justify-between rounded-md border p-3 transition-colors duration-300 ${themeColors.border} ${themeColors.muted}`}>
                           <div>
-                            <p className="font-medium">{moduleQuizzes[0]?.title}</p>
+                            <p className={`font-medium transition-colors duration-300 ${themeColors.foreground}`}>{moduleQuizzes[0]?.title}</p>
                             {moduleQuizzes[0]?.description && (
-                              <p className="text-sm text-muted-foreground">{moduleQuizzes[0]?.description}</p>
+                              <p className={`text-sm transition-colors duration-300 ${themeColors.mutedForeground}`}>{moduleQuizzes[0]?.description}</p>
                             )}
                           </div>
                           <Button variant="outline" onClick={() => setOpenQuiz(moduleQuizzes[0]!)} disabled={!unlockedFinalExam}>
@@ -476,17 +479,17 @@ export default function CourseView() {
                   )}
 
                     {!finalExamModule && selectedIndex === (displayModules?.length || 0) - 1 && finalExamQuiz && (
-                      <section className="rounded-md border p-4">
-                        <h3 className="font-medium">Prova final do curso</h3>
+                      <section className={`rounded-md border p-4 transition-colors duration-300 ${themeColors.border} ${themeColors.card}`}>
+                        <h3 className={`font-medium transition-colors duration-300 ${themeColors.foreground}`}>Prova final do curso</h3>
                         {!unlockedFinalExam && (
-                          <p className="text-sm text-muted-foreground mt-1">Conclua todos os módulos para liberar.</p>
+                          <p className={`text-sm mt-1 transition-colors duration-300 ${themeColors.mutedForeground}`}>Conclua todos os módulos para liberar.</p>
                         )}
                         <div className="mt-2">
-                          <div className="flex items-center justify-between rounded-md border p-3">
+                          <div className={`flex items-center justify-between rounded-md border p-3 transition-colors duration-300 ${themeColors.border} ${themeColors.muted}`}>
                             <div>
-                              <p className="font-medium">{finalExamQuiz.title}</p>
+                              <p className={`font-medium transition-colors duration-300 ${themeColors.foreground}`}>{finalExamQuiz.title}</p>
                               {finalExamQuiz.description && (
-                                <p className="text-sm text-muted-foreground">{finalExamQuiz.description}</p>
+                                <p className={`text-sm transition-colors duration-300 ${themeColors.mutedForeground}`}>{finalExamQuiz.description}</p>
                               )}
                             </div>
                             <Button onClick={() => setOpenQuiz(finalExamQuiz)} disabled={!unlockedFinalExam}>
@@ -503,16 +506,16 @@ export default function CourseView() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Escolha um módulo para começar.</p>
+                <p className={`text-sm transition-colors duration-300 ${themeColors.mutedForeground}`}>Escolha um módulo para começar.</p>
               )}
             </CardContent>
           </Card>
         </div>
       )}
       <Dialog open={!!openQuiz} onOpenChange={(o) => !o && setOpenQuiz(null)}>
-        <DialogContent className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`w-[95vw] sm:w-[90vw] md:w-[80vw] lg:max-w-3xl max-h-[90vh] overflow-y-auto transition-colors duration-300 ${themeColors.card} ${themeColors.border}`}>
           <DialogHeader>
-            <DialogTitle>{openQuiz?.title || "Quiz"}</DialogTitle>
+            <DialogTitle className={`transition-colors duration-300 ${themeColors.foreground}`}>{openQuiz?.title || "Quiz"}</DialogTitle>
           </DialogHeader>
           {openQuiz && <QuizRunner quiz={openQuiz} onClose={() => setOpenQuiz(null)} courseId={id!} courseDifficulty={data?.course?.difficulty_level || null} isFinalExam={isFinalExamForOpen} />}
         </DialogContent>

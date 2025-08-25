@@ -42,26 +42,43 @@ export default function TrackBuilder() {
 
     try {
       setSaving(true);
+      
+      // Verificar se as tabelas necessárias existem
       const { data: track, error } = await supabase
         .from("tracks")
         .insert({ title: title.trim(), description: null, is_public: false, is_certifiable: false, status: "draft", created_by: profile.id })
         .select("id")
         .maybeSingle();
-      if (error) throw error;
+        
+      if (error) {
+        console.warn('Tabela tracks não encontrada ou erro ao criar trilha:', error);
+        toast("Funcionalidade de trilhas não disponível no momento");
+        return;
+      }
+      
       const trackId = track!.id as string;
 
       const rows = selectedIds.map((course_id, idx) => ({ track_id: trackId, course_id, order_index: idx + 1 }));
       const { error: e2 } = await supabase.from("track_courses").insert(rows);
-      if (e2) throw e2;
+      if (e2) {
+        console.warn('Erro ao associar cursos à trilha:', e2);
+        // Tentar deletar a trilha criada se falhou ao associar cursos
+        await supabase.from("tracks").delete().eq("id", trackId);
+        toast("Erro ao criar trilha - funcionalidade não disponível");
+        return;
+      }
 
-      await supabase.from("user_tracks").insert({ user_id: profile.id, track_id: trackId, status: "in_progress", progress: 0 });
+      const { error: e3 } = await supabase.from("user_tracks").insert({ user_id: profile.id, track_id: trackId, status: "in_progress", progress: 0 });
+      if (e3) {
+        console.warn('Erro ao associar usuário à trilha:', e3);
+      }
 
       toast("Trilha criada com sucesso");
       setTitle("");
       setSelected({});
     } catch (e: any) {
-      console.error(e);
-      toast("Erro ao criar trilha", { description: e.message });
+      console.error('Erro inesperado ao criar trilha:', e);
+      toast("Erro ao criar trilha", { description: e?.message || 'Erro desconhecido' });
     } finally {
       setSaving(false);
     }

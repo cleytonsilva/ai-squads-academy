@@ -2,10 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import AppLayout from "@/components/AppLayout";
 import RequireAuth, { RequireRole } from "@/components/auth/RequireAuth";
+import { ThemeProvider } from "@/contexts/theme-context";
 
 // Lazy loading para páginas principais
 const Index = lazy(() => import("./pages/Index"));
@@ -24,6 +25,13 @@ const Challenges = lazy(() => import("./pages/challenges"));
 const Ranking = lazy(() => import("./pages/ranking"));
 const Badges = lazy(() => import("./pages/badges"));
 
+// Lazy loading para páginas do dashboard do aluno
+const Cursos = lazy(() => import("./pages/Cursos"));
+const Missoes = lazy(() => import("./pages/Missoes"));
+const Conquistas = lazy(() => import("./pages/Conquistas"));
+const Simulados = lazy(() => import("./pages/Simulados"));
+const Perfil = lazy(() => import("./pages/Perfil"));
+
 // Lazy loading para páginas admin
 const NewAdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
@@ -38,6 +46,7 @@ const AIGenerator = lazy(() => import("./pages/admin/AIGenerator"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const CertificateManagement = lazy(() => import("./pages/admin/CertificateManagement"));
 const RankingManagement = lazy(() => import("./pages/admin/RankingManagement"));
+const AdminMissions = lazy(() => import("./pages/admin/AdminMissions"));
 const queryClient = new QueryClient();
 
 // Componente de loading para Suspense
@@ -49,10 +58,11 @@ const LoadingFallback = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route element={<AppLayout />}>
@@ -62,6 +72,12 @@ const App = () => (
 
               <Route element={<RequireAuth />}>
                 <Route path="/app" element={<AppDashboard />} />
+                <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+                <Route path="/app/cursos" element={<Cursos />} />
+                <Route path="/app/missoes" element={<Missoes />} />
+                <Route path="/app/conquistas" element={<Conquistas />} />
+                <Route path="/app/simulados" element={<Simulados />} />
+                <Route path="/app/perfil" element={<Perfil />} />
                 <Route path="/courses" element={<Courses />} />
                 <Route path="/courses/:id" element={<CourseView />} />
                 <Route path="/achievements" element={<Achievements />} />
@@ -86,14 +102,16 @@ const App = () => (
                 <Route path="/admin/achievements" element={<AchievementManagement />} />
                 <Route path="/admin/badges" element={<BadgeManagement />} />
                 <Route path="/admin/challenges" element={<AdminChallengeManagement />} />
+                <Route path="/admin/missions" element={<AdminMissions />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

@@ -132,4 +132,29 @@ All colors MUST be HSL.
   svg[data-lucide] {
     @apply transition-transform duration-200 ease-in-out transform-gpu;
   }
+
+  /* Transições suaves para mudanças de tema */
+  .theme-transition {
+    @apply transition-colors duration-300 ease-in-out;
+  }
+
+  /* Transições globais para elementos de tema */
+  * {
+    transition: background-color 0.3s ease-in-out, 
+                border-color 0.3s ease-in-out, 
+                color 0.3s ease-in-out;
+  }
+
+  /* Melhorar contraste para acessibilidade */
+  .high-contrast {
+    @apply contrast-125;
+  }
+
+  /* Suporte para prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
 }

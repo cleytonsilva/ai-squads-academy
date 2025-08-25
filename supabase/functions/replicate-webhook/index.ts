@@ -2,10 +2,13 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { downloadAndUploadImage, isValidImageUrl } from "../shared/image-storage-utils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, replicate-signature",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, replicate-signature, x-requested-with",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 // Interfaces para tipagem
@@ -70,7 +73,7 @@ async function verifyWebhookSignature(
 }
 
 /**
- * Processamento do webhook com retry automático
+ * Processamento do webhook com retry automático e logging melhorado
  * @param payload - Dados do webhook
  * @param supabase - Cliente Supabase
  * @param maxRetries - Número máximo de tentativas
@@ -78,26 +81,64 @@ async function verifyWebhookSignature(
 async function processWebhookWithRetry(
   payload: WebhookPayload,
   supabase: any,
-  maxRetries = 3
+  maxRetries = 5
 ): Promise<void> {
   let attempt = 0;
+  let lastError: any = null;
   
   while (attempt < maxRetries) {
     try {
+      console.log(`[WEBHOOK] Tentativa ${attempt + 1}/${maxRetries} para predição ${payload.id}`);
       await processWebhook(payload, supabase);
+      
+      // Log de sucesso
+      console.log(`[WEBHOOK] Processamento bem-sucedido na tentativa ${attempt + 1}`);
       return; // Sucesso
-    } catch (error) {
+    } catch (error: any) {
       attempt++;
-      console.error(`[WEBHOOK] Tentativa ${attempt} falhou:`, error);
+      lastError = error;
+      console.error(`[WEBHOOK] Tentativa ${attempt} falhou para ${payload.id}:`, {
+        error: error.message,
+        stack: error.stack,
+        payload: {
+          id: payload.id,
+          status: payload.status,
+          hasOutput: !!payload.output
+        }
+      });
       
       if (attempt >= maxRetries) {
-        throw error;
+        // Log final de erro
+        console.error(`[WEBHOOK] Todas as ${maxRetries} tentativas falharam para ${payload.id}`);
+        
+        // Registrar falha crítica
+        try {
+          await supabase
+            .from('generation_events')
+            .insert({
+              event_type: 'webhook_failed',
+              event_data: {
+                prediction_id: payload.id,
+                error: error.message,
+                attempts: maxRetries,
+                timestamp: new Date().toISOString()
+              },
+              created_at: new Date().toISOString()
+            });
+        } catch (logError) {
+          console.error('[WEBHOOK] Erro ao registrar falha:', logError);
+        }
+        
+        throw lastError;
       }
       
-      // Backoff exponencial
-      await new Promise(resolve => 
-        setTimeout(resolve, Math.pow(2, attempt) * 1000)
-      );
+      // Backoff exponencial com jitter
+      const baseDelay = Math.pow(2, attempt) * 1000;
+      const jitter = Math.random() * 1000;
+      const delay = baseDelay + jitter;
+      
+      console.log(`[WEBHOOK] Aguardando ${delay}ms antes da próxima tentativa...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 }
@@ -180,6 +221,51 @@ async function processWebhook(payload: WebhookPayload, supabase: any): Promise<v
 }
 
 /**
+ * Invalida cache e notifica atualização
+ * @param supabase - Cliente Supabase
+ * @param courseId - ID do curso
+ * @param imageUrl - Nova URL da imagem
+ */
+async function invalidateCacheAndNotify(
+  supabase: any,
+  courseId: string,
+  imageUrl: string
+): Promise<void> {
+  try {
+    // Registrar evento de cache invalidation
+    await supabase
+      .from('generation_events')
+      .insert({
+        event_type: 'cache_invalidated',
+        event_data: {
+          course_id: courseId,
+          new_image_url: imageUrl,
+          timestamp: new Date().toISOString()
+        },
+        created_at: new Date().toISOString()
+      });
+
+    // Notificar frontend via realtime
+    await supabase
+      .channel('course_updates')
+      .send({
+        type: 'broadcast',
+        event: 'cover_updated',
+        payload: {
+          course_id: courseId,
+          cover_image_url: imageUrl,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    console.log(`[WEBHOOK] Cache invalidado e frontend notificado para curso ${courseId}`);
+  } catch (error) {
+    console.error('[WEBHOOK] Erro ao invalidar cache:', error);
+    // Não falhar o webhook por causa de notificação
+  }
+}
+
+/**
  * Processa resultado bem-sucedido da geração
  * @param prediction - Dados da predição
  * @param imageUrl - URL da imagem gerada
@@ -193,21 +279,53 @@ async function processSuccessfulGeneration(
   const { prediction_type, course_id, module_id } = prediction;
   
   try {
+    // Validar se a URL da imagem é válida
+    if (!isValidImageUrl(imageUrl)) {
+      throw new Error(`URL de imagem inválida: ${imageUrl}`);
+    }
+
+    console.log(`[WEBHOOK] Processando imagem: ${imageUrl}`);
+    
+    // Download e upload da imagem para Storage local
+    const uploadResult = await downloadAndUploadImage(
+      supabase,
+      imageUrl,
+      {
+        courseId: course_id,
+        moduleId: module_id,
+        predictionId: prediction.prediction_id
+      }
+    );
+
+    if (!uploadResult.success) {
+      throw new Error(`Falha no upload da imagem: ${uploadResult.error}`);
+    }
+
+    const localImageUrl = uploadResult.publicUrl!;
+    console.log(`[WEBHOOK] Imagem salva localmente: ${localImageUrl}`);
+    
     if (prediction_type === 'course_cover' && course_id) {
-      // Atualizar capa do curso
-      await supabase
+      // Atualizar capa do curso com URL local
+      const { error: updateError } = await supabase
         .from('courses')
         .update({
-          cover_image_url: imageUrl,
-          thumbnail_url: imageUrl, // Compatibilidade
+          cover_image_url: localImageUrl,
+          thumbnail_url: localImageUrl, // Compatibilidade
           updated_at: new Date().toISOString()
         })
         .eq('id', course_id);
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar curso: ${updateError.message}`);
+      }
         
-      console.log(`[WEBHOOK] Capa do curso ${course_id} atualizada`);
+      console.log(`[WEBHOOK] Capa do curso ${course_id} atualizada com URL local`);
+      
+      // Invalidar cache e notificar frontend
+      await invalidateCacheAndNotify(supabase, course_id, localImageUrl);
       
     } else if (prediction_type === 'module_image' && module_id) {
-      // Atualizar imagem do módulo
+      // Atualizar imagem do módulo com URL local
       const { data: module } = await supabase
         .from('modules')
         .select('content_jsonb, title')
@@ -215,7 +333,7 @@ async function processSuccessfulGeneration(
         .single();
         
       if (module) {
-        const imageHtml = createModuleImageHtml(imageUrl, module.title);
+        const imageHtml = createModuleImageHtml(localImageUrl, module.title);
         const updatedContent = prependImageToContent(module.content_jsonb, imageHtml);
         
         await supabase
@@ -226,7 +344,7 @@ async function processSuccessfulGeneration(
           })
           .eq('id', module_id);
           
-        console.log(`[WEBHOOK] Imagem do módulo ${module_id} atualizada`);
+        console.log(`[WEBHOOK] Imagem do módulo ${module_id} atualizada com URL local`);
       }
     }
     

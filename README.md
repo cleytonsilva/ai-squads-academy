@@ -28,6 +28,116 @@ O AI Squads Academy é uma plataforma moderna de ensino que utiliza inteligênci
 - Sistema de badges e conquistas
 - Progresso do estudante
 
+### 🎮 Sistema de Gamificação
+
+O AI Squads Academy incorpora um sistema de gamificação robusto e envolvente, projetado para aumentar o engajamento dos estudantes e tornar o aprendizado mais motivador e divertido.
+
+#### 🏆 Componentes Principais
+
+**Badges (Distintivos)**
+- **Conquistas Automáticas**: Badges desbloqueados automaticamente ao atingir marcos específicos
+- **Categorias Diversas**: Badges de conclusão, performance, tempo de estudo, streaks e conquistas especiais
+- **Níveis de Raridade**: Bronze, Prata, Ouro e Platina para diferentes níveis de dificuldade
+- **Exibição Visual**: Interface atrativa com ícones personalizados e animações
+
+**Missões e Desafios**
+- **Missões Diárias**: Tarefas específicas que renovam a cada dia
+- **Desafios Semanais**: Objetivos de longo prazo com recompensas maiores
+- **Missões Personalizadas**: Criadas por instrutores para cursos específicos
+- **Tipos de Desafio**: Conclusão de módulos, pontuação em quizzes, tempo de estudo, sequências de estudo
+
+**Sistema de Quizzes Interativos**
+- **Avaliações Gamificadas**: Quizzes com pontuação, tempo limite e feedback imediato
+- **Múltiplas Tentativas**: Sistema que permite retentar com penalidades progressivas
+- **Ranking de Performance**: Classificação baseada em pontuação e tempo de resposta
+- **Análise de Progresso**: Relatórios detalhados de performance por tópico
+
+**Pontuação e XP (Experiência)**
+- **Sistema de Pontos**: Ganhe pontos por completar lições, quizzes e atividades
+- **Multiplicadores**: Bônus por sequências de estudo e performance excepcional
+- **Níveis de Usuário**: Progressão através de níveis baseados em XP acumulado
+- **Recompensas por Nível**: Desbloqueio de recursos e privilégios especiais
+
+#### 🎯 Mecânicas de Progressão
+
+**Sistema de Streaks (Sequências)**
+- **Streak Diário**: Mantenha uma sequência de dias consecutivos estudando
+- **Streak de Conclusão**: Complete módulos consecutivos sem falhar
+- **Multiplicadores de Streak**: Bônus crescentes para sequências longas
+- **Recuperação de Streak**: Sistema de "freeze" para manter streaks em situações especiais
+
+**Desbloqueio Progressivo**
+- **Conteúdo Sequencial**: Novos módulos desbloqueados conforme progresso
+- **Pré-requisitos Dinâmicos**: Sistema flexível de dependências entre conteúdos
+- **Caminhos Alternativos**: Múltiplas rotas para atingir objetivos
+- **Conteúdo Bônus**: Material extra desbloqueado por alta performance
+
+**Recompensas e Incentivos**
+- **Certificados Digitais**: Certificações automáticas por conclusão de cursos
+- **Títulos Especiais**: Reconhecimentos únicos por conquistas excepcionais
+- **Acesso Antecipado**: Preview de novos conteúdos para top performers
+- **Recursos Premium**: Desbloqueio de funcionalidades avançadas
+
+#### 🏅 Sistema de Ranking e Competição
+
+**Leaderboards (Placares)**
+- **Ranking Global**: Classificação geral de todos os usuários da plataforma
+- **Ranking por Curso**: Competição específica dentro de cada curso
+- **Ranking Semanal/Mensal**: Competições temporárias com reset periódico
+- **Ranking por Categoria**: Classificações especializadas (velocidade, precisão, consistência)
+
+**Competições e Eventos**
+- **Torneios de Quiz**: Eventos especiais com premiações
+- **Desafios Comunitários**: Objetivos coletivos que toda a comunidade trabalha junto
+- **Maratonas de Estudo**: Eventos de tempo limitado com recompensas especiais
+- **Competições entre Turmas**: Rivalidade saudável entre diferentes grupos
+
+#### 📈 Benefícios Educacionais
+
+**Aumento do Engajamento**
+- **Motivação Intrínseca**: Sistema que recompensa o progresso genuíno
+- **Feedback Imediato**: Reconhecimento instantâneo de conquistas
+- **Senso de Progresso**: Visualização clara do avanço no aprendizado
+- **Diversão no Aprendizado**: Elementos lúdicos que tornam o estudo prazeroso
+
+**Melhoria na Retenção**
+- **Hábitos de Estudo**: Incentivo à consistência através de streaks e missões diárias
+- **Revisão Gamificada**: Sistema que torna a revisão de conteúdo mais atrativa
+- **Spaced Repetition**: Algoritmos que otimizam a retenção de longo prazo
+- **Microlearning**: Quebra de conteúdo em pequenas doses digestíveis
+
+**Desenvolvimento de Competências**
+- **Autoavaliação**: Ferramentas para que estudantes monitorem seu próprio progresso
+- **Metacognição**: Desenvolvimento da capacidade de "aprender a aprender"
+- **Resiliência**: Sistema que encoraja persistência através de tentativas múltiplas
+- **Colaboração**: Elementos sociais que promovem aprendizado em grupo
+
+#### ⚙️ Funcionamento Técnico
+
+**Arquitetura do Sistema**
+- **Banco de Dados**: Tabelas especializadas para badges, missões, quizzes e progresso
+- **Edge Functions**: Processamento serverless para cálculos de pontuação e desbloqueios
+- **Real-time Updates**: Atualizações em tempo real usando Supabase Realtime
+- **Caching Inteligente**: Otimização de performance para dados de gamificação
+
+**Algoritmos de Pontuação**
+- **Pontuação Adaptativa**: Algoritmos que ajustam dificuldade baseado na performance
+- **Anti-Gaming**: Proteções contra exploração do sistema de pontos
+- **Balanceamento**: Ajustes contínuos para manter competição justa
+- **Analytics**: Coleta de dados para otimização contínua do sistema
+
+**Integração com IA**
+- **Recomendações Personalizadas**: IA sugere próximos passos baseado no perfil do usuário
+- **Geração de Conteúdo**: Criação automática de quizzes e desafios
+- **Análise Preditiva**: Identificação precoce de estudantes em risco de evasão
+- **Otimização de Experiência**: Ajustes automáticos baseados em padrões de comportamento
+
+**Monitoramento e Analytics**
+- **Métricas de Engajamento**: Tracking detalhado de interações com elementos gamificados
+- **A/B Testing**: Testes contínuos para otimização de mecânicas
+- **Relatórios de Performance**: Dashboards para educadores acompanharem progresso
+- **Alertas Inteligentes**: Notificações automáticas para intervenções pedagógicas
+
 ## 🛠️ Tecnologias Utilizadas
 
 - **Frontend**: React 18, TypeScript, Vite
@@ -163,6 +273,7 @@ ai-squads-academy/
 ## 📚 Documentação
 
 - [Sistema de Capas de Curso](docs/COURSE_COVERS_SYSTEM.md)
+- [Guia Técnico de Edge Functions](docs/EDGE_FUNCTIONS_TECHNICAL_GUIDE.md)
 - [Configuração do Replicate](docs/REPLICATE_API_SETUP.md)
 - [Configuração do Corcel](docs/CORCEL_SETUP.md)
 - [Guia de Implementação](docs/IMPLEMENTATION.md)

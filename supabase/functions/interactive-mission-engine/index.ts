@@ -118,35 +118,41 @@ serve(async (req) => {
        throw new Error(`Invalid JSON response from AI: ${aiResponseText}`);
     }
 
-    // 6. Analyze AI response and update attempt
+    // 6. Analyze AI response and calculate changes
     const { evaluation, reason, response, xp_change } = aiData;
-    let newXp = attempt.xp_earned;
-    let newLives = attempt.lives_remaining;
-    let newStatus = attempt.status;
+    let xpDelta = 0;
+    let livesDelta = 0;
 
     if (evaluation === 'correct' || evaluation === 'partial') {
-      newXp += Math.abs(xp_change || 0);
+      xpDelta = Math.abs(xp_change || 10); // Default 10 XP for correct answers
     } else if (evaluation === 'incorrect') {
-      newXp -= Math.abs(xp_change || 0);
-      newLives -= 1;
+      xpDelta = -Math.abs(xp_change || 5); // Default -5 XP for incorrect answers
+      livesDelta = -1; // Lose 1 life for incorrect answers
     }
 
-    if (newLives <= 0) {
-      newStatus = 'failed';
+    // 7. Use RPC function to atomically update mission attempt state
+    const { data: updateResult, error: updateError } = await adminClient
+      .rpc('update_mission_attempt_state', {
+        p_attempt_id: attemptId,
+        p_xp_change: xpDelta,
+        p_lives_change: livesDelta
+      });
+
+    if (updateError) {
+      console.error('Error updating mission attempt state:', updateError);
+      throw updateError;
     }
 
-    const { error: updateError } = await adminClient
-      .from('mission_attempts')
-      .update({
-        xp_earned: newXp,
-        lives_remaining: newLives,
-        status: newStatus,
-      })
-      .eq('id', attemptId);
+    const updateData = updateResult[0];
+    if (!updateData.success) {
+      throw new Error(`Failed to update mission state: ${updateData.message}`);
+    }
 
-    if (updateError) throw updateError;
+    const newXp = updateData.new_xp;
+    const newLives = updateData.new_lives;
+    const newStatus = newLives <= 0 ? 'failed' : attempt.status;
 
-    // 7. Log the conversation
+    // 8. Log the conversation
     const { error: logError } = await adminClient
       .from('mission_chat_logs')
       .insert([

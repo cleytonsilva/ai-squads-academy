@@ -17,6 +17,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const mode = searchParams.get('mode');
@@ -46,9 +48,38 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação dos campos obrigatórios
+    if (!username.trim()) {
+      toast("Campo obrigatório", { description: "Nome de usuário é obrigatório", className: "destructive" });
+      return;
+    }
+    
+    if (!fullName.trim()) {
+      toast("Campo obrigatório", { description: "Nome completo é obrigatório", className: "destructive" });
+      return;
+    }
+    
+    // Validação do formato do username (apenas letras, números e underscore)
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      toast("Formato inválido", { description: "Nome de usuário deve conter apenas letras, números e underscore", className: "destructive" });
+      return;
+    }
+    
+    // Validação do tamanho do username
+    if (username.length < 3 || username.length > 20) {
+      toast("Tamanho inválido", { description: "Nome de usuário deve ter entre 3 e 20 caracteres", className: "destructive" });
+      return;
+    }
+    
     setLoading(true);
     try {
-      await signUp(email, password);
+      // Passar dados adicionais para o signUp
+      await signUp(email, password, {
+        username: username.trim(),
+        full_name: fullName.trim(),
+        display_name: fullName.trim()
+      });
       toast("Confirme seu email", { description: "Enviamos um link de confirmação." });
     } catch (err: any) {
       toast("Erro no cadastro", { description: err.message, className: "destructive" });
@@ -121,11 +152,39 @@ const Auth = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email-signup">Email</Label>
-                    <Input id="email-signup" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <Label htmlFor="fullname-signup">Nome Completo *</Label>
+                    <Input 
+                      id="fullname-signup" 
+                      type="text" 
+                      autoComplete="name" 
+                      value={fullName} 
+                      onChange={(e) => setFullName(e.target.value)} 
+                      placeholder="Digite seu nome completo"
+                      required 
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password-signup">Senha</Label>
+                    <Label htmlFor="username-signup">Nome de Usuário *</Label>
+                    <Input 
+                      id="username-signup" 
+                      type="text" 
+                      autoComplete="username" 
+                      value={username} 
+                      onChange={(e) => setUsername(e.target.value.toLowerCase())} 
+                      placeholder="Digite seu nome de usuário"
+                      pattern="[a-zA-Z0-9_]+"
+                      minLength={3}
+                      maxLength={20}
+                      required 
+                    />
+                    <p className="text-xs text-muted-foreground">Apenas letras, números e underscore. Entre 3-20 caracteres.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email-signup">Email *</Label>
+                    <Input id="email-signup" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Digite seu email" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password-signup">Senha *</Label>
                     <div className="relative">
                       <Input 
                         id="password-signup" 
@@ -133,6 +192,8 @@ const Auth = () => {
                         autoComplete="new-password" 
                         value={password} 
                         onChange={(e) => setPassword(e.target.value)} 
+                        placeholder="Digite sua senha"
+                        minLength={6}
                         required 
                         className="pr-10"
                       />
@@ -151,6 +212,7 @@ const Auth = () => {
                         )}
                       </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres.</p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cadastrando..." : "Cadastrar"}</Button>
                 </form>

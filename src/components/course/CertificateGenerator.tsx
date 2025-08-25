@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Certificate, Course, UserProfile } from '@/types/course';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Award,
