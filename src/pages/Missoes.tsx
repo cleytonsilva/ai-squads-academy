@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Target, Clock, Trophy, Star, CheckCircle, XCircle } from "lucide-react";
+import { Target, Clock, Trophy, Star, CheckCircle, XCircle, Gamepad2 } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useStudentData } from "@/hooks/useStudentData";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -226,17 +226,17 @@ export default function MissoesPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="px-4 py-6 space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-neutral-700 rounded w-1/4 mb-4"></div>
+          <div className={`h-8 ${themeColors.muted} rounded w-1/4 mb-4`}></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-neutral-700 rounded"></div>
+              <div key={i} className={`h-24 ${themeColors.muted} rounded`}></div>
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-neutral-700 rounded"></div>
+              <div key={i} className={`h-64 ${themeColors.muted} rounded`}></div>
             ))}
           </div>
         </div>
@@ -245,12 +245,12 @@ export default function MissoesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wider">MISSÕES</h1>
-          <p className="text-sm text-neutral-400">Complete desafios e ganhe XP para subir de nível</p>
+          <h1 className={`text-2xl font-bold ${themeColors.foreground} tracking-wider`}>MISSÕES</h1>
+          <p className={`text-sm ${themeColors.mutedForeground}`}>Complete desafios e ganhe XP para subir de nível</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -263,23 +263,23 @@ export default function MissoesPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">EM ANDAMENTO</p>
-                <p className="text-2xl font-bold text-white font-mono">{missoesEmAndamento}</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>EM ANDAMENTO</p>
+                <p className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{missoesEmAndamento}</p>
               </div>
-              <Target className="w-8 h-8 text-white" />
+              <Target className={`w-8 h-8 ${themeColors.foreground}`} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">CONCLUÍDAS</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>CONCLUÍDAS</p>
                 <p className="text-2xl font-bold text-green-500 font-mono">{missoesConcluidas}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500" />
@@ -287,44 +287,99 @@ export default function MissoesPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">XP TOTAL</p>
-                <p className="text-2xl font-bold text-white font-mono">{xpTotal.toLocaleString()}</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>XP TOTAL</p>
+                <p className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{xpTotal.toLocaleString()}</p>
               </div>
-              <Star className="w-8 h-8 text-white" />
+              <Star className={`w-8 h-8 ${themeColors.foreground}`} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">SEQUÊNCIA</p>
-                <p className="text-2xl font-bold text-white font-mono">{sequencia}</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>SEQUÊNCIA</p>
+                <p className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{sequencia}</p>
               </div>
-              <Trophy className="w-8 h-8 text-white" />
+              <Trophy className={`w-8 h-8 ${themeColors.foreground}`} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Missions Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* Seção Em Construção */}
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <Card className={`${themeColors.card} ${themeColors.border} w-full max-w-2xl`}>
+          <CardContent className="p-12 text-center space-y-8">
+            {/* Ícone de Gamepad */}
+            <div className="flex justify-center">
+              <div className="p-6 rounded-full bg-neutral-100 bg-gradient-to-br from-purple-100 to-purple-200 animate-pulse">
+                <Gamepad2 className="w-16 h-16 text-purple-600 animate-construction" />
+              </div>
+            </div>
+
+            {/* Título */}
+            <div className="space-y-3">
+              <h2 className={`text-3xl font-bold ${themeColors.foreground} tracking-wider`}>
+                EM CONSTRUÇÃO
+              </h2>
+              <div className={`w-24 h-1 ${themeColors.primaryBg} mx-auto rounded-full`}></div>
+            </div>
+
+            {/* Texto Atraente */}
+            <div className="space-y-4">
+              <p className={`text-lg ${themeColors.cardForeground} leading-relaxed`}>
+                Estamos desenvolvendo <span className="font-semibold text-purple-600">mini jogos interativos</span> para você!
+              </p>
+              <p className="text-base text-neutral-500 leading-relaxed max-w-lg mx-auto">
+                Em breve, você terá acesso a <strong>mini jogos educativos</strong> que irão desenvolver suas habilidades e ensinar na prática diversos temas de segurança da informação, incluindo <strong>phishing, criptografia, gestão de senhas, engenharia social, análise de vulnerabilidades</strong> e muito mais.
+              </p>
+              <p className={`text-sm ${themeColors.mutedForeground} italic`}>
+                Aprenda brincando e torne-se um especialista em segurança!
+              </p>
+            </div>
+
+            {/* Call-to-Action */}
+            <div className="pt-4">
+              <Button 
+                size="lg"
+                className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white px-8 py-3 text-base font-semibold tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg`}
+                onClick={() => {
+                  // Aqui você pode adicionar lógica para notificar o usuário ou redirecionar
+                  alert('Obrigado pelo interesse! Você será notificado quando os mini jogos estiverem disponíveis.');
+                }}
+              >
+                <span>Quero jogar primeiro!</span>
+                <Gamepad2 className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
+
+            {/* Informação adicional */}
+            <div className={`text-xs ${themeColors.mutedForeground} pt-4 border-t ${themeColors.border}`}>
+              <p>🎮 Gamificação educativa • 🔐 Segurança na prática • 🏆 Aprenda se divertindo</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Missions Grid (comentado temporariamente) */}
+      <div className="hidden grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {missions.map((missao) => (
           <Card
             key={missao.id}
-            className="bg-neutral-900 border-neutral-700 hover:border-neutral-500 transition-colors cursor-pointer"
+            className={`${themeColors.card} ${themeColors.border} hover:${themeColors.border.replace('border-neutral-200', 'border-neutral-300').replace('border-neutral-700', 'border-neutral-500')} transition-colors cursor-pointer`}
             onClick={() => setSelectedMission(missao)}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-sm font-bold text-white tracking-wider">{missao.title}</CardTitle>
-                  <p className="text-xs text-neutral-400 font-mono">{missao.category}</p>
+                  <CardTitle className={`text-sm font-bold ${themeColors.foreground} tracking-wider`}>{missao.title}</CardTitle>
+                  <p className={`text-xs ${themeColors.mutedForeground} font-mono`}>{missao.category}</p>
                 </div>
                 <div className="flex items-center gap-2">{getStatusIcon(missao.status)}</div>
               </div>
@@ -344,16 +399,16 @@ export default function MissoesPage() {
                 <Badge className={getDifficultyColor(missao.difficulty)}>{missao.difficulty.toUpperCase()}</Badge>
               </div>
 
-              <p className="text-sm text-neutral-300">{missao.description}</p>
+              <p className={`text-sm ${themeColors.cardForeground}`}>{missao.description}</p>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-neutral-400">
+                <div className={`flex items-center gap-2 text-xs ${themeColors.mutedForeground}`}>
                   <Trophy className="w-3 h-3" />
                   <span>{missao.xp_reward} XP</span>
                   <Clock className="w-3 h-3 ml-2" />
                   <span>{getTimeLeft(missao.expires_at)}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-neutral-400">
+                <div className={`flex items-center gap-2 text-xs ${themeColors.mutedForeground}`}>
                   <Target className="w-3 h-3" />
                   <span>Categoria: {missao.category}</span>
                 </div>
@@ -362,12 +417,12 @@ export default function MissoesPage() {
               {missao.status !== "disponivel" && missao.status !== "expirada" && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-neutral-400">Progresso</span>
-                    <span className="text-white font-mono">
+                    <span className={`${themeColors.mutedForeground}`}>Progresso</span>
+                    <span className={`${themeColors.foreground} font-mono`}>
                       {missao.progress}/{missao.total_required}
                     </span>
                   </div>
-                  <div className="w-full bg-neutral-800 rounded-full h-2">
+                  <div className={`w-full ${themeColors.muted} rounded-full h-2`}>
                     <div
                       className={`${themeColors.primaryBg} h-2 rounded-full transition-all duration-300`}
                       style={{ width: `${(missao.progress / missao.total_required) * 100}%` }}
@@ -398,16 +453,16 @@ export default function MissoesPage() {
       {/* Mission Detail Modal */}
       {selectedMission && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="bg-neutral-900 border-neutral-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <Card className={`${themeColors.card} ${themeColors.border} w-full max-w-4xl max-h-[90vh] overflow-y-auto`}>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold text-white tracking-wider">{selectedMission.title}</CardTitle>
-                <p className="text-sm text-neutral-400 font-mono">{selectedMission.category}</p>
+                <CardTitle className={`text-xl font-bold ${themeColors.foreground} tracking-wider`}>{selectedMission.title}</CardTitle>
+                <p className={`text-sm ${themeColors.mutedForeground} font-mono`}>{selectedMission.category}</p>
               </div>
               <Button
                 variant="ghost"
                 onClick={() => setSelectedMission(null)}
-                className="text-neutral-400 hover:text-white"
+                className={`${themeColors.mutedForeground} hover:${themeColors.foreground}`}
               >
                 ✕
               </Button>
@@ -416,7 +471,7 @@ export default function MissoesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">STATUS DA MISSÃO</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>STATUS DA MISSÃO</h3>
                     <div className="flex gap-2">
                       <Badge className={getStatusColor(selectedMission.status)}>
                         {selectedMission.status === "em_andamento"
@@ -435,22 +490,22 @@ export default function MissoesPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">DETALHES</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>DETALHES</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Categoria:</span>
-                        <span className="text-white">{selectedMission.category}</span>
+                        <span className={`${themeColors.mutedForeground}`}>Categoria:</span>
+                        <span className={`${themeColors.foreground}`}>{selectedMission.category}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Recompensa:</span>
-                        <span className="text-white font-mono">{selectedMission.xp_reward} XP</span>
+                        <span className={`${themeColors.mutedForeground}`}>Recompensa:</span>
+                        <span className={`${themeColors.foreground} font-mono`}>{selectedMission.xp_reward} XP</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Tempo Restante:</span>
-                        <span className="text-white font-mono">{getTimeLeft(selectedMission.expires_at)}</span>
+                        <span className={`${themeColors.mutedForeground}`}>Tempo Restante:</span>
+                        <span className={`${themeColors.foreground} font-mono`}>{getTimeLeft(selectedMission.expires_at)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Dificuldade:</span>
+                        <span className={`${themeColors.mutedForeground}`}>Dificuldade:</span>
                         <Badge className={getDifficultyColor(selectedMission.difficulty)}>
                           {selectedMission.difficulty}
                         </Badge>
@@ -461,15 +516,15 @@ export default function MissoesPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">PROGRESSO</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>PROGRESSO</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-neutral-400">Concluído</span>
-                        <span className="text-white font-mono">
+                        <span className={`${themeColors.mutedForeground}`}>Concluído</span>
+                        <span className={`${themeColors.foreground} font-mono`}>
                           {selectedMission.progress}/{selectedMission.total_required}
                         </span>
                       </div>
-                      <div className="w-full bg-neutral-800 rounded-full h-3">
+                      <div className={`w-full ${themeColors.muted} rounded-full h-3`}>
                         <div
                           className={`${themeColors.primaryBg} h-3 rounded-full transition-all duration-300`}
                           style={{ width: `${(selectedMission.progress / selectedMission.total_required) * 100}%` }}
@@ -479,13 +534,13 @@ export default function MissoesPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">DESCRIÇÃO</h3>
-                    <p className="text-sm text-neutral-300">{selectedMission.description}</p>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>DESCRIÇÃO</h3>
+                    <p className={`text-sm ${themeColors.cardForeground}`}>{selectedMission.description}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-4 border-t border-neutral-700">
+              <div className={`flex gap-2 pt-4 border-t ${themeColors.border}`}>
                 {selectedMission.status === "disponivel" ? (
                   <Button
                     onClick={() => {
@@ -503,13 +558,13 @@ export default function MissoesPage() {
                     Continuar
                   </Button>
                 ) : (
-                  <Button disabled className="bg-neutral-700 text-neutral-400">
+                  <Button disabled className={`${themeColors.muted} ${themeColors.mutedForeground}`}>
                     {selectedMission.status === "concluida" ? "Missão Concluída" : "Missão Expirada"}
                   </Button>
                 )}
                 <Button
                   variant="outline"
-                  className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent"
+                  className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground} bg-transparent`}
                 >
                   Ver Dicas
                 </Button>

@@ -8,10 +8,13 @@ interface TacticalChartProps {
 }
 
 export function TacticalChart({ title, children, className = "" }: TacticalChartProps) {
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
+  
   return (
-    <Card className={`bg-neutral-900 border-neutral-700 ${className}`}>
+    <Card className={`${themeColors.card} ${themeColors.border} ${className}`}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">
+        <CardTitle className={`text-sm font-medium ${themeColors.mutedForeground} tracking-wider`}>
           {title}
         </CardTitle>
       </CardHeader>
@@ -48,7 +51,7 @@ export function TacticalWeeklyChart({ data }: WeeklyPerformanceChartProps) {
       {/* Chart Grid */}
       <div className="absolute inset-0 grid grid-cols-7 grid-rows-6 opacity-20">
         {Array.from({ length: 42 }).map((_, i) => (
-          <div key={i} className="border border-neutral-700"></div>
+          <div key={i} className={`border ${themeColors.border}`}></div>
         ))}
       </div>
 
@@ -83,7 +86,7 @@ export function TacticalWeeklyChart({ data }: WeeklyPerformanceChartProps) {
       </svg>
 
       {/* Y-axis labels */}
-      <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-neutral-500 -ml-8 font-mono">
+      <div className={`absolute left-0 top-0 h-full flex flex-col justify-between text-xs ${themeColors.mutedForeground} -ml-8 font-mono`}>
         <span>100%</span>
         <span>75%</span>
         <span>50%</span>
@@ -92,7 +95,7 @@ export function TacticalWeeklyChart({ data }: WeeklyPerformanceChartProps) {
       </div>
 
       {/* X-axis labels */}
-      <div className="absolute bottom-0 left-0 w-full flex justify-between text-xs text-neutral-500 -mb-6 font-mono">
+      <div className={`absolute bottom-0 left-0 w-full flex justify-between text-xs ${themeColors.mutedForeground} -mb-6 font-mono`}>
         {chartData.map((item, index) => (
           <span key={index}>{item.day}</span>
         ))}
@@ -117,16 +120,16 @@ export function TacticalCourseProgress({ courses }: TacticalCourseProgressProps)
       {courses.map((curso) => (
         <div
           key={curso.id}
-          className="flex items-center justify-between p-2 bg-neutral-800 rounded hover:bg-neutral-700 transition-colors cursor-pointer"
+          className={`flex items-center justify-between p-2 ${themeColors.muted} rounded ${themeColors.accent.replace('bg-', 'hover:bg-')} transition-colors cursor-pointer`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-white"></div>
+            <div className={`w-2 h-2 rounded-full ${themeColors.foreground.replace('text-', 'bg-')}`}></div>
             <div>
-              <div className="text-xs text-white font-mono">{curso.id}</div>
-              <div className="text-xs text-neutral-500">{curso.name}</div>
+              <div className={`text-xs ${themeColors.foreground} font-mono`}>{curso.id}</div>
+              <div className={`text-xs ${themeColors.mutedForeground}`}>{curso.name}</div>
             </div>
           </div>
-          <div className="text-xs text-white font-mono">{curso.progress}%</div>
+          <div className={`text-xs ${themeColors.foreground} font-mono`}>{curso.progress}%</div>
         </div>
       ))}
     </div>

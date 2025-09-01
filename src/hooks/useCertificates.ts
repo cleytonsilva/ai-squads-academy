@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 // Interfaces para tipagem
 interface Certificate {
@@ -54,6 +54,7 @@ interface UseCertificatesReturn {
  */
 export function useCertificates(): UseCertificatesReturn {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [certificates, setCertificates] = useState<UserCertificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +117,7 @@ export function useCertificates(): UseCertificatesReturn {
     } catch (err) {
       console.error('Erro ao carregar certificados:', err);
       setError('Erro ao carregar certificados');
-      toast.error('Erro ao carregar certificados');
+      toast({ title: "Erro", description: "Erro ao carregar certificados", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -127,7 +128,7 @@ export function useCertificates(): UseCertificatesReturn {
    */
   const generateCertificate = async (userCertificateId: string): Promise<string | null> => {
     if (!user) {
-      toast.error('Usuário não autenticado');
+      toast({ title: "Erro", description: "Usuário não autenticado", variant: "destructive" });
       return null;
     }
 
@@ -165,13 +166,13 @@ export function useCertificates(): UseCertificatesReturn {
       // Atualizar lista de certificados
       await refreshCertificates();
       
-      toast.success('Certificado gerado com sucesso!');
+      toast({ title: "Sucesso", description: "Certificado gerado com sucesso!" });
       return result.certificateUrl;
 
     } catch (err) {
       console.error('Erro ao gerar certificado:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao gerar certificado';
-      toast.error(errorMessage);
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
       return null;
     }
   };
@@ -217,12 +218,12 @@ export function useCertificates(): UseCertificatesReturn {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Certificado baixado com sucesso!');
+      toast({ title: "Sucesso", description: "Certificado baixado com sucesso!" });
 
     } catch (err) {
       console.error('Erro ao baixar certificado:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao baixar certificado';
-      toast.error(errorMessage);
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
     }
   };
 
@@ -253,6 +254,7 @@ export function useCertificates(): UseCertificatesReturn {
  */
 export function useAllCertificates() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [certificates, setCertificates] = useState<UserCertificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -325,7 +327,7 @@ export function useAllCertificates() {
     } catch (err) {
       console.error('Erro ao carregar todos os certificados:', err);
       setError('Erro ao carregar certificados');
-      toast.error('Erro ao carregar certificados');
+      toast({ title: "Erro", description: "Erro ao carregar certificados", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -348,6 +350,7 @@ export function useAllCertificates() {
  * Hook para gerenciar templates de certificados
  */
 export function useCertificateTemplates() {
+  const { toast } = useToast();
   const [templates, setTemplates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -392,7 +395,7 @@ export function useCertificateTemplates() {
     } catch (err) {
       console.error('Erro ao carregar templates:', err);
       setError('Erro ao carregar templates');
-      toast.error('Erro ao carregar templates de certificados');
+      toast({ title: "Erro", description: "Erro ao carregar templates de certificados", variant: "destructive" });
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { useTheme } from "@/contexts/theme-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ interface CourseLite { id: string; title: string; }
 
 export default function TrackBuilder() {
   const { profile } = useCurrentProfile();
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
   const [title, setTitle] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
@@ -85,25 +88,25 @@ export default function TrackBuilder() {
   };
 
   return (
-    <Card className="animate-enter">
+    <Card className={`animate-enter ${themeColors.card} ${themeColors.border} border transition-colors duration-200`}>
       <CardHeader>
-        <CardTitle>Crie sua trilha personalizada</CardTitle>
-        <CardDescription>Selecione cursos publicados e gere sua trilha de estudos.</CardDescription>
+        <CardTitle className={`${themeColors.cardForeground} tracking-wider`}>Crie sua trilha personalizada</CardTitle>
+        <CardDescription className={`${themeColors.mutedForeground}`}>Selecione cursos publicados e gere sua trilha de estudos.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Input placeholder="Título da trilha" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <div className="md:col-span-2 text-sm text-muted-foreground">Dica: combine cursos complementares (ex.: Fundamentos + Cloud + Segurança)</div>
+          <div className={`md:col-span-2 text-sm ${themeColors.mutedForeground} font-mono`}>Dica: combine cursos complementares (ex.: Fundamentos + Cloud + Segurança)</div>
         </div>
         <Separator />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[320px] overflow-auto pr-1">
           {courses?.map((c) => (
-            <label key={c.id} className="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer hover:bg-accent/50">
+            <label key={c.id} className={`flex items-center gap-2 rounded-md ${themeColors.border} border px-3 py-2 cursor-pointer hover:${themeColors.accent} transition-colors duration-200`}>
               <Checkbox checked={!!selected[c.id]} onCheckedChange={() => toggle(c.id)} />
-              <span className="truncate">{c.title}</span>
+              <span className={`truncate ${themeColors.cardForeground} text-sm`}>{c.title}</span>
             </label>
           ))}
-          {!courses?.length && <p className="text-sm text-muted-foreground">Nenhum curso publicado ainda.</p>}
+          {!courses?.length && <p className={`text-sm ${themeColors.mutedForeground} font-mono text-center py-4`}>NENHUM CURSO PUBLICADO AINDA.</p>}
         </div>
         <div className="flex items-center justify-end gap-2">
           <Button variant="outline" onClick={() => { setTitle(""); setSelected({}); }} disabled={saving}>Limpar</Button>

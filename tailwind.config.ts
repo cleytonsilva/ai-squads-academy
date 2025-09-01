@@ -64,7 +64,8 @@ export default {
 				}
 			},
 			fontFamily: {
-				sans: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif']
+				sans: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				orbitron: ['Orbitron', 'monospace']
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)'

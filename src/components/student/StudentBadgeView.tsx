@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Award, 
   Star, 
@@ -60,6 +60,7 @@ interface BadgeChallenge {
  * Estudantes visualizam seus badges conquistados e progresso
  */
 export default function StudentBadgeView() {
+  const { toast } = useToast();
   const [userBadges, setUserBadges] = useState<UserBadge[]>([]);
   const [badgeProgress, setBadgeProgress] = useState<BadgeProgress[]>([]);
   const [availableChallenges, setAvailableChallenges] = useState<BadgeChallenge[]>([]);
@@ -87,7 +88,7 @@ export default function StudentBadgeView() {
       // Verificar usuário autenticado
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
-        toast.error('Usuário não autenticado');
+        toast({ title: "Erro", description: "Usuário não autenticado", variant: "destructive" });
         return;
       }
       
@@ -100,7 +101,7 @@ export default function StudentBadgeView() {
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados do usuário');
+      toast({ title: "Erro", description: "Erro ao carregar dados do usuário", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -210,7 +211,7 @@ export default function StudentBadgeView() {
       // Fallback para copiar para clipboard
       const text = `Conquistei o badge "${badge.badge.name}" na AI Squads Academy! 🏆`;
       navigator.clipboard.writeText(text);
-      toast.success('Texto copiado para a área de transferência!');
+      toast({ title: "Sucesso", description: "Texto copiado para a área de transferência!" });
     }
   };
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Course, CourseModule, UserCourseProgress, UserNote } from '@/types/course';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import {
   BookOpen,
   ChevronRight,
@@ -50,6 +50,7 @@ interface ViewerState {
 }
 
 export default function CourseViewer({ courseId, isAdmin = false, userId, mockCourse }: CourseViewerProps) {
+  const { toast } = useToast();
   const [state, setState] = useState<ViewerState>({
     course: null,
     currentModule: null,
@@ -84,8 +85,12 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
-      // Load course with modules
-      const { data: courseData, error: courseError } = await supabase
+      // Load course with modules - tentar diferentes estruturas de tabela
+      let courseData = null;
+      let courseError = null;
+      
+      // Primeiro, tentar com course_modules
+      const { data: courseData1, error: courseError1 } = await supabase
         .from('courses')
         .select(`
           *,
@@ -96,6 +101,31 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
         `)
         .eq('id', courseId)
         .single();
+      
+      if (courseError1) {
+        console.log('Tentativa 1 falhou, tentando com tabela modules:', courseError1);
+        
+        // Se falhar, tentar com tabela modules
+        const { data: courseData2, error: courseError2 } = await supabase
+          .from('courses')
+          .select(`
+            *,
+            modules(
+              *,
+              quizzes:module_quizzes(*)
+            )
+          `)
+          .eq('id', courseId)
+          .single();
+          
+        courseData = courseData2;
+        courseError = courseError2;
+      } else {
+        courseData = courseData1;
+        courseError = courseError1;
+      }
+      
+      console.log('Dados do curso carregados:', { courseData, courseError });
 
       if (courseError) throw courseError;
 
@@ -140,12 +170,31 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
         error: err.message || 'Erro ao carregar curso',
         loading: false
       }));
-      toast.error('Erro ao carregar curso');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar curso",
+        variant: "destructive",
+      });
     }
   };
 
   const selectModule = (module: CourseModule) => {
-    setState(prev => ({ ...prev, currentModule: module }));
+    console.log('Selecionando módulo:', module.title, module);
+    
+    // Adicionar loading state temporário
+    setState(prev => ({ 
+      ...prev, 
+      currentModule: null // Limpar módulo atual temporariamente
+    }));
+    
+    // Pequeno delay para feedback visual
+    setTimeout(() => {
+      setState(prev => ({ 
+        ...prev, 
+        currentModule: module 
+      }));
+      console.log('Módulo selecionado com sucesso:', module.title);
+    }, 100);
   };
 
   const toggleModuleCompletion = async (moduleId: string) => {
@@ -165,11 +214,18 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
 
       if (error) throw error;
 
-      toast.success('Progresso atualizado!');
+      toast({
+        title: "Sucesso!",
+        description: "Progresso atualizado!",
+      });
       loadCourseData(); // Reload to get updated progress
     } catch (err: any) {
       console.error('Erro ao atualizar progresso:', err);
-      toast.error('Erro ao atualizar progresso');
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar progresso",
+        variant: "destructive",
+      });
     }
   };
 
@@ -190,11 +246,18 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
       if (error) throw error;
 
       setNewNote('');
-      toast.success('Anotação salva!');
+      toast({
+        title: "Sucesso!",
+        description: "Anotação salva!",
+      });
       loadCourseData(); // Reload to get updated notes
     } catch (err: any) {
       console.error('Erro ao salvar anotação:', err);
-      toast.error('Erro ao salvar anotação');
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar anotação",
+        variant: "destructive",
+      });
     }
   };
 
@@ -438,7 +501,7 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
                       <Brain className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Editor WYSIWYG</h3>
                       <p className="text-gray-600 mb-4">
-                        Aqui será implementado o editor TinyMCE para administradores
+                        Editor Tiptap integrado para administradores
                       </p>
                       <Button variant="outline">
                         Editar Conteúdo
@@ -448,21 +511,45 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
                 ) : (
                   // Student View
                   <div className="prose max-w-none">
-                    {state.currentModule.content_jsonb?.content ? (
-                      <div dangerouslySetInnerHTML={{ 
-                        __html: state.currentModule.content_jsonb.content 
-                      }} />
-                    ) : (
-                      <div className="text-center py-12">
-                        <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          Conteúdo em Desenvolvimento
-                        </h3>
-                        <p className="text-gray-600">
-                          O conteúdo deste módulo ainda está sendo preparado.
-                        </p>
-                      </div>
-                    )}
+                    {(() => {
+                      // Debug: Log do conteúdo do módulo
+                      console.log('Renderizando conteúdo do módulo:', {
+                        moduleId: state.currentModule.id,
+                        moduleTitle: state.currentModule.title,
+                        contentJsonb: state.currentModule.content_jsonb,
+                        hasContent: !!state.currentModule.content_jsonb?.content
+                      });
+                      
+                      // Verificar diferentes estruturas de conteúdo
+                      const content = state.currentModule.content_jsonb?.content || 
+                                    state.currentModule.content_jsonb?.html ||
+                                    state.currentModule.content;
+                      
+                      if (content && content.trim()) {
+                        return (
+                          <div 
+                            dangerouslySetInnerHTML={{ __html: content }}
+                            className="module-content"
+                          />
+                        );
+                      } else {
+                        return (
+                          <div className="text-center py-12">
+                            <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                              Conteúdo em Desenvolvimento
+                            </h3>
+                            <p className="text-gray-600">
+                              O conteúdo deste módulo ainda está sendo preparado.
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">
+                              Debug: {JSON.stringify(state.currentModule.content_jsonb, null, 2)}
+                            </p>
+                          </div>
+                        );
+                      }
+                    })()
+                    }
                   </div>
                 )}
               </div>
@@ -493,13 +580,30 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Selecione um Módulo
-                </h3>
-                <p className="text-gray-600">
-                  Escolha um módulo na barra lateral para começar a estudar.
-                </p>
+                {/* Verificar se está carregando um módulo */}
+                {state.course.modules && state.course.modules.length > 0 ? (
+                  // Mostrar loading se há módulos mas nenhum selecionado (durante troca)
+                  <>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Carregando Módulo...
+                    </h3>
+                    <p className="text-gray-600">
+                      Aguarde enquanto o conteúdo é carregado.
+                    </p>
+                  </>
+                ) : (
+                  // Mostrar mensagem padrão se não há módulos
+                  <>
+                    <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Selecione um Módulo
+                    </h3>
+                    <p className="text-gray-600">
+                      Escolha um módulo na barra lateral para começar a estudar.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}

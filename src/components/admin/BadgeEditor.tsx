@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Plus, Save, Eye, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 
 interface Course {
   id: string;
@@ -27,6 +27,11 @@ interface BadgeTemplate {
     text_color: string;
     border_style: string;
     icon: string;
+  };
+  requirements: {
+    completion_percentage: number;
+    min_score?: number;
+    required_modules?: string[];
   };
   is_active: boolean;
 }
@@ -59,6 +64,7 @@ export default function BadgeEditor() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingBadge, setEditingBadge] = useState<BadgeTemplate | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const { toast } = useToast();
 
   // Form state
   const [formData, setFormData] = useState<BadgeTemplate>({
@@ -70,6 +76,11 @@ export default function BadgeEditor() {
       text_color: '#ffffff',
       border_style: 'solid',
       icon: 'trophy'
+    },
+    requirements: {
+      completion_percentage: 100,
+      min_score: undefined,
+      required_modules: []
     },
     is_active: true
   });
@@ -133,7 +144,11 @@ export default function BadgeEditor() {
 
   const handleSave = async () => {
     if (!formData.name.trim() || !selectedCourse) {
-      toast.error('Nome e curso são obrigatórios');
+      toast({
+        title: "Erro",
+        description: "Nome e curso são obrigatórios",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -152,7 +167,10 @@ export default function BadgeEditor() {
           .eq('id', editingBadge.id);
 
         if (error) throw error;
-        toast.success('Template de badge atualizado com sucesso');
+        toast({
+          title: "Sucesso",
+          description: "Template de badge atualizado com sucesso",
+        });
       } else {
         // Create new badge template
         const { error } = await supabase
@@ -160,7 +178,10 @@ export default function BadgeEditor() {
           .insert([dataToSave]);
 
         if (error) throw error;
-        toast.success('Template de badge criado com sucesso');
+        toast({
+          title: "Sucesso",
+          description: "Template de badge criado com sucesso",
+        });
       }
 
       // Reset form and reload templates
@@ -168,7 +189,11 @@ export default function BadgeEditor() {
       loadBadgeTemplates();
     } catch (error) {
       console.error('Erro ao salvar template de badge:', error);
-      toast.error('Não foi possível salvar o template de badge');
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o template de badge",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -188,12 +213,19 @@ export default function BadgeEditor() {
 
       if (error) throw error;
       
-      toast.success('Template de badge excluído com sucesso');
+      toast({
+        title: "Sucesso",
+        description: "Template de badge excluído com sucesso",
+      });
       
       loadBadgeTemplates();
     } catch (error) {
       console.error('Erro ao excluir template de badge:', error);
-      toast.error('Não foi possível excluir o template de badge');
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o template de badge",
+        variant: "destructive",
+      });
     } finally {
       setDeletingId(null);
     }
@@ -215,6 +247,11 @@ export default function BadgeEditor() {
         text_color: '#ffffff',
         border_style: 'solid',
         icon: 'trophy'
+      },
+      requirements: {
+        completion_percentage: 100,
+        min_score: undefined,
+        required_modules: []
       },
       is_active: true
     });
@@ -309,7 +346,7 @@ export default function BadgeEditor() {
                       type="number"
                       min="0"
                       max="100"
-                      value={formData.requirements.completion_percentage}
+                      value={formData.requirements?.completion_percentage || 100}
                       onChange={(e) => setFormData({
                         ...formData,
                         requirements: {
@@ -482,7 +519,7 @@ export default function BadgeEditor() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span>Conclusão: {badge.requirements.completion_percentage}%</span>
+                          <span>Conclusão: {badge.requirements?.completion_percentage || 100}%</span>
                           <Badge variant={badge.is_active ? 'default' : 'secondary'}>
                             {badge.is_active ? 'Ativo' : 'Inativo'}
                           </Badge>

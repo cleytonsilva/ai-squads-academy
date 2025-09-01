@@ -5,6 +5,7 @@ import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import CertificateCard from "./CertificateCard";
 import html2canvas from "html2canvas";
@@ -139,7 +140,12 @@ export default function Achievements() {
               const b = (badges || []).find(bb => bb.id === ub.badge_id);
               return (
                 <Badge key={ub.id} variant="secondary" className="gap-2">
-                  {b?.image_url ? <img src={b.image_url} alt={`Badge ${b.name}`} className="h-4 w-4" /> : null}
+                  {b?.image_url ? (
+                    <Avatar className="h-4 w-4">
+                      <AvatarImage src={b.image_url} alt={`Badge ${b.name}`} />
+                      <AvatarFallback>{b.name?.charAt(0) || "B"}</AvatarFallback>
+                    </Avatar>
+                  ) : null}
                   {b?.name || ub.badge_id}
                 </Badge>
               );

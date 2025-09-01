@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Editor } from '@tinymce/tinymce-react';
+import TiptapAdminEditor from '@/components/ui/tiptap/tiptap-admin-editor';
 import { Module } from '@/types/course';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -44,8 +44,7 @@ interface ModuleFormData {
 }
 
 export default function ModuleEditor({ module, courseId, onSave, onCancel }: ModuleEditorProps) {
-  const editorRef = useRef<any>(null);
-  const [loading, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('content');
   
@@ -58,138 +57,15 @@ export default function ModuleEditor({ module, courseId, onSave, onCancel }: Mod
     order_index: module.order_index || 0
   });
 
-  const [editorConfig] = useState({
-    height: 500,
-    menubar: true,
-    plugins: [
-      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-      'insertdatetime', 'media', 'table', 'help', 'wordcount', 'codesample',
-      'emoticons', 'template', 'paste', 'textcolor', 'colorpicker'
-    ],
-    toolbar: [
-      'undo redo | blocks | bold italic underline strikethrough | fontfamily fontsize',
-      'forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent',
-      'removeformat | link image media table | codesample | fullscreen preview | help'
-    ].join(' | '),
-    content_style: `
-      body { 
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
-        font-size: 16px; 
-        line-height: 1.6;
-        color: #374151;
-        max-width: none;
-      }
-      h1, h2, h3, h4, h5, h6 {
-        color: #111827;
-        margin-top: 1.5em;
-        margin-bottom: 0.5em;
-      }
-      p {
-        margin-bottom: 1em;
-      }
-      code {
-        background-color: #f3f4f6;
-        padding: 2px 4px;
-        border-radius: 4px;
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      }
-      pre {
-        background-color: #1f2937;
-        color: #f9fafb;
-        padding: 1rem;
-        border-radius: 8px;
-        overflow-x: auto;
-      }
-      blockquote {
-        border-left: 4px solid #3b82f6;
-        padding-left: 1rem;
-        margin: 1rem 0;
-        background-color: #eff6ff;
-        padding: 1rem;
-        border-radius: 4px;
-      }
-      img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-        margin: 1rem 0;
-      }
-      table th,
-      table td {
-        border: 1px solid #d1d5db;
-        padding: 8px 12px;
-        text-align: left;
-      }
-      table th {
-        background-color: #f9fafb;
-        font-weight: 600;
-      }
-    `,
-    paste_data_images: true,
-    automatic_uploads: true,
-    file_picker_types: 'image',
-    file_picker_callback: (callback: any, value: any, meta: any) => {
-      if (meta.filetype === 'image') {
-        const input = document.createElement('input');
-        input.setAttribute('type', 'file');
-        input.setAttribute('accept', 'image/*');
-        input.onchange = function() {
-          const file = (this as HTMLInputElement).files?.[0];
-          if (file) {
-            uploadImage(file).then((url) => {
-              callback(url, { alt: file.name });
-            }).catch((error) => {
-              console.error('Erro ao fazer upload da imagem:', error);
-              toast.error('Erro ao fazer upload da imagem');
-            });
-          }
-        };
-        input.click();
-      }
-    },
-    setup: (editor: any) => {
-      editor.on('change', () => {
-        const content = editor.getContent();
-        setFormData(prev => ({ ...prev, content }));
-      });
-    }
-  });
-
-  const uploadImage = async (file: File): Promise<string> => {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `course-content/${courseId}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('course-assets')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('course-assets')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    } catch (error) {
-      console.error('Erro no upload:', error);
-      throw error;
-    }
-  };
+  // Ref para o editor Tiptap
+  const tiptapRef = useRef<any>(null);
 
   const handleSave = async () => {
     try {
       setSaving(true);
 
-      // Get content from editor
-      const content = editorRef.current?.getContent() || formData.content;
+      // Obter conteúdo do editor Tiptap
+      const content = tiptapRef.current?.getHTML() || formData.content;
 
       // Prepare update data
       const updateData = {
@@ -293,8 +169,8 @@ export default function ModuleEditor({ module, courseId, onSave, onCancel }: Mod
                 Cancelar
               </Button>
             )}
-            <Button onClick={handleSave} disabled={loading}>
-              {loading ? (
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Salvando...
@@ -337,12 +213,12 @@ export default function ModuleEditor({ module, courseId, onSave, onCancel }: Mod
                 </Card>
               ) : (
                 <div className="h-full">
-                  <Editor
-                    ref={editorRef}
-                    apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-                    value={formData.content}
-                    init={editorConfig}
-                    onEditorChange={(content) => handleInputChange('content', content)}
+                  <TiptapAdminEditor
+                    ref={tiptapRef}
+                    content={formData.content}
+                    onChange={(content) => handleInputChange('content', content)}
+                    courseId={courseId}
+                    placeholder="Digite o conteúdo do módulo..."
                   />
                 </div>
               )}

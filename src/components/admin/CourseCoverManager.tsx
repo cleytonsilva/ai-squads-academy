@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { Upload, Image as ImageIcon, Link, Palette, Check, X, History, User, Calendar, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -44,6 +44,8 @@ export default function CourseCoverManager({
   courseTitle = 'Curso',
   onCoverUpdated
 }: CourseCoverManagerProps) {
+  const { toast } = useToast();
+  
   // Estados do componente
   const [isOpen, setIsOpen] = useState(false);
   const [covers, setCovers] = useState<CourseCover[]>([]);
@@ -103,7 +105,11 @@ export default function CourseCoverManager({
 
       if (error) {
         console.error('[COVER_MANAGER] Erro ao carregar capas:', error);
-        toast.error('Erro ao carregar capas do curso');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar capas do curso",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -115,7 +121,11 @@ export default function CourseCoverManager({
       
     } catch (error) {
       console.error('[COVER_MANAGER] Erro inesperado:', error);
-      toast.error('Erro inesperado ao carregar capas');
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao carregar capas",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -145,14 +155,22 @@ export default function CourseCoverManager({
       // Validar tipo de arquivo
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!allowedTypes.includes(file.type)) {
-        toast.error('Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou GIF.');
+        toast({
+          title: "Erro",
+          description: "Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou GIF.",
+          variant: "destructive"
+        });
         return null;
       }
 
       // Validar tamanho (50MB para compatibilidade com bucket)
       const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
-        toast.error('Arquivo muito grande. Tamanho máximo: 50MB.');
+        toast({
+          title: "Erro",
+          description: "Arquivo muito grande. Tamanho máximo: 50MB.",
+          variant: "destructive"
+        });
         return null;
       }
 
@@ -164,23 +182,7 @@ export default function CourseCoverManager({
 
       console.log('[COVER_MANAGER] Iniciando upload:', fileName);
 
-      // Verificar se o bucket existe antes do upload
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      
-      if (bucketsError) {
-        console.error('[COVER_MANAGER] Erro ao listar buckets:', bucketsError);
-        toast.error('Erro ao verificar configuração do storage');
-        return null;
-      }
-
-      const courseImagesBucket = buckets?.find(bucket => bucket.id === 'course-images');
-      if (!courseImagesBucket) {
-        console.error('[COVER_MANAGER] Bucket course-images não encontrado');
-        toast.error('Bucket de imagens não configurado. Contate o administrador.');
-        return null;
-      }
-
-      // Upload para o storage
+      // Upload para o storage (bucket 'course-images' já verificado como existente)
       const { data, error } = await supabase.storage
         .from('course-images')
         .upload(fileName, file, {
@@ -194,13 +196,29 @@ export default function CourseCoverManager({
         
         // Tratamento específico de erros
         if (error.message?.includes('Bucket not found')) {
-          toast.error('Bucket de imagens não encontrado. Verifique a configuração do Storage.');
+          toast({
+            title: "Erro",
+            description: "Bucket de imagens não encontrado. Verifique a configuração do Storage.",
+            variant: "destructive"
+          });
         } else if (error.message?.includes('Duplicate')) {
-          toast.error('Arquivo já existe. Tente novamente.');
+          toast({
+            title: "Erro",
+            description: "Arquivo já existe. Tente novamente.",
+            variant: "destructive"
+          });
         } else if (error.message?.includes('Policy')) {
-          toast.error('Sem permissão para upload. Verifique suas credenciais.');
+          toast({
+            title: "Erro",
+            description: "Sem permissão para upload. Verifique suas credenciais.",
+            variant: "destructive"
+          });
         } else {
-          toast.error(`Erro no upload: ${error.message}`);
+          toast({
+            title: "Erro",
+            description: `Erro no upload: ${error.message}`,
+            variant: "destructive"
+          });
         }
         return null;
       }
@@ -215,7 +233,11 @@ export default function CourseCoverManager({
       
     } catch (error) {
       console.error('[COVER_MANAGER] Erro inesperado no upload:', error);
-      toast.error('Erro inesperado no upload');
+      toast({
+        title: "Erro",
+        description: "Erro inesperado no upload",
+        variant: "destructive"
+      });
       return null;
     }
   };
@@ -227,7 +249,11 @@ export default function CourseCoverManager({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Usuário não autenticado');
+        toast({
+          title: "Erro",
+          description: "Usuário não autenticado",
+          variant: "destructive"
+        });
         return false;
       }
 
@@ -238,7 +264,11 @@ export default function CourseCoverManager({
         .single();
 
       if (!profile) {
-        toast.error('Perfil do usuário não encontrado');
+        toast({
+          title: "Erro",
+          description: "Perfil do usuário não encontrado",
+          variant: "destructive"
+        });
         return false;
       }
 
@@ -254,14 +284,22 @@ export default function CourseCoverManager({
 
       if (insertError) {
         console.error('[COVER_MANAGER] Erro ao inserir capa:', insertError);
-        toast.error('Erro ao salvar capa no banco de dados');
+        toast({
+          title: "Erro",
+          description: "Erro ao salvar capa no banco de dados",
+          variant: "destructive"
+        });
         return false;
       }
 
       return true;
     } catch (error) {
       console.error('[COVER_MANAGER] Erro inesperado ao salvar:', error);
-      toast.error('Erro inesperado ao salvar capa');
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao salvar capa",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -277,11 +315,18 @@ export default function CourseCoverManager({
 
       if (error) {
         console.error('[COVER_MANAGER] Erro ao ativar capa:', error);
-        toast.error('Erro ao ativar capa');
+        toast({
+          title: "Erro",
+          description: "Erro ao ativar capa",
+          variant: "destructive"
+        });
         return;
       }
 
-      toast.success('Capa ativada com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Capa ativada com sucesso!"
+      });
       await loadCovers();
       
       // Notificar componente pai
@@ -291,7 +336,11 @@ export default function CourseCoverManager({
       }
     } catch (error) {
       console.error('[COVER_MANAGER] Erro inesperado ao ativar:', error);
-      toast.error('Erro inesperado ao ativar capa');
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao ativar capa",
+        variant: "destructive"
+      });
     }
   };
 
@@ -307,15 +356,26 @@ export default function CourseCoverManager({
 
       if (error) {
         console.error('[COVER_MANAGER] Erro ao excluir capa:', error);
-        toast.error('Erro ao excluir capa');
+        toast({
+          title: "Erro",
+          description: "Erro ao excluir capa",
+          variant: "destructive"
+        });
         return;
       }
 
-      toast.success('Capa excluída com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Capa excluída com sucesso!"
+      });
       await loadCovers();
     } catch (error) {
       console.error('[COVER_MANAGER] Erro inesperado ao excluir:', error);
-      toast.error('Erro inesperado ao excluir capa');
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao excluir capa",
+        variant: "destructive"
+      });
     }
   };
 
@@ -332,7 +392,10 @@ export default function CourseCoverManager({
       if (uploadedUrl) {
         const success = await addCoverToDatabase(uploadedUrl, true);
         if (success) {
-          toast.success('Capa enviada com sucesso!');
+          toast({
+            title: "Sucesso",
+            description: "Capa enviada com sucesso!"
+          });
           await loadCovers();
           if (onCoverUpdated) {
             onCoverUpdated(uploadedUrl);
@@ -353,12 +416,20 @@ export default function CourseCoverManager({
    */
   const handleUrlSubmit = async () => {
     if (!imageUrl.trim()) {
-      toast.error('Digite uma URL válida');
+      toast({
+        title: "Erro",
+        description: "Digite uma URL válida",
+        variant: "destructive"
+      });
       return;
     }
 
     if (!isValidImageUrl(imageUrl)) {
-      toast.error('URL inválida. Use uma URL completa com extensão de imagem válida.');
+      toast({
+        title: "Erro",
+        description: "URL inválida. Use uma URL completa com extensão de imagem válida.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -366,7 +437,10 @@ export default function CourseCoverManager({
     try {
       const success = await addCoverToDatabase(imageUrl, true);
       if (success) {
-        toast.success('Capa adicionada com sucesso!');
+        toast({
+          title: "Sucesso",
+          description: "Capa adicionada com sucesso!"
+        });
         setImageUrl('');
         await loadCovers();
         if (onCoverUpdated) {
@@ -396,22 +470,37 @@ export default function CourseCoverManager({
 
       if (error) {
         console.error('[AI_GENERATION] Erro na Edge Function:', error);
-        toast.error(`Erro na geração: ${error.message}`);
+        toast({
+          title: "Erro",
+          description: `Erro na geração: ${error.message}`,
+          variant: "destructive"
+        });
         return;
       }
 
       if (data?.success || data?.predictionId) {
-        toast.success('Geração de capa iniciada! A imagem será atualizada em breve.');
+        toast({
+          title: "Sucesso",
+          description: "Geração de capa iniciada! A imagem será atualizada em breve."
+        });
         // Recarregar capas após um tempo para pegar a nova capa
         setTimeout(() => {
           loadCovers();
         }, 3000);
       } else {
-        toast.error('Resposta inesperada do serviço de geração');
+        toast({
+          title: "Erro",
+          description: "Resposta inesperada do serviço de geração",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('[AI_GENERATION] Erro inesperado:', error);
-      toast.error('Erro inesperado na geração de capa');
+      toast({
+        title: "Erro",
+        description: "Erro inesperado na geração de capa",
+        variant: "destructive"
+      });
     } finally {
       setIsGenerating(false);
     }

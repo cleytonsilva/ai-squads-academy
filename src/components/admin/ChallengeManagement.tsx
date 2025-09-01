@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChallenges, useChallengeStats, useChallengeManagement } from '@/hooks/useChallenges';
 import { useBadgeTemplates } from '@/hooks/useBadges';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 // Interface para formulário de desafio
 interface ChallengeFormData {
@@ -44,7 +44,8 @@ function ChallengeForm({
   onSave: (data: ChallengeFormData) => void; 
   onCancel: () => void; 
 }) {
-  const { badgeTemplates } = useBadgeTemplates();
+  const { templates: badgeTemplates, loading: badgeTemplatesLoading } = useBadgeTemplates();
+  const { toast } = useToast();
   const [formData, setFormData] = useState<ChallengeFormData>({
     title: challenge?.title || '',
     description: challenge?.description || '',
@@ -66,17 +67,17 @@ function ChallengeForm({
     
     // Validações básicas
     if (!formData.title.trim()) {
-      toast.error('Título é obrigatório');
+      toast({ title: "Erro", description: "Título é obrigatório", variant: "destructive" });
       return;
     }
     
     if (!formData.badge_id) {
-      toast.error('Badge é obrigatório');
+      toast({ title: "Erro", description: "Badge é obrigatório", variant: "destructive" });
       return;
     }
     
     if (formData.requirements.length === 0) {
-      toast.error('Pelo menos um requisito é necessário');
+      toast({ title: "Erro", description: "Pelo menos um requisito é necessário", variant: "destructive" });
       return;
     }
     
@@ -135,17 +136,23 @@ function ChallengeForm({
               <SelectValue placeholder="Selecione um badge" />
             </SelectTrigger>
             <SelectContent>
-              {badgeTemplates.map(badge => (
-                <SelectItem key={badge.id} value={badge.id}>
-                  <div className="flex items-center gap-2">
-                    <span>{badge.icon}</span>
-                    <span>{badge.name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {badge.rarity}
-                    </Badge>
-                  </div>
+              {badgeTemplates && badgeTemplates.length > 0 ? (
+                badgeTemplates.map(badge => (
+                  <SelectItem key={badge.id} value={badge.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{badge.style?.icon || '🏆'}</span>
+                      <span>{badge.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {badge.category || 'Badge'}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="" disabled>
+                  {badgeTemplatesLoading ? 'Carregando badges...' : 'Nenhum badge disponível'}
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>

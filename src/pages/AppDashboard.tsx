@@ -26,7 +26,13 @@ import {
   TrendingDown,
   ChevronRight,
   Bell,
-  Settings
+  Settings,
+  Shield,
+  Lock,
+  Code,
+  Database,
+  Server,
+  Cpu
 } from "lucide-react";
 import TrackBuilder from "@/components/app/TrackBuilder";
 import ProgressOverview from "@/components/app/ProgressOverview";
@@ -122,10 +128,30 @@ const AppDashboard = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Avatar className={`h-16 w-16 border-2 ${themeColors.border.replace('border-', 'border-')}`}>
-              <AvatarImage src={profile?.avatar_url} alt={profile?.display_name || 'Operador'} />
-              <AvatarFallback className={`${themeColors.muted} ${themeColors.foreground} font-mono text-lg`}>
-                {profile?.display_name?.charAt(0) || 'O'}
-              </AvatarFallback>
+              {profile?.avatar_url?.startsWith('icon:') ? (
+                <AvatarFallback className={`${themeColors.muted} ${themeColors.foreground} font-mono text-lg`}>
+                  {(() => {
+                    const iconName = profile.avatar_url.replace('icon:', '');
+                    const iconMap = {
+                      'cyber-shield': Shield,
+                      'secure-lock': Lock,
+                      'code-master': Code,
+                      'data-guardian': Database,
+                      'server-admin': Server,
+                      'tech-expert': Cpu
+                    };
+                    const IconComponent = iconMap[iconName as keyof typeof iconMap];
+                    return IconComponent ? <IconComponent className="w-8 h-8" /> : (profile?.display_name?.charAt(0) || 'O');
+                  })()} 
+                </AvatarFallback>
+              ) : (
+                <>
+                  <AvatarImage src={profile?.avatar_url} alt={profile?.display_name || 'Operador'} />
+                  <AvatarFallback className={`${themeColors.muted} ${themeColors.foreground} font-mono text-lg`}>
+                    {profile?.display_name?.charAt(0) || 'O'}
+                  </AvatarFallback>
+                </>
+              )}
             </Avatar>
             <div>
               <div className="flex items-center gap-2 mb-1">

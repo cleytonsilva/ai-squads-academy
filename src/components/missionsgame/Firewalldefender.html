@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firewall Defender - Simulador de Rede</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #0a0a0a;
+            color: #0f0;
+            font-family: 'Press Start 2P', cursive;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #111 0%, #222 100%);
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            color: #0f0;
+        }
+        
+        .game-area {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .equipment-palette {
+            background-color: #111;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .palette-title {
+            font-size: 16px;
+            color: #0ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .palette-equipment {
+            width: 100%;
+            height: 80px;
+            background-color: #222;
+            border: 2px solid #0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            cursor: grab;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+        
+        .palette-equipment:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+        }
+        
+        .palette-equipment:active {
+            cursor: grabbing;
+        }
+        
+        .firewall { background-color: #f00; color: #fff; }
+        .router { background-color: #00f; color: #fff; }
+        .switch { background-color: #ff0; color: #000; }
+        .server { background-color: #0ff; color: #000; }
+        
+        .topology-container {
+            background-color: #111;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            min-height: 500px;
+        }
+        
+        .topology {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .topology-slot {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-color: rgba(0, 50, 0, 0.3);
+            border: 2px dashed #0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .topology-slot:hover {
+            background-color: rgba(0, 100, 0, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        
+        .topology-slot.filled {
+            background-color: rgba(0, 100, 0, 0.8);
+            border-style: solid;
+        }
+        
+        .topology-slot.error {
+            border-color: #f00;
+            background-color: rgba(100, 0, 0, 0.3);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.5); }
+        }
+        
+        .equipment {
+            width: 80px;
+            height: 80px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .equipment:hover {
+            transform: scale(1.05);
+        }
+        
+        .equipment.error {
+            animation: shake 0.5s;
+            border: 2px solid #f00;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .connection-line {
+            position: absolute;
+            background-color: #0f0;
+            height: 2px;
+            transform-origin: left center;
+            z-index: 1;
+            opacity: 0.7;
+        }
+        
+        .packet {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            z-index: 20;
+            transition: none;
+        }
+        
+        .packet.malicious {
+            background-color: #f00;
+            box-shadow: 0 0 10px #f00;
+        }
+        
+        .packet.legitimate {
+            background-color: #0f0;
+            box-shadow: 0 0 10px #0f0;
+        }
+        
+        .packet.blocked {
+            background-color: #888;
+            animation: explode 0.5s forwards;
+        }
+        
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            text-align: center;
+        }
+        
+        .status-label {
+            font-size: 10px;
+            color: #888;
+        }
+        
+        .status-value {
+            font-size: 16px;
+            color: #0f0;
+            margin-top: 5px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .control-btn {
+            padding: 12px 25px;
+            background-color: #222;
+            color: #0f0;
+            border: 2px solid #0f0;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover {
+            background-color: #0f0;
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .control-btn.primary {
+            background-color: #0f0;
+            color: #000;
+        }
+        
+        .control-btn.primary:hover {
+            background-color: #0ff;
+        }
+        
+        .config-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px;
+            max-width: 90vw;
+            background-color: #111;
+            border: 3px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+        }
+        
+        .config-popup.active {
+            display: block;
+        }
+        
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0f0;
+        }
+        
+        .config-title {
+            font-size: 18px;
+            color: #0ff;
+        }
+        
+        .close-btn {
+            width: 30px;
+            height: 30px;
+            background-color: #f00;
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .config-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #0f0;
+        }
+        
+        .config-tab {
+            padding: 10px 20px;
+            background-color: #222;
+            border: 1px solid #0f0;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .config-tab.active {
+            background-color: #0f0;
+            color: #000;
+        }
+        
+        .config-content {
+            min-height: 350px;
+            background-color: #000;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        
+        .terminal {
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        .terminal-line {
+            margin-bottom: 10px;
+        }
+        
+        .terminal-prompt {
+            color: #0ff;
+        }
+        
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: #0f0;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+            width: 80%;
+        }
+        
+        .config-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-label {
+            font-size: 10px;
+            margin-bottom: 5px;
+            color: #0ff;
+        }
+        
+        .form-input, .form-select {
+            background-color: #222;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 8px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            border-radius: 3px;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            box-shadow: 0 0 5px #0f0;
+        }
+        
+        .save-config-btn {
+            grid-column: span 2;
+            padding: 12px;
+            background-color: #0f0;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        
+        .save-config-btn:hover {
+            background-color: #0ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            display: none;
+        }
+        
+        .overlay.active {
+            display: block;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #0f0;
+            color: #000;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 2000;
+            transform: translateX(400px);
+            transition: transform 0.5s;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background-color: #f00;
+            color: #fff;
+        }
+        
+        .notification.success {
+            background-color: #0f0;
+            color: #000;
+        }
+        
+        .notification.warning {
+            background-color: #ff0;
+            color: #000;
+        }
+        
+        .packet-info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 10px;
+            color: #0f0;
+            z-index: 30;
+        }
+        
+        .topology-label {
+            position: absolute;
+            font-size: 10px;
+            color: #888;
+            z-index: 5;
+        }
+        
+        .analysis-panel {
+            background-color: #111;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .analysis-title {
+            font-size: 16px;
+            color: #0ff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .analysis-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+        }
+        
+        .analysis-status {
+            color: #0f0;
+        }
+        
+        .analysis-status.error {
+            color: #f00;
+        }
+        
+        .analysis-status.warning {
+            color: #ff0;
+        }
+        
+        @media (max-width: 1024px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .equipment-palette {
+                order: 2;
+            }
+            
+            .topology-container {
+                order: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>FIREWALL DEFENDER - SIMULADOR DE REDE</h1>
+            <p>Monte a topologia, configure os equipamentos e proteja sua rede</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">PONTUAÇÃO</div>
+                <div class="status-value" id="score">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">NÍVEL</div>
+                <div class="status-value" id="level">1</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">EQUIPAMENTOS</div>
+                <div class="status-value" id="equipment-count">0/4</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">REGRAS</div>
+                <div class="status-value" id="rules-count">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">PACOTES BLOQUEADOS</div>
+                <div class="status-value" id="blocked-packets">0</div>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="equipment-palette">
+                <div class="palette-title">EQUIPAMENTOS</div>
+                <div class="palette-equipment firewall" draggable="true" data-type="firewall">
+                    FIREWALL
+                </div>
+                <div class="palette-equipment router" draggable="true" data-type="router">
+                    ROTEADOR
+                </div>
+                <div class="palette-equipment switch" draggable="true" data-type="switch">
+                    SWITCH
+                </div>
+                <div class="palette-equipment server" draggable="true" data-type="server">
+                    SERVIDOR
+                </div>
+                
+                <div class="analysis-panel">
+                    <div class="analysis-title">ANÁLISE DA TOPOLOGIA</div>
+                    <div class="analysis-item">
+                        <span>Firewall</span>
+                        <span class="analysis-status" id="firewall-status">Não conectado</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span>Roteador</span>
+                        <span class="analysis-status" id="router-status">Não conectado</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span>Switch</span>
+                        <span class="analysis-status" id="switch-status">Não conectado</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span>Servidor</span>
+                        <span class="analysis-status" id="server-status">Não conectado</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="topology-container">
+                <div class="topology" id="topology">
+                    <!-- Slots para equipamentos -->
+                    <div class="topology-slot" data-slot="firewall" data-correct="firewall" style="top: 50px; left: 50px;">
+                        <span style="font-size: 10px; color: #888;">FIREWALL</span>
+                    </div>
+                    <div class="topology-slot" data-slot="router" data-correct="router" style="top: 50px; left: 250px;">
+                        <span style="font-size: 10px; color: #888;">ROTEADOR</span>
+                    </div>
+                    <div class="topology-slot" data-slot="switch" data-correct="switch" style="top: 200px; left: 150px;">
+                        <span style="font-size: 10px; color: #888;">SWITCH</span>
+                    </div>
+                    <div class="topology-slot" data-slot="server" data-correct="server" style="top: 200px; left: 350px;">
+                        <span style="font-size: 10px; color: #888;">SERVIDOR</span>
+                    </div>
+                    
+                    <!-- Linhas de conexão -->
+                    <div class="connection-line" id="line1" style="width: 100px; top: 100px; left: 150px; transform: rotate(0deg);"></div>
+                    <div class="connection-line" id="line2" style="width: 100px; top: 100px; left: 350px; transform: rotate(45deg);"></div>
+                    <div class="connection-line" id="line3" style="width: 100px; top: 250px; left: 250px; transform: rotate(0deg);"></div>
+                    
+                    <!-- Labels da topologia -->
+                    <div class="topology-label" style="top: 20px; left: 50px;">INTERNET</div>
+                    <div class="topology-label" style="top: 320px; left: 150px;">LAN</div>
+                    <div class="topology-label" style="top: 320px; left: 350px;">SERVIDORES</div>
+                </div>
+                
+                <div class="packet-info" id="packet-info">
+                    Pacotes: <span id="packet-count">0</span> | 
+                    Maliciosos: <span id="malicious-count">0</span> | 
+                    Legítimos: <span id="legitimate-count">0</span>
+                </div>
+                
+                <div class="controls">
+                    <button class="control-btn" id="analyze-btn">ANALISAR TOPOLOGIA</button>
+                    <button class="control-btn primary" id="start-btn" disabled>INICIAR SIMULAÇÃO</button>
+                    <button class="control-btn" id="reset-btn">REINICIAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="config-popup" id="config-popup">
+        <div class="config-header">
+            <div class="config-title" id="config-title">CONFIGURAÇÃO DE EQUIPAMENTO</div>
+            <button class="close-btn" id="close-config">×</button>
+        </div>
+        
+        <div class="config-tabs">
+            <div class="config-tab active" data-tab="terminal">TERMINAL</div>
+            <div class="config-tab" data-tab="gui">INTERFACE GRÁFICA</div>
+        </div>
+        
+        <div class="config-content">
+            <div class="terminal" id="terminal-tab">
+                <div class="terminal-line">
+                    <span class="terminal-prompt">admin@device:~$</span> <span>Sistema de configuração de equipamento</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="terminal-prompt">admin@device:~$</span> <span>Digite 'help' para comandos disponíveis</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="terminal-prompt">admin@device:~$</span> 
+                    <input type="text" class="terminal-input" id="terminal-input" placeholder="help">
+                </div>
+            </div>
+            
+            <div class="config-form" id="gui-tab" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">NOME DO EQUIPAMENTO</label>
+                    <input type="text" class="form-input" id="equip-name" placeholder="Nome do equipamento">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">INTERFACE</label>
+                    <select class="form-select" id="interface">
+                        <option value="wan">WAN</option>
+                        <option value="lan">LAN</option>
+                        <option value="dmz">DMZ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">IP ADDRESS</label>
+                    <input type="text" class="form-input" id="ip-address" placeholder="192.168.1.1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SUBNET MASK</label>
+                    <input type="text" class="form-input" id="subnet-mask" placeholder="255.255.255.0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">AÇÃO PADRÃO</label>
+                    <select class="form-select" id="default-action">
+                        <option value="deny">DENY</option>
+                        <option value="allow">ALLOW</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">PROTOCOLO</label>
+                    <select class="form-select" id="protocol">
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                        <option value="icmp">ICMP</option>
+                    </select>
+                </div>
+                <button class="save-config-btn" id="save-config">SALVAR CONFIGURAÇÃO</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // Elementos do DOM
+        const topology = document.getElementById('topology');
+        const configPopup = document.getElementById('config-popup');
+        const overlay = document.getElementById('overlay');
+        const notification = document.getElementById('notification');
+        
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const equipmentCountElement = document.getElementById('equipment-count');
+        const rulesCountElement = document.getElementById('rules-count');
+        const blockedPacketsElement = document.getElementById('blocked-packets');
+        
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const closeConfigBtn = document.getElementById('close-config');
+        const saveConfigBtn = document.getElementById('save-config');
+        
+        const terminalInput = document.getElementById('terminal-input');
+        const terminalTab = document.getElementById('terminal-tab');
+        const guiTab = document.getElementById('gui-tab');
+        
+        const packetInfo = document.getElementById('packet-info');
+        const packetCountElement = document.getElementById('packet-count');
+        const maliciousCountElement = document.getElementById('malicious-count');
+        const legitimateCountElement = document.getElementById('legitimate-count');
+        
+        // Elementos de status
+        const firewallStatus = document.getElementById('firewall-status');
+        const routerStatus = document.getElementById('router-status');
+        const switchStatus = document.getElementById('switch-status');
+        const serverStatus = document.getElementById('server-status');
+        
+        // Variáveis do jogo
+        let score = 0;
+        let level = 1;
+        let equipmentCount = 0;
+        let rulesCount = 0;
+        let blockedPackets = 0;
+        let currentEquipment = null;
+        let simulationRunning = false;
+        let packetInterval = null;
+        let packetCount = 0;
+        let maliciousCount = 0;
+        let legitimateCount = 0;
+        
+        // Configurações dos equipamentos
+        const equipmentConfigs = {
+            firewall: {
+                name: 'Firewall',
+                terminalCommands: ['show config', 'set rule', 'clear stats', 'restart', 'show connections'],
+                defaultConfig: {
+                    name: 'Firewall-01',
+                    interface: 'wan',
+                    ip: '192.168.1.1',
+                    subnet: '255.255.255.0',
+                    action: 'deny',
+                    protocol: 'tcp'
+                },
+                position: { top: 50, left: 50 }
+            },
+            router: {
+                name: 'Roteador',
+                terminalCommands: ['show route', 'add route', 'ping', 'traceroute', 'show interfaces'],
+                defaultConfig: {
+                    name: 'Router-01',
+                    interface: 'lan',
+                    ip: '192.168.1.254',
+                    subnet: '255.255.255.0',
+                    action: 'allow',
+                    protocol: 'tcp'
+                },
+                position: { top: 50, left: 250 }
+            },
+            switch: {
+                name: 'Switch',
+                terminalCommands: ['show vlan', 'add vlan', 'show port', 'config port', 'show mac-table'],
+                defaultConfig: {
+                    name: 'Switch-01',
+                    interface: 'lan',
+                    ip: '192.168.1.2',
+                    subnet: '255.255.255.0',
+                    action: 'allow',
+                    protocol: 'tcp'
+                },
+                position: { top: 200, left: 150 }
+            },
+            server: {
+                name: 'Servidor',
+                terminalCommands: ['show service', 'start service', 'stop service', 'show log', 'show connections'],
+                defaultConfig: {
+                    name: 'Server-01',
+                    interface: 'dmz',
+                    ip: '192.168.2.10',
+                    subnet: '255.255.255.0',
+                    action: 'allow',
+                    protocol: 'tcp'
+                },
+                position: { top: 200, left: 350 }
+            }
+        };
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDragAndDrop();
+            setupEventListeners();
+            updateStatus();
+        });
+        
+        // Configurar arrastar e soltar
+        function setupDragAndDrop() {
+            const paletteEquipments = document.querySelectorAll('.palette-equipment');
+            const topologySlots = document.querySelectorAll('.topology-slot');
+            
+            paletteEquipments.forEach(equipment => {
+                equipment.addEventListener('dragstart', handleDragStart);
+            });
+            
+            topologySlots.forEach(slot => {
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('drop', handleDrop);
+                slot.addEventListener('click', handleSlotClick);
+            });
+        }
+        
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.dataset.type);
+            e.target.style.opacity = '0.7';
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.style.backgroundColor = 'rgba(0, 150, 0, 0.5)';
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            const equipmentType = e.dataTransfer.getData('text/plain');
+            const slot = e.currentTarget;
+            const correctType = slot.dataset.correct;
+            
+            if (!slot.querySelector('.equipment')) {
+                const equipment = document.createElement('div');
+                equipment.className = `equipment ${equipmentType}`;
+                equipment.textContent = equipmentConfigs[equipmentType].name.toUpperCase();
+                equipment.dataset.type = equipmentType;
+                
+                slot.appendChild(equipment);
+                slot.classList.add('filled');
+                
+                // Verificar se o equipamento está no lugar correto
+                if (equipmentType === correctType) {
+                    slot.classList.add('correct');
+                    showNotification(`${equipmentConfigs[equipmentType].name} posicionado corretamente!`, 'success');
+                    score += 10;
+                } else {
+                    slot.classList.add('error');
+                    showNotification(`${equipmentConfigs[equipmentType].name} no lugar errado!`, 'error');
+                    score -= 5;
+                }
+                
+                equipmentCount++;
+                updateStatus();
+                
+                if (equipmentCount === 4) {
+                    analyzeBtn.disabled = false;
+                    showNotification('Todos os equipamentos posicionados! Analise a topologia.', 'success');
+                }
+            }
+            
+            slot.style.backgroundColor = '';
+            
+            // Resetar opacidade
+            document.querySelectorAll('.palette-equipment').forEach(el => {
+                el.style.opacity = '1';
+            });
+        }
+        
+        function handleSlotClick(e) {
+            const slot = e.currentTarget;
+            const equipment = slot.querySelector('.equipment');
+            
+            if (equipment) {
+                currentEquipment = equipment;
+                openConfigPopup(equipment.dataset.type);
+            }
+        }
+        
+        // Configurar event listeners
+        function setupEventListeners() {
+            analyzeBtn.addEventListener('click', analyzeTopology);
+            startBtn.addEventListener('click', startSimulation);
+            resetBtn.addEventListener('click', resetGame);
+            closeConfigBtn.addEventListener('click', closeConfigPopup);
+            saveConfigBtn.addEventListener('click', saveConfiguration);
+            
+            // Tabs de configuração
+            document.querySelectorAll('.config-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.config-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    if (tab.dataset.tab === 'terminal') {
+                        terminalTab.style.display = 'block';
+                        guiTab.style.display = 'none';
+                    } else {
+                        terminalTab.style.display = 'none';
+                        guiTab.style.display = 'grid';
+                    }
+                });
+            });
+            
+            // Terminal input
+            terminalInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    processTerminalCommand(e.target.value);
+                    e.target.value = '';
+                }
+            });
+        }
+        
+        // Analisar topologia
+        function analyzeTopology() {
+            let correctCount = 0;
+            const slots = document.querySelectorAll('.topology-slot');
+            
+            slots.forEach(slot => {
+                const equipment = slot.querySelector('.equipment');
+                if (equipment) {
+                    const equipmentType = equipment.dataset.type;
+                    const correctType = slot.dataset.correct;
+                    
+                    if (equipmentType === correctType) {
+                        correctCount++;
+                        slot.classList.remove('error');
+                        slot.classList.add('correct');
+                        
+                        // Atualizar status
+                        const statusElement = document.getElementById(`${equipmentType}-status`);
+                        statusElement.textContent = 'Correto';
+                        statusElement.className = 'analysis-status';
+                    } else {
+                        slot.classList.remove('correct');
+                        slot.classList.add('error');
+                        
+                        // Atualizar status
+                        const statusElement = document.getElementById(`${equipmentType}-status`);
+                        statusElement.textContent = 'Incorreto';
+                        statusElement.className = 'analysis-status error';
+                    }
+                }
+            });
+            
+            if (correctCount === 4) {
+                showNotification('Topologia correta! Configure os equipamentos.', 'success');
+                startBtn.disabled = false;
+                score += 50;
+                updateStatus();
+            } else {
+                showNotification(`${correctCount}/4 equipamentos no lugar correto.`, 'warning');
+            }
+        }
+        
+        // Abrir popup de configuração
+        function openConfigPopup(equipmentType) {
+            const config = equipmentConfigs[equipmentType];
+            
+            document.getElementById('config-title').textContent = `CONFIGURAÇÃO - ${config.name}`;
+            
+            // Preencher formulário GUI
+            document.getElementById('equip-name').value = config.defaultConfig.name;
+            document.getElementById('interface').value = config.defaultConfig.interface;
+            document.getElementById('ip-address').value = config.defaultConfig.ip;
+            document.getElementById('subnet-mask').value = config.defaultConfig.subnet;
+            document.getElementById('default-action').value = config.defaultConfig.action;
+            document.getElementById('protocol').value = config.defaultConfig.protocol;
+            
+            // Adicionar comandos ao terminal
+            const terminalContent = terminalTab.innerHTML;
+            const newTerminalContent = `
+                <div class="terminal-line">
+                    <span class="terminal-prompt">admin@${equipmentType}:~$</span> <span>Conectado ao ${config.name}</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="terminal-prompt">admin@${equipmentType}:~$</span> <span>Comandos disponíveis: ${config.terminalCommands.join(', ')}</span>
+                </div>
+                <div class="terminal-line">
+                    <span class="terminal-prompt">admin@${equipmentType}:~$</span> 
+                    <input type="text" class="terminal-input" id="terminal-input" placeholder="help">
+                </div>
+            `;
+            
+            terminalTab.innerHTML = newTerminalContent;
+            
+            // Re-adicionar event listener ao terminal input
+            const newTerminalInput = document.getElementById('terminal-input');
+            newTerminalInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    processTerminalCommand(e.target.value);
+                    e.target.value = '';
+                }
+            });
+            
+            overlay.classList.add('active');
+            configPopup.classList.add('active');
+        }
+        
+        function closeConfigPopup() {
+            overlay.classList.remove('active');
+            configPopup.classList.remove('active');
+        }
+        
+        function saveConfiguration() {
+            const equipName = document.getElementById('equip-name').value;
+            const interface = document.getElementById('interface').value;
+            const ipAddress = document.getElementById('ip-address').value;
+            const subnetMask = document.getElementById('subnet-mask').value;
+            const defaultAction = document.getElementById('default-action').value;
+            const protocol = document.getElementById('protocol').value;
+            
+            // Simular salvamento da configuração
+            if (equipName && ipAddress) {
+                rulesCount++;
+                updateStatus();
+                
+                // Marcar equipamento como configurado
+                if (currentEquipment) {
+                    currentEquipment.dataset.configured = 'true';
+                    currentEquipment.style.border = '2px solid #0f0';
+                }
+                
+                showNotification(`Configuração salva para ${equipName}!`, 'success');
+                closeConfigPopup();
+                
+                // Adicionar pontuação
+                score += 20;
+                updateStatus();
+                
+                // Verificar se todos estão configurados
+                checkAllConfigured();
+            } else {
+                showNotification('Preencha todos os campos obrigatórios!', 'error');
+            }
+        }
+        
+        function processTerminalCommand(command) {
+            const terminalContent = terminalTab.innerHTML;
+            const newLine = document.createElement('div');
+            newLine.className = 'terminal-line';
+            
+            if (!command) return;
+            
+            newLine.innerHTML = `<span class="terminal-prompt">admin@${currentEquipment.dataset.type}:~$</span> <span>${command}</span>`;
+            
+            // Adicionar resposta
+            const responseLine = document.createElement('div');
+            responseLine.className = 'terminal-line';
+            
+            if (command === 'help') {
+                responseLine.innerHTML = `<span>Comandos disponíveis: ${equipmentConfigs[currentEquipment.dataset.type].terminalCommands.join(', ')}</span>`;
+            } else if (command === 'show config') {
+                responseLine.innerHTML = `<span>Configuração atual: ${document.getElementById('equip-name').value}</span>`;
+            } else if (command === 'set rule') {
+                responseLine.innerHTML = `<span>Regra adicionada: ${document.getElementById('default-action').value} ${document.getElementById('protocol').value}</span>`;
+                rulesCount++;
+                updateStatus();
+            } else if (command === 'clear stats') {
+                responseLine.innerHTML = `<span>Estatísticas limpas</span>`;
+            } else if (command === 'restart') {
+                responseLine.innerHTML = `<span>Reiniciando equipamento...</span>`;
+            } else if (command === 'show connections') {
+                responseLine.innerHTML = `<span>Conexões ativas: ${Math.floor(Math.random() * 10) + 1}</span>`;
+            } else {
+                responseLine.innerHTML = `<span>Comando não reconhecido. Digite 'help' para ajuda.</span>`;
+            }
+            
+            terminalTab.appendChild(newLine);
+            terminalTab.appendChild(responseLine);
+            
+            // Scroll para o final
+            terminalTab.scrollTop = terminalTab.scrollHeight;
+        }
+        
+        function checkAllConfigured() {
+            const allConfigured = Array.from(document.querySelectorAll('.equipment')).every(
+                equipment => equipment.dataset.configured === 'true'
+            );
+            
+            if (allConfigured && equipmentCount === 4) {
+                showNotification('Todos os equipamentos configurados! Pronto para simulação.', 'success');
+            }
+        }
+        
+        // Iniciar simulação
+        function startSimulation() {
+            if (simulationRunning) return;
+            
+            // Verificar se todos estão configurados
+            const allConfigured = Array.from(document.querySelectorAll('.equipment')).every(
+                equipment => equipment.dataset.configured === 'true'
+            );
+            
+            if (!allConfigured) {
+                showNotification('Configure todos os equipamentos antes de iniciar!', 'error');
+                return;
+            }
+            
+            simulationRunning = true;
+            startBtn.disabled = true;
+            analyzeBtn.disabled = true;
+            
+            showNotification('Iniciando simulação de tráfego...', 'success');
+            
+            // Iniciar geração de pacotes
+            packetInterval = setInterval(generatePacket, 1000);
+            
+            // Simular por 30 segundos
+            setTimeout(() => {
+                stopSimulation();
+            }, 30000);
+        }
+        
+        function stopSimulation() {
+            if (packetInterval) {
+                clearInterval(packetInterval);
+                packetInterval = null;
+            }
+            
+            simulationRunning = false;
+            startBtn.disabled = false;
+            analyzeBtn.disabled = false;
+            
+            showNotification('Simulação concluída!', 'success');
+            
+            // Calcular pontuação final
+            const totalPackets = maliciousCount + legitimateCount;
+            const blockRate = blockedPackets / totalPackets;
+            
+            if (blockRate > 0.7) {
+                score += 100;
+                showNotification('Excelente! Taxa de bloqueio: ' + Math.round(blockRate * 100) + '%', 'success');
+            } else if (blockRate > 0.5) {
+                score += 50;
+                showNotification('Bom trabalho! Taxa de bloqueio: ' + Math.round(blockRate * 100) + '%', 'warning');
+            } else {
+                showNotification('Precisa melhorar! Taxa de bloqueio: ' + Math.round(blockRate * 100) + '%', 'error');
+            }
+            
+            updateStatus();
+        }
+        
+        // Gerar pacotes
+        function generatePacket() {
+            const isMalicious = Math.random() > 0.6; // 40% chance de ser malicioso
+            
+            const packet = document.createElement('div');
+            packet.className = `packet ${isMalicious ? 'malicious' : 'legitimate'}`;
+            
+            // Posição inicial (vindo da internet)
+            packet.style.left = '20px';
+            packet.style.top = '100px';
+            
+            topology.appendChild(packet);
+            
+            packetCount++;
+            if (isMalicious) {
+                maliciousCount++;
+            } else {
+                legitimateCount++;
+            }
+            
+            updatePacketInfo();
+            
+            // Animar pacote através da topologia
+            animatePacket(packet, isMalicious);
+        }
+        
+        function animatePacket(packet, isMalicious) {
+            const positions = [
+                { left: 20, top: 100 },    // Internet
+                { left: 100, top: 100 },   // Firewall
+                { left: 250, top: 100 },   // Roteador
+                { left: 150, top: 200 },   // Switch
+                { left: 350, top: 200 }    // Servidor
+            ];
+            
+            let currentIndex = 0;
+            
+            const movePacket = () => {
+                if (currentIndex >= positions.length - 1) {
+                    // Pacote chegou ao destino
+                    if (isMalicious) {
+                        // Pacote malicioso chegou ao servidor - falha de segurança
+                        showNotification('Pacote malicioso chegou ao servidor!', 'error');
+                        score -= 20;
+                    } else {
+                        // Pacote legítimo chegou ao servidor - sucesso
+                        score += 5;
+                    }
+                    
+                    packet.remove();
+                    updateStatus();
+                    return;
+                }
+                
+                currentIndex++;
+                const targetPos = positions[currentIndex];
+                
+                // Verificar se o pacote deve ser bloqueado
+                if (currentIndex === 1 && isMalicious) {
+                    // Verificar regras do firewall
+                    const firewall = document.querySelector('[data-slot="firewall"] .equipment');
+                    if (firewall && firewall.dataset.configured === 'true') {
+                        // Firewall configurado - chance de bloquear
+                        if (Math.random() > 0.3) {
+                            // Pacote bloqueado
+                            packet.classList.add('blocked');
+                            blockedPackets++;
+                            score += 10;
+                            updateStatus();
+                            
+                            setTimeout(() => {
+                                packet.remove();
+                            }, 500);
+                            return;
+                        }
+                    } else {
+                        // Firewall não configurado - pacote passa
+                        packet.classList.add('error');
+                    }
+                }
+                
+                // Mover pacote para próxima posição
+                packet.style.transition = 'all 0.8s linear';
+                packet.style.left = targetPos.left + 'px';
+                packet.style.top = targetPos.top + 'px';
+                
+                setTimeout(movePacket, 800);
+            };
+            
+            // Iniciar animação
+            setTimeout(movePacket, 100);
+        }
+        
+        function resetGame() {
+            // Parar simulação
+            if (packetInterval) {
+                clearInterval(packetInterval);
+                packetInterval = null;
+            }
+            
+            // Resetar variáveis
+            score = 0;
+            level = 1;
+            equipmentCount = 0;
+            rulesCount = 0;
+            blockedPackets = 0;
+            simulationRunning = false;
+            packetCount = 0;
+            maliciousCount = 0;
+            legitimateCount = 0;
+            
+            // Remover equipamentos dos slots
+            document.querySelectorAll('.equipment').forEach(equipment => {
+                equipment.remove();
+            });
+            
+            // Remover classes dos slots
+            document.querySelectorAll('.topology-slot').forEach(slot => {
+                slot.classList.remove('filled', 'correct', 'error');
+            });
+            
+            // Remover pacotes
+            document.querySelectorAll('.packet').forEach(packet => {
+                packet.remove();
+            });
+            
+            // Resetar status
+            firewallStatus.textContent = 'Não conectado';
+            firewallStatus.className = 'analysis-status';
+            routerStatus.textContent = 'Não conectado';
+            routerStatus.className = 'analysis-status';
+            switchStatus.textContent = 'Não conectado';
+            switchStatus.className = 'analysis-status';
+            serverStatus.textContent = 'Não conectado';
+            serverStatus.className = 'analysis-status';
+            
+            // Desabilitar botões
+            startBtn.disabled = true;
+            analyzeBtn.disabled = true;
+            
+            updateStatus();
+            updatePacketInfo();
+            showNotification('Jogo reiniciado!', 'success');
+        }
+        
+        function updateStatus() {
+            scoreElement.textContent = score;
+            levelElement.textContent = level;
+            equipmentCountElement.textContent = `${equipmentCount}/4`;
+            rulesCountElement.textContent = rulesCount;
+            blockedPacketsElement.textContent = blockedPackets;
+        }
+        
+        function updatePacketInfo() {
+            packetCountElement.textContent = packetCount;
+            maliciousCountElement.textContent = maliciousCount;
+            legitimateCountElement.textContent = legitimateCount;
+        }
+        
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Fechar popup ao clicar no overlay
+        overlay.addEventListener('click', closeConfigPopup);
+        
+        // Prevenir fechamento ao clicar no popup
+        configPopup.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 
 // Interfaces para tipagem
 interface Certificate {
@@ -263,6 +263,19 @@ export function useCourseData(courseIds: string[]) {
  */
 export function useStudentDashboardData() {
   const { profile } = useCurrentProfile();
+  
+  // Debug logs para rastrear carregamentos
+  const debugLog = (message: string, data?: any) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[useStudentDashboardData] ${message}`, data || '');
+    }
+  };
+  
+  // Log quando o hook é executado
+  useEffect(() => {
+    debugLog('Hook executado', { profileId: profile?.id });
+  }, [profile?.id]);
+  
   const certificates = useStudentCertificates();
   const badges = useStudentBadges();
   const courses = useStudentCourses();

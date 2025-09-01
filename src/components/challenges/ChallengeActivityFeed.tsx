@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
 // Interface para atividade
@@ -235,6 +235,7 @@ export default function ChallengeActivityFeed({
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  const { toast } = useToast();
   
   // Carregar atividades reais do Supabase
   useEffect(() => {
@@ -366,11 +367,17 @@ export default function ChallengeActivityFeed({
       return activity;
     }));
     
-    toast.success('Curtida atualizada!');
+    toast({
+      title: "Sucesso!",
+      description: "Curtida atualizada!",
+    });
   };
   
   const handleComment = (activityId: string) => {
-    toast.info('Funcionalidade de comentários em breve!');
+    toast({
+      title: "Informação",
+      description: "Funcionalidade de comentários em breve!",
+    });
   };
   
   const handleShare = async (activityId: string) => {
@@ -388,11 +395,17 @@ export default function ChallengeActivityFeed({
         });
       } catch (error) {
         navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
-        toast.success('Link copiado para a área de transferência!');
+        toast({
+          title: "Sucesso!",
+          description: "Link copiado para a área de transferência!",
+        });
       }
     } else {
       navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
-      toast.success('Link copiado para a área de transferência!');
+      toast({
+        title: "Sucesso!",
+        description: "Link copiado para a área de transferência!",
+      });
     }
   };
   
@@ -401,7 +414,10 @@ export default function ChallengeActivityFeed({
     // Simular refresh
     await new Promise(resolve => setTimeout(resolve, 1000));
     setRefreshing(false);
-    toast.success('Feed atualizado!');
+    toast({
+      title: "Sucesso!",
+      description: "Feed atualizado!",
+    });
   };
 
   // Variant minimal

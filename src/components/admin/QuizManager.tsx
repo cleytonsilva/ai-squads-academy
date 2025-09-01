@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export interface ModuleOption {
   id: string;
@@ -25,6 +25,7 @@ interface Quiz {
 export default function QuizManager({ courseId, modules }: { courseId: string; modules: ModuleOption[] }) {
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const { toast } = useToast();
 
   const moduleMap = useMemo(() => Object.fromEntries(modules.map(m => [m.id, m.title])), [modules]);
 
@@ -49,8 +50,15 @@ export default function QuizManager({ courseId, modules }: { courseId: string; m
       is_active: true,
     };
     const { error } = await supabase.from("quizzes").insert(payload);
-    if (error) return toast.error("Erro ao criar quiz");
-    toast.success("Quiz criado");
+    if (error) return toast({
+      title: "Erro",
+      description: "Erro ao criar quiz",
+      variant: "destructive",
+    });
+    toast({
+      title: "Sucesso",
+      description: "Quiz criado",
+    });
     setNewTitle("");
     setNewDesc("");
     refetch();
@@ -58,14 +66,25 @@ export default function QuizManager({ courseId, modules }: { courseId: string; m
 
   const toggleActive = async (q: Quiz) => {
     const { error } = await supabase.from("quizzes").update({ is_active: !q.is_active }).eq("id", q.id);
-    if (error) return toast.error("Erro ao atualizar status");
+    if (error) return toast({
+      title: "Erro",
+      description: "Erro ao atualizar status",
+      variant: "destructive",
+    });
     refetch();
   };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("quizzes").delete().eq("id", id);
-    if (error) return toast.error("Erro ao remover quiz");
-    toast.success("Removido");
+    if (error) return toast({
+      title: "Erro",
+      description: "Erro ao remover quiz",
+      variant: "destructive",
+    });
+    toast({
+      title: "Sucesso",
+      description: "Removido",
+    });
     refetch();
   };
 

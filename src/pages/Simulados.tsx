@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Clock, FileText, BarChart3, Play, CheckCircle } from "lucide-react";
+import { Search, Clock, FileText, BarChart3, Play, CheckCircle, Construction, ArrowRight } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useStudentData } from "@/hooks/useStudentData";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
@@ -234,17 +234,17 @@ export default function SimuladosPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="px-4 py-6 space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-neutral-700 rounded w-1/4 mb-4"></div>
+          <div className={`h-8 ${themeColors.muted} rounded w-1/4 mb-4`}></div>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-24 bg-neutral-700 rounded"></div>
+              <div key={i} className={`h-24 ${themeColors.muted} rounded`}></div>
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-neutral-700 rounded"></div>
+              <div key={i} className={`h-64 ${themeColors.muted} rounded`}></div>
             ))}
           </div>
         </div>
@@ -253,48 +253,48 @@ export default function SimuladosPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wider">SIMULADOS</h1>
-          <p className="text-sm text-neutral-400">Pratique com simulados e teste seus conhecimentos</p>
+          <h1 className={`text-2xl font-bold ${themeColors.foreground} tracking-wider`}>SIMULADOS</h1>
+          <p className={`text-sm ${themeColors.mutedForeground}`}>Pratique com simulados e teste seus conhecimentos</p>
         </div>
       </div>
 
       {/* Search and Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <Card className="lg:col-span-2 bg-neutral-900 border-neutral-700">
+        <Card className={`lg:col-span-2 ${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeColors.mutedForeground}`} />
               <Input
                 placeholder="Buscar simulados..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-neutral-800 border-neutral-600 text-white placeholder-neutral-400"
+                className={`pl-10 ${themeColors.muted} ${themeColors.border} ${themeColors.foreground} placeholder:${themeColors.mutedForeground}`}
               />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">TENTATIVAS</p>
-                <p className="text-2xl font-bold text-white font-mono">{totalAttempts}</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>TENTATIVAS</p>
+                <p className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{totalAttempts}</p>
               </div>
-              <FileText className="w-8 h-8 text-white" />
+              <FileText className={`w-8 h-8 ${themeColors.foreground}`} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">CONCLUÍDOS</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>CONCLUÍDOS</p>
                 <p className="text-2xl font-bold text-green-500 font-mono">{completedAssessments}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-500" />
@@ -302,124 +302,87 @@ export default function SimuladosPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">MÉDIA</p>
-                <p className="text-2xl font-bold text-white font-mono">{averageScore}</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>MÉDIA</p>
+                <p className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{averageScore}</p>
               </div>
-              <BarChart3 className="w-8 h-8 text-white" />
+              <BarChart3 className={`w-8 h-8 ${themeColors.foreground}`} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Simulados Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredSimulados.map((simulado) => (
-          <Card
-            key={simulado.id}
-            className="bg-neutral-900 border-neutral-700 hover:border-neutral-500 transition-colors cursor-pointer"
-            onClick={() => setSelectedSimulado(simulado)}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-sm font-bold text-white tracking-wider">{simulado.title}</CardTitle>
-                  <p className="text-xs text-neutral-400 font-mono">{simulado.type}</p>
-                </div>
-                <Badge className={getStatusColor(simulado.status)}>
-                  {simulado.status === "disponivel"
-                    ? "DISPONÍVEL"
-                    : simulado.status === "em_andamento"
-                      ? "EM ANDAMENTO"
-                      : "CONCLUÍDO"}
-                </Badge>
+      {/* Seção Em Construção */}
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <Card className={`${themeColors.card} ${themeColors.border} w-full max-w-2xl`}>
+          <CardContent className="p-12 text-center space-y-8">
+            {/* Ícone de Construção */}
+            <div className="flex justify-center">
+              <div className="p-6 rounded-full bg-neutral-100 bg-gradient-to-br from-orange-100 to-orange-200 animate-pulse">
+          <Construction className="w-16 h-16 text-orange-600 animate-construction" />
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Badge className={getTypeColor(simulado.type)}>{simulado.type.toUpperCase()}</Badge>
-                <Badge className={getDifficultyColor(simulado.difficulty)}>{simulado.difficulty.toUpperCase()}</Badge>
-              </div>
+            </div>
 
-              <p className="text-sm text-neutral-300">{simulado.description}</p>
+            {/* Título */}
+            <div className="space-y-3">
+              <h2 className={`text-3xl font-bold ${themeColors.foreground} tracking-wider`}>
+                EM CONSTRUÇÃO
+              </h2>
+              <div className={`w-24 h-1 ${themeColors.primaryBg} mx-auto rounded-full`}></div>
+            </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-4 text-xs text-neutral-400">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{formatDuration(simulado.duration_minutes)}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    <span>{simulado.total_questions} questões</span>
-                  </div>
-                </div>
-                <div className="text-xs text-neutral-400">
-                  Tentativas: <span className="text-white font-mono">{simulado.attempts}</span>
-                  {simulado.best_score && (
-                    <span className="ml-4">
-                      Melhor nota: <span className="text-white font-mono">{simulado.best_score}</span>
-                    </span>
-                  )}
-                </div>
-              </div>
+            {/* Texto Atraente */}
+            <div className="space-y-4">
+              <p className={`text-lg ${themeColors.cardForeground} leading-relaxed`}>
+                Estamos preparando algo <span className="font-semibold text-orange-600">incrível</span> para você!
+              </p>
+              <p className="text-base text-neutral-500 leading-relaxed max-w-lg mx-auto">
+              Em breve, você terá acesso a <strong>simulados específicos</strong> para as provas mais concorridas do mercado, incluindo ENEM, vestibulares de universidades federais, concursos públicos e certificações profissionais como <strong>AWS, GCP, Azure, ISO 27001, CISP</strong> e outras tecnologias em alta demanda.
+            </p>
+              <p className={`text-sm ${themeColors.mutedForeground} italic`}>
+                Prepare-se para elevar seu desempenho a um novo patamar!
+              </p>
+            </div>
 
-              <div className="flex flex-wrap gap-1">
-                {simulado.subjects.slice(0, 3).map((subject) => (
-                  <Badge key={subject} className="bg-neutral-800 text-neutral-300 text-xs">
-                    {subject}
-                  </Badge>
-                ))}
-                {simulado.subjects.length > 3 && (
-                  <Badge className="bg-neutral-800 text-neutral-300 text-xs">+{simulado.subjects.length - 3}</Badge>
-                )}
-              </div>
+            {/* Call-to-Action */}
+            <div className="pt-4">
+              <Button 
+                size="lg"
+                className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white px-8 py-3 text-base font-semibold tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg`}
+                onClick={() => {
+                  // Aqui você pode adicionar lógica para notificar o usuário ou redirecionar
+                  alert('Obrigado pelo interesse! Você será notificado quando os simulados estiverem disponíveis.');
+                }}
+              >
+                <span>Quero ser notificado</span>
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </div>
 
-              <div className="flex gap-2 pt-2">
-                {simulado.status === "em_andamento" ? (
-                  <Button
-                    size="sm"
-                    className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white flex-1`}
-                  >
-                    Continuar
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (simulado.status === "disponivel") {
-                        handleStartAssessment(simulado.id);
-                      }
-                    }}
-                    className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white flex-1`}
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Iniciar
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+            {/* Informação adicional */}
+            <div className={`text-xs ${themeColors.mutedForeground} pt-4 border-t ${themeColors.border}`}>
+              <p>🚀 Novidades chegando em breve • 📚 Conteúdo de alta qualidade • 🎯 Foco nos seus objetivos</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Simulado Detail Modal */}
       {selectedSimulado && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="bg-neutral-900 border-neutral-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <Card className={`${themeColors.card} ${themeColors.border} w-full max-w-4xl max-h-[90vh] overflow-y-auto`}>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold text-white tracking-wider">{selectedSimulado.title}</CardTitle>
-                <p className="text-sm text-neutral-400 font-mono">{selectedSimulado.type}</p>
+                <CardTitle className={`text-xl font-bold ${themeColors.foreground} tracking-wider`}>{selectedSimulado.title}</CardTitle>
+                <p className={`text-sm ${themeColors.mutedForeground} font-mono`}>{selectedSimulado.type}</p>
               </div>
               <Button
                 variant="ghost"
                 onClick={() => setSelectedSimulado(null)}
-                className="text-neutral-400 hover:text-white"
+                className={`${themeColors.mutedForeground} hover:${themeColors.foreground}`}
               >
                 ✕
               </Button>
@@ -428,7 +391,7 @@ export default function SimuladosPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">INFORMAÇÕES</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>INFORMAÇÕES</h3>
                     <div className="flex gap-2 mb-3">
                       <Badge className={getStatusColor(selectedSimulado.status)}>
                         {selectedSimulado.status === "disponivel"
@@ -444,34 +407,34 @@ export default function SimuladosPage() {
                         {selectedSimulado.difficulty.toUpperCase()}
                       </Badge>
                     </div>
-                    <p className="text-sm text-neutral-300">{selectedSimulado.description}</p>
+                    <p className={`text-sm ${themeColors.cardForeground}`}>{selectedSimulado.description}</p>
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">DETALHES</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>DETALHES</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Duração:</span>
-                        <span className="text-white">{formatDuration(selectedSimulado.duration_minutes)}</span>
+                        <span className={`${themeColors.mutedForeground}`}>Duração:</span>
+                        <span className={`${themeColors.foreground}`}>{formatDuration(selectedSimulado.duration_minutes)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Questões:</span>
-                        <span className="text-white">{selectedSimulado.total_questions}</span>
+                        <span className={`${themeColors.mutedForeground}`}>Questões:</span>
+                        <span className={`${themeColors.foreground}`}>{selectedSimulado.total_questions}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Tentativas:</span>
-                        <span className="text-white">{selectedSimulado.attempts}</span>
+                        <span className={`${themeColors.mutedForeground}`}>Tentativas:</span>
+                        <span className={`${themeColors.foreground}`}>{selectedSimulado.attempts}</span>
                       </div>
                       {selectedSimulado.best_score && (
                         <div className="flex justify-between">
-                          <span className="text-neutral-400">Melhor Nota:</span>
-                          <span className="text-white font-mono">{selectedSimulado.best_score}</span>
+                          <span className={`${themeColors.mutedForeground}`}>Melhor Nota:</span>
+                          <span className={`${themeColors.foreground} font-mono`}>{selectedSimulado.best_score}</span>
                         </div>
                       )}
                       {selectedSimulado.last_attempt && (
                         <div className="flex justify-between">
-                          <span className="text-neutral-400">Última Tentativa:</span>
-                          <span className="text-white font-mono">{selectedSimulado.last_attempt}</span>
+                          <span className={`${themeColors.mutedForeground}`}>Última Tentativa:</span>
+                          <span className={`${themeColors.foreground} font-mono`}>{selectedSimulado.last_attempt}</span>
                         </div>
                       )}
                     </div>
@@ -480,10 +443,10 @@ export default function SimuladosPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">MATÉRIAS</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>MATÉRIAS</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedSimulado.subjects.map((subject) => (
-                        <Badge key={subject} className="bg-neutral-800 text-neutral-300">
+                        <Badge key={subject} className={`${themeColors.muted} ${themeColors.cardForeground}`}>
                           {subject}
                         </Badge>
                       ))}
@@ -492,13 +455,13 @@ export default function SimuladosPage() {
 
                   {selectedSimulado.best_score && (
                     <div>
-                      <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">DESEMPENHO</h3>
+                      <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>DESEMPENHO</h3>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-neutral-400">Melhor Pontuação</span>
-                          <span className="text-white font-mono">{selectedSimulado.best_score}/1000</span>
+                          <span className={`${themeColors.mutedForeground}`}>Melhor Pontuação</span>
+                          <span className={`${themeColors.foreground} font-mono`}>{selectedSimulado.best_score}/1000</span>
                         </div>
-                        <div className="w-full bg-neutral-800 rounded-full h-3">
+                        <div className={`w-full ${themeColors.muted} rounded-full h-3`}>
                           <div
                             className={`${themeColors.primaryBg} h-3 rounded-full transition-all duration-300`}
                             style={{ width: `${(selectedSimulado.best_score / 1000) * 100}%` }}
@@ -510,7 +473,7 @@ export default function SimuladosPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-4 border-t border-neutral-700">
+              <div className={`flex gap-2 pt-4 border-t ${themeColors.border}`}>
                 {selectedSimulado.status === "em_andamento" ? (
                   <Button
                     className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white`}
@@ -533,13 +496,13 @@ export default function SimuladosPage() {
                 )}
                 <Button
                   variant="outline"
-                  className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent"
+                  className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground} bg-transparent`}
                 >
                   Ver Histórico
                 </Button>
                 <Button
                   variant="outline"
-                  className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent"
+                  className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground} bg-transparent`}
                 >
                   Compartilhar
                 </Button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import AdminBadgeManagement from './AdminBadgeManagement';
 import StudentBadgeView from '../student/StudentBadgeView';
 
@@ -9,6 +9,7 @@ import StudentBadgeView from '../student/StudentBadgeView';
  * Renderiza diferentes views baseado no papel do usuário
  */
 export default function BadgeManagement() {
+  const { toast } = useToast();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +21,11 @@ export default function BadgeManagement() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error('Usuário não autenticado');
+        toast({
+          title: "Erro",
+          description: "Usuário não autenticado",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -32,14 +37,22 @@ export default function BadgeManagement() {
 
       if (error) {
         console.error('Erro ao buscar perfil:', error);
-        toast.error('Erro ao verificar permissões');
+        toast({
+          title: "Erro",
+          description: "Erro ao verificar permissões",
+          variant: "destructive"
+        });
         return;
       }
 
       setUserRole(profile?.role || 'student');
     } catch (err) {
       console.error('Erro ao verificar papel do usuário:', err);
-      toast.error('Erro ao verificar permissões');
+      toast({
+        title: "Erro",
+        description: "Erro ao verificar permissões",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }

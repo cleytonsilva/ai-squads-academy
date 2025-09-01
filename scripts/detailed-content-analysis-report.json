@@ -1,0 +1,495 @@
+{
+  "timestamp": "2025-08-26T20:22:17.021Z",
+  "summary": {
+    "totalModules": 16,
+    "modulesWithProblems": 2,
+    "duplicatedGroups": 1
+  },
+  "moduleDetails": [
+    {
+      "moduleId": "84cbbe22-ec35-4137-8008-dbde567cd60a",
+      "title": "Introdução à Cibersegurança",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 0,
+      "content": {
+        "html": "<p>A cibersegurança refere-se à prática de proteger sistemas, redes e programas contra ataques digitais. Esses ataques geralmente têm como objetivo acessar, alterar ou destruir informações sensíveis, extorquir dinheiro aos usuários ou interromper processos normais de negócios. Neste módulo, abordaremos os principais conceitos de cibersegurança e sua relevância no mundo atual.</p><p>Nos dias de hoje, a dependência da tecnologia é crescente, e com isso, as ameaças também aumentam. Entender os tipos de ameaças e vulnerabilidades é essencial para qualquer profissional de TI. Vamos explorar as diferentes categorias de ameaças, como malware, phishing e ransomware, e discutir como elas afetam indivíduos e organizações.</p><p>Além disso, veremos as consequências de uma falha em cibersegurança, que podem incluir perda de dados, danos à reputação e consequências legais. A conscientização e a educação em cibersegurança são fundamentais para mitigar esses riscos e proteger ativos valiosos.</p>",
+        "summary": "Compreenda os conceitos básicos e a importância da cibersegurança."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 996,
+        "textContent": "A cibersegurança refere-se à prática de proteger sistemas, redes e programas contra ataques digitais. Esses ataques geralmente têm como objetivo acessar, alterar ou destruir informações sensíveis, extorquir dinheiro aos usuários ou interromper processos normais de negócios. Neste módulo, abordaremos os principais conceitos de cibersegurança e sua relevância no mundo atual. Nos dias de hoje, a dependência da tecnologia é crescente, e com isso, as ameaças também aumentam. Entender os tipos de ameaças e vulnerabilidades é essencial para qualquer profissional de TI. Vamos explorar as diferentes categorias de ameaças, como malware, phishing e ransomware, e discutir como elas afetam indivíduos e organizações. Além disso, veremos as consequências de uma falha em cibersegurança, que podem incluir perda de dados, danos à reputação e consequências legais. A conscientização e a educação em cibersegurança são fundamentais para mitigar esses riscos e proteger ativos valiosos.",
+        "wordCount": 140
+      }
+    },
+    {
+      "moduleId": "0bdb6853-71fa-4eca-af16-d849ccd08030",
+      "title": "Tipos de Ameaças",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 1,
+      "content": {
+        "html": "<p>As ameaças à cibersegurança podem ser classificadas em várias categorias, incluindo malware, phishing, ransomware e ataques de negação de serviço (DoS). Cada uma dessas ameaças possui características e métodos de ataque distintos que podem causar danos significativos a indivíduos e organizações.</p><p>O malware é um termo genérico que se refere a qualquer software malicioso projetado para causar danos. Isso inclui vírus, worms e trojans. Por outro lado, o phishing é uma técnica que tenta enganar os usuários a fornecer informações confidenciais, como senhas e números de cartão de crédito, geralmente por meio de e-mails fraudulentos.</p><p>O ransomware é uma forma de malware que criptografa dados, exigindo um resgate para a recuperação. Ataques DoS, por sua vez, visam tornar um serviço indisponível, sobrecarregando-o com tráfego excessivo. Entender esses tipos de ameaças é fundamental para desenvolver estratégias de defesa eficazes.</p>",
+        "summary": "Explore as diferentes ameaças que podem comprometer a segurança da informação."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 951,
+        "textContent": "As ameaças à cibersegurança podem ser classificadas em várias categorias, incluindo malware, phishing, ransomware e ataques de negação de serviço (DoS). Cada uma dessas ameaças possui características e métodos de ataque distintos que podem causar danos significativos a indivíduos e organizações. O malware é um termo genérico que se refere a qualquer software malicioso projetado para causar danos. Isso inclui vírus, worms e trojans. Por outro lado, o phishing é uma técnica que tenta enganar os usuários a fornecer informações confidenciais, como senhas e números de cartão de crédito, geralmente por meio de e-mails fraudulentos. O ransomware é uma forma de malware que criptografa dados, exigindo um resgate para a recuperação. Ataques DoS, por sua vez, visam tornar um serviço indisponível, sobrecarregando-o com tráfego excessivo. Entender esses tipos de ameaças é fundamental para desenvolver estratégias de defesa eficazes.",
+        "wordCount": 138
+      }
+    },
+    {
+      "moduleId": "84533da5-8ca0-4d16-a03f-33aba80f1345",
+      "title": "Práticas de Proteção",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 2,
+      "content": {
+        "html": "<p>A proteção de sistemas e dados é uma responsabilidade crucial para qualquer profissional de TI. Este módulo abordará as melhores práticas que podem ser implementadas para fortalecer a segurança. O uso de senhas fortes e a autenticação em duas etapas são fundamentais para proteger contas e sistemas.</p><p>Além disso, é essencial manter software e sistemas operacionais atualizados para evitar vulnerabilidades conhecidas. As atualizações frequentemente incluem correções de segurança que protegem contra novas ameaças. Também discutiremos a importância de realizar backups regulares e como a criptografia pode proteger dados sensíveis.</p><p>O treinamento contínuo dos usuários é outra prática vital. Os usuários muitas vezes são o elo mais fraco em uma estratégia de cibersegurança, e educá-los sobre como reconhecer ameaças e agir de forma segura pode prevenir muitos problemas.</p>",
+        "summary": "Aprenda as melhores práticas para proteger sistemas e dados."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 888,
+        "textContent": "A proteção de sistemas e dados é uma responsabilidade crucial para qualquer profissional de TI. Este módulo abordará as melhores práticas que podem ser implementadas para fortalecer a segurança. O uso de senhas fortes e a autenticação em duas etapas são fundamentais para proteger contas e sistemas. Além disso, é essencial manter software e sistemas operacionais atualizados para evitar vulnerabilidades conhecidas. As atualizações frequentemente incluem correções de segurança que protegem contra novas ameaças. Também discutiremos a importância de realizar backups regulares e como a criptografia pode proteger dados sensíveis. O treinamento contínuo dos usuários é outra prática vital. Os usuários muitas vezes são o elo mais fraco em uma estratégia de cibersegurança, e educá-los sobre como reconhecer ameaças e agir de forma segura pode prevenir muitos problemas.",
+        "wordCount": 127
+      }
+    },
+    {
+      "moduleId": "c97704a2-56e5-430b-a1e5-b1573bafa547",
+      "title": "Segurança em Redes",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 3,
+      "content": {
+        "html": "<p>A segurança em redes é um aspecto crucial da cibersegurança, pois as redes são frequentemente um alvo para atacantes. Neste módulo, vamos explorar as melhores práticas para proteger redes e dispositivos conectados. O uso de firewalls, sistemas de detecção de intrusões e segmentação de redes são práticas fundamentais.</p><p>Firewalls atuam como barreiras entre redes confiáveis e não confiáveis, monitorando o tráfego e bloqueando acessos não autorizados. Além disso, a segmentação de redes ajuda a limitar o acesso e a minimizar o impacto de um ataque ao dividir grandes redes em partes menores e mais seguras.</p><p>Outro ponto importante é a proteção de dispositivos móveis e IoT (Internet das Coisas), que muitas vezes são vulneráveis. A implementação de políticas de segurança e o uso de VPNs (redes privadas virtuais) podem ajudar a proteger dados em trânsito e garantir que dispositivos não autorizados não acessem a rede.</p>",
+        "summary": "Entenda como proteger redes e dispositivos conectados."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 937,
+        "textContent": "A segurança em redes é um aspecto crucial da cibersegurança, pois as redes são frequentemente um alvo para atacantes. Neste módulo, vamos explorar as melhores práticas para proteger redes e dispositivos conectados. O uso de firewalls, sistemas de detecção de intrusões e segmentação de redes são práticas fundamentais. Firewalls atuam como barreiras entre redes confiáveis e não confiáveis, monitorando o tráfego e bloqueando acessos não autorizados. Além disso, a segmentação de redes ajuda a limitar o acesso e a minimizar o impacto de um ataque ao dividir grandes redes em partes menores e mais seguras. Outro ponto importante é a proteção de dispositivos móveis e IoT (Internet das Coisas), que muitas vezes são vulneráveis. A implementação de políticas de segurança e o uso de VPNs (redes privadas virtuais) podem ajudar a proteger dados em trânsito e garantir que dispositivos não autorizados não acessem a rede.",
+        "wordCount": 145
+      }
+    },
+    {
+      "moduleId": "eaed59f7-5a32-4dba-a966-f270f607a2d4",
+      "title": "Legislação e Compliance",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 4,
+      "content": {
+        "html": "<p>A legislação e o compliance são aspectos cruciais da cibersegurança, pois estabelecem as obrigações legais que as organizações devem seguir para proteger dados e informações. Neste módulo, discutiremos algumas das principais leis, como a Lei Geral de Proteção de Dados (LGPD) no Brasil, que regula o tratamento de dados pessoais.</p><p>A LGPD estabelece diretrizes sobre como as empresas devem coletar, armazenar e processar dados pessoais, garantindo a privacidade dos usuários. O descumprimento dessa lei pode resultar em penalidades severas, incluindo multas significativas e danos à reputação.</p><p>Além da LGPD, existem outras regulamentações internacionais, como o Regulamento Geral sobre a Proteção de Dados (GDPR) da União Europeia, que também influencia práticas de cibersegurança no Brasil. A conformidade com essas leis não é apenas uma obrigação legal, mas também uma prática que pode aumentar a confiança dos clientes e proteger a integridade da marca.</p>",
+        "summary": "Conheça as leis e regulamentações que afetam a cibersegurança."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 973,
+        "textContent": "A legislação e o compliance são aspectos cruciais da cibersegurança, pois estabelecem as obrigações legais que as organizações devem seguir para proteger dados e informações. Neste módulo, discutiremos algumas das principais leis, como a Lei Geral de Proteção de Dados (LGPD) no Brasil, que regula o tratamento de dados pessoais. A LGPD estabelece diretrizes sobre como as empresas devem coletar, armazenar e processar dados pessoais, garantindo a privacidade dos usuários. O descumprimento dessa lei pode resultar em penalidades severas, incluindo multas significativas e danos à reputação. Além da LGPD, existem outras regulamentações internacionais, como o Regulamento Geral sobre a Proteção de Dados (GDPR) da União Europeia, que também influencia práticas de cibersegurança no Brasil. A conformidade com essas leis não é apenas uma obrigação legal, mas também uma prática que pode aumentar a confiança dos clientes e proteger a integridade da marca.",
+        "wordCount": 142
+      }
+    },
+    {
+      "moduleId": "053b0693-029b-4822-8320-6e8e5fb8ad29",
+      "title": "Respostas a Incidentes",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 5,
+      "content": {
+        "html": "<p>A resposta a incidentes é uma parte essencial da cibersegurança, pois envolve ações tomadas para lidar com um ataque ou violação de segurança. Neste módulo, discutiremos as etapas envolvidas na resposta a incidentes, incluindo preparação, identificação, contenção, erradicação, recuperação e aprendizado.</p><p>A preparação envolve ter um plano de resposta a incidentes em vigor e treinar a equipe para agir rapidamente. A identificação é o processo de reconhecer que um incidente ocorreu, enquanto a contenção visa limitar o impacto. A erradicação envolve eliminar a causa do incidente, e a recuperação é o processo de restaurar sistemas e dados afetados.</p><p>Por fim, o aprendizado é crucial para evitar que incidentes semelhantes ocorram no futuro. Analisar o que deu errado e implementar melhorias pode fortalecer a postura de segurança de uma organização.</p>",
+        "summary": "Aprenda a lidar com incidentes de segurança e a minimizar danos."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 869,
+        "textContent": "A resposta a incidentes é uma parte essencial da cibersegurança, pois envolve ações tomadas para lidar com um ataque ou violação de segurança. Neste módulo, discutiremos as etapas envolvidas na resposta a incidentes, incluindo preparação, identificação, contenção, erradicação, recuperação e aprendizado. A preparação envolve ter um plano de resposta a incidentes em vigor e treinar a equipe para agir rapidamente. A identificação é o processo de reconhecer que um incidente ocorreu, enquanto a contenção visa limitar o impacto. A erradicação envolve eliminar a causa do incidente, e a recuperação é o processo de restaurar sistemas e dados afetados. Por fim, o aprendizado é crucial para evitar que incidentes semelhantes ocorram no futuro. Analisar o que deu errado e implementar melhorias pode fortalecer a postura de segurança de uma organização.",
+        "wordCount": 129
+      }
+    },
+    {
+      "moduleId": "06dde3de-5e2a-4e0e-be16-c9438a6fe565",
+      "title": "Futuro da Cibersegurança",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 6,
+      "content": {
+        "html": "<p>O futuro da cibersegurança é moldado por uma série de tendências emergentes e desafios. Neste módulo, discutiremos como a evolução da tecnologia, como a inteligência artificial e a computação em nuvem, está impactando a cibersegurança. Essas tecnologias oferecem novas oportunidades, mas também criam novas vulnerabilidades.</p><p>A inteligência artificial, por exemplo, pode ser usada para detectar padrões de comportamento anômalos e responder a ameaças em tempo real. No entanto, também pode ser explorada por hackers para desenvolver ataques mais sofisticados. Assim, a cibersegurança deve evoluir constantemente para acompanhar essas mudanças.</p><p>Além disso, os desafios relacionados à privacidade e à proteção de dados continuarão a crescer à medida que mais informações pessoais são coletadas e armazenadas. A conformidade com regulamentações e a construção de confiança com os clientes serão essenciais para as organizações que buscam prosperar em um ambiente digital em constante mudança.</p>",
+        "summary": "Explore as tendências e desafios futuros na cibersegurança."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 1007,
+        "textContent": "O futuro da cibersegurança é moldado por uma série de tendências emergentes e desafios. Neste módulo, discutiremos como a evolução da tecnologia, como a inteligência artificial e a computação em nuvem, está impactando a cibersegurança. Essas tecnologias oferecem novas oportunidades, mas também criam novas vulnerabilidades. A inteligência artificial, por exemplo, pode ser usada para detectar padrões de comportamento anômalos e responder a ameaças em tempo real. No entanto, também pode ser explorada por hackers para desenvolver ataques mais sofisticados. Assim, a cibersegurança deve evoluir constantemente para acompanhar essas mudanças. Além disso, os desafios relacionados à privacidade e à proteção de dados continuarão a crescer à medida que mais informações pessoais são coletadas e armazenadas. A conformidade com regulamentações e a construção de confiança com os clientes serão essenciais para as organizações que buscam prosperar em um ambiente digital em constante mudança.",
+        "wordCount": 141
+      }
+    },
+    {
+      "moduleId": "4061b636-3e2e-418b-81be-10b5b3b1c8ba",
+      "title": "Prova Final",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 7,
+      "content": {
+        "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+      },
+      "problems": [
+        "Conteúdo genérico demais"
+      ],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 79,
+        "textContent": "Prova Final Responda às questões a seguir para concluir o curso.",
+        "wordCount": 11
+      }
+    },
+    {
+      "moduleId": "b67563a8-bfe9-4218-b0de-e6c66047697a",
+      "title": "Introdução ao Blue Team",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 0,
+      "content": {
+        "html": "<p>O Blue Team é a equipe responsável pela defesa de sistemas e redes contra ciberataques. Ao contrário do Red Team, que simula ataques para identificar vulnerabilidades, o Blue Team se concentra em proteger e monitorar ambientes tecnológicos.</p><p>Os profissionais do Blue Team utilizam uma variedade de ferramentas e técnicas para detectar, prevenir e responder a incidentes de segurança. Isso inclui a análise de logs, monitoramento de rede e implementação de políticas de segurança.</p><p>Entender o papel do Blue Team é fundamental para qualquer profissional de TI, pois a segurança da informação é uma preocupação crescente em um mundo cada vez mais digital. Este módulo irá estabelecer as bases para o que será abordado nas próximas aulas.</p>\n<p>Este é o conteúdo adicional gerado pela IA com exemplos práticos e exercícios.</p>"
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 837,
+        "textContent": "O Blue Team é a equipe responsável pela defesa de sistemas e redes contra ciberataques. Ao contrário do Red Team, que simula ataques para identificar vulnerabilidades, o Blue Team se concentra em proteger e monitorar ambientes tecnológicos. Os profissionais do Blue Team utilizam uma variedade de ferramentas e técnicas para detectar, prevenir e responder a incidentes de segurança. Isso inclui a análise de logs, monitoramento de rede e implementação de políticas de segurança. Entender o papel do Blue Team é fundamental para qualquer profissional de TI, pois a segurança da informação é uma preocupação crescente em um mundo cada vez mais digital. Este módulo irá estabelecer as bases para o que será abordado nas próximas aulas. Este é o conteúdo adicional gerado pela IA com exemplos práticos e exercícios.",
+        "wordCount": 129
+      }
+    },
+    {
+      "moduleId": "dc0d4f3e-d56f-4d70-91cd-6f40999f7b0b",
+      "title": "Fundamentos de Segurança da Informação",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 1,
+      "content": {
+        "html": "<p>A segurança da informação é um campo amplo que abrange práticas, conceitos e tecnologias que visam proteger dados e sistemas. Os princípios fundamentais incluem confidencialidade, integridade e disponibilidade, muitas vezes referidos como a tríade CIA.</p><p>A confidencialidade garante que a informação seja acessível apenas a pessoas autorizadas, enquanto a integridade assegura que os dados não sejam alterados de forma não autorizada. A disponibilidade, por sua vez, refere-se à garantia de que os dados e serviços estejam acessíveis quando necessário.</p><p>Para implementar a segurança da informação, as organizações devem adotar uma abordagem holística, que inclua políticas, procedimentos e tecnologias que protejam todos os aspectos da informação, desde o armazenamento até a transmissão.</p>"
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 804,
+        "textContent": "A segurança da informação é um campo amplo que abrange práticas, conceitos e tecnologias que visam proteger dados e sistemas. Os princípios fundamentais incluem confidencialidade, integridade e disponibilidade, muitas vezes referidos como a tríade CIA. A confidencialidade garante que a informação seja acessível apenas a pessoas autorizadas, enquanto a integridade assegura que os dados não sejam alterados de forma não autorizada. A disponibilidade, por sua vez, refere-se à garantia de que os dados e serviços estejam acessíveis quando necessário. Para implementar a segurança da informação, as organizações devem adotar uma abordagem holística, que inclua políticas, procedimentos e tecnologias que protejam todos os aspectos da informação, desde o armazenamento até a transmissão.",
+        "wordCount": 111
+      }
+    },
+    {
+      "moduleId": "301495fb-07d2-4be9-afb9-c169a630dc5b",
+      "title": "Análise de Risco",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 2,
+      "content": {
+        "html": "<p>A análise de risco é um componente crucial da segurança da informação. Este processo envolve a identificação de ativos, ameaças e vulnerabilidades que podem afetar a segurança de uma organização. A análise de risco ajuda as organizações a priorizar suas ações de segurança e alocar recursos de forma eficaz.</p><p>O primeiro passo na análise de risco é a identificação dos ativos, que podem incluir hardware, software, dados e pessoas. Em seguida, as ameaças são identificadas, que podem ser internas ou externas, e as vulnerabilidades são avaliadas.</p><p>Uma vez que os riscos são identificados, as organizações podem implementar controles para mitigar esses riscos, como a adoção de políticas de segurança, treinamento de funcionários e utilização de tecnologias de proteção.</p>",
+        "summary": "Aprenda a identificar e avaliar riscos de segurança."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 785,
+        "textContent": "A análise de risco é um componente crucial da segurança da informação. Este processo envolve a identificação de ativos, ameaças e vulnerabilidades que podem afetar a segurança de uma organização. A análise de risco ajuda as organizações a priorizar suas ações de segurança e alocar recursos de forma eficaz. O primeiro passo na análise de risco é a identificação dos ativos, que podem incluir hardware, software, dados e pessoas. Em seguida, as ameaças são identificadas, que podem ser internas ou externas, e as vulnerabilidades são avaliadas. Uma vez que os riscos são identificados, as organizações podem implementar controles para mitigar esses riscos, como a adoção de políticas de segurança, treinamento de funcionários e utilização de tecnologias de proteção.",
+        "wordCount": 118
+      }
+    },
+    {
+      "moduleId": "36c49222-4482-4ebf-8bf3-e34c7c8162b2",
+      "title": "Monitoramento e Resposta a Incidentes",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 3,
+      "content": {
+        "html": "<p>O monitoramento contínuo e a resposta a incidentes são aspectos fundamentais da segurança da informação. O monitoramento envolve a coleta e análise de dados de segurança para identificar atividades suspeitas ou anômalas.</p><p>As ferramentas de monitoramento são usadas para rastrear eventos de segurança em tempo real e gerar alertas quando algo suspeito é detectado. Essa abordagem permite que as equipes de segurança respondam rapidamente a incidentes potenciais, minimizando o impacto na organização.</p><p>A resposta a incidentes inclui um conjunto de procedimentos que devem ser seguidos quando um incidente é identificado. Isso pode envolver a contenção do incidente, a erradicação da ameaça e a recuperação dos sistemas afetados. Documentar o incidente e aprender com ele é crucial para melhorar a segurança futura.</p>",
+        "summary": "Entenda como monitorar e responder a incidentes de segurança."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 830,
+        "textContent": "O monitoramento contínuo e a resposta a incidentes são aspectos fundamentais da segurança da informação. O monitoramento envolve a coleta e análise de dados de segurança para identificar atividades suspeitas ou anômalas. As ferramentas de monitoramento são usadas para rastrear eventos de segurança em tempo real e gerar alertas quando algo suspeito é detectado. Essa abordagem permite que as equipes de segurança respondam rapidamente a incidentes potenciais, minimizando o impacto na organização. A resposta a incidentes inclui um conjunto de procedimentos que devem ser seguidos quando um incidente é identificado. Isso pode envolver a contenção do incidente, a erradicação da ameaça e a recuperação dos sistemas afetados. Documentar o incidente e aprender com ele é crucial para melhorar a segurança futura.",
+        "wordCount": 121
+      }
+    },
+    {
+      "moduleId": "26737a05-3e14-4d9b-8e60-d0796013a39c",
+      "title": "Ferramentas de Segurança",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 4,
+      "content": {
+        "html": "<p>As ferramentas de segurança são essenciais para a operação do Blue Team, pois ajudam na detecção, prevenção e resposta a incidentes de segurança. Existem várias categorias de ferramentas, incluindo firewalls, sistemas de detecção de intrusões (IDS), antivírus e plataformas de gerenciamento de eventos de segurança (SIEM).</p><p>Firewalls atuam como uma barreira entre redes confiáveis e não confiáveis, filtrando o tráfego de rede com base em políticas de segurança. Sistemas de detecção de intrusões monitoram redes e sistemas para identificar atividades maliciosas e gerar alertas.</p><p>Os antivírus são usados para detectar e remover malware, enquanto as plataformas SIEM agregam dados de segurança de diferentes fontes, permitindo uma análise centralizada e uma resposta mais rápida a incidentes.</p>",
+        "summary": "Conheça as principais ferramentas utilizadas pelo Blue Team."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 809,
+        "textContent": "As ferramentas de segurança são essenciais para a operação do Blue Team, pois ajudam na detecção, prevenção e resposta a incidentes de segurança. Existem várias categorias de ferramentas, incluindo firewalls, sistemas de detecção de intrusões (IDS), antivírus e plataformas de gerenciamento de eventos de segurança (SIEM). Firewalls atuam como uma barreira entre redes confiáveis e não confiáveis, filtrando o tráfego de rede com base em políticas de segurança. Sistemas de detecção de intrusões monitoram redes e sistemas para identificar atividades maliciosas e gerar alertas. Os antivírus são usados para detectar e remover malware, enquanto as plataformas SIEM agregam dados de segurança de diferentes fontes, permitindo uma análise centralizada e uma resposta mais rápida a incidentes.",
+        "wordCount": 115
+      }
+    },
+    {
+      "moduleId": "77d39123-0ec0-4ea8-970a-3a6b83d776ed",
+      "title": "Políticas de Segurança",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 5,
+      "content": {
+        "html": "<p>As políticas de segurança são documentos formais que definem como a segurança da informação deve ser gerenciada dentro de uma organização. Elas estabelecem as diretrizes e normas que todos os colaboradores devem seguir para garantir a proteção de dados e sistemas.</p><p>Uma boa política de segurança cobre aspectos como controle de acesso, uso aceitável de recursos, resposta a incidentes e treinamento de funcionários. Além disso, as políticas devem ser revisadas e atualizadas regularmente para se adaptarem a novas ameaças e mudanças no ambiente de negócios.</p><p>Implementar políticas de segurança eficazes é fundamental para criar uma cultura de segurança dentro da organização e minimizar riscos associados a incidentes de segurança.</p>",
+        "summary": "Aprenda sobre a importância das políticas de segurança na organização."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 748,
+        "textContent": "As políticas de segurança são documentos formais que definem como a segurança da informação deve ser gerenciada dentro de uma organização. Elas estabelecem as diretrizes e normas que todos os colaboradores devem seguir para garantir a proteção de dados e sistemas. Uma boa política de segurança cobre aspectos como controle de acesso, uso aceitável de recursos, resposta a incidentes e treinamento de funcionários. Além disso, as políticas devem ser revisadas e atualizadas regularmente para se adaptarem a novas ameaças e mudanças no ambiente de negócios. Implementar políticas de segurança eficazes é fundamental para criar uma cultura de segurança dentro da organização e minimizar riscos associados a incidentes de segurança.",
+        "wordCount": 109
+      }
+    },
+    {
+      "moduleId": "b5f53cb3-48d9-4589-acb9-8dbeff3ab611",
+      "title": "Treinamento e Conscientização",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 6,
+      "content": {
+        "html": "<p>O treinamento e a conscientização em segurança da informação são cruciais para capacitar os colaboradores a reconhecer e responder a ameaças de segurança. Muitas vezes, os usuários são o elo mais fraco na segurança da informação, e um treinamento adequado pode ajudar a mitigar riscos.</p><p>Programas de conscientização devem incluir tópicos como phishing, senhas seguras, e práticas recomendadas para o uso de dispositivos e redes. Além disso, simulações de ataques podem ser realizadas para treinar os colaboradores a identificar atividades suspeitas.</p><p>Investir em treinamento e conscientização não apenas protege a organização, mas também cria uma cultura de segurança que promove a responsabilidade individual entre os funcionários.</p>",
+        "summary": "Entenda a importância do treinamento em segurança da informação."
+      },
+      "problems": [],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 749,
+        "textContent": "O treinamento e a conscientização em segurança da informação são cruciais para capacitar os colaboradores a reconhecer e responder a ameaças de segurança. Muitas vezes, os usuários são o elo mais fraco na segurança da informação, e um treinamento adequado pode ajudar a mitigar riscos. Programas de conscientização devem incluir tópicos como phishing, senhas seguras, e práticas recomendadas para o uso de dispositivos e redes. Além disso, simulações de ataques podem ser realizadas para treinar os colaboradores a identificar atividades suspeitas. Investir em treinamento e conscientização não apenas protege a organização, mas também cria uma cultura de segurança que promove a responsabilidade individual entre os funcionários.",
+        "wordCount": 106
+      }
+    },
+    {
+      "moduleId": "a313a0d4-d1e6-4617-bef8-cf1b2aa4d702",
+      "title": "Prova Final",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 7,
+      "content": {
+        "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+      },
+      "problems": [
+        "Conteúdo genérico demais"
+      ],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 79,
+        "textContent": "Prova Final Responda às questões a seguir para concluir o curso.",
+        "wordCount": 11
+      }
+    }
+  ],
+  "contentProblems": [
+    {
+      "moduleId": "4061b636-3e2e-418b-81be-10b5b3b1c8ba",
+      "title": "Prova Final",
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "orderIndex": 7,
+      "content": {
+        "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+      },
+      "problems": [
+        "Conteúdo genérico demais"
+      ],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 79,
+        "textContent": "Prova Final Responda às questões a seguir para concluir o curso.",
+        "wordCount": 11
+      }
+    },
+    {
+      "moduleId": "a313a0d4-d1e6-4617-bef8-cf1b2aa4d702",
+      "title": "Prova Final",
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "orderIndex": 7,
+      "content": {
+        "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+      },
+      "problems": [
+        "Conteúdo genérico demais"
+      ],
+      "contentSummary": {
+        "hasHtml": true,
+        "htmlLength": 79,
+        "textContent": "Prova Final Responda às questões a seguir para concluir o curso.",
+        "wordCount": 11
+      }
+    }
+  ],
+  "duplicatedContent": [
+    {
+      "modules": [
+        {
+          "moduleId": "4061b636-3e2e-418b-81be-10b5b3b1c8ba",
+          "title": "Prova Final",
+          "courseTitle": "Curso de Cibersegurança",
+          "content": {
+            "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+          }
+        },
+        {
+          "moduleId": "a313a0d4-d1e6-4617-bef8-cf1b2aa4d702",
+          "title": "Prova Final",
+          "courseTitle": "Blue Team Fundamentos",
+          "content": {
+            "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+          }
+        }
+      ],
+      "contentPreview": "Prova Final Responda às questões a seguir para concluir o curso."
+    }
+  ],
+  "courseAnalysis": [
+    {
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "totalModules": 8,
+      "modulesWithProblems": 1,
+      "modules": [
+        {
+          "id": "84cbbe22-ec35-4137-8008-dbde567cd60a",
+          "title": "Introdução à Cibersegurança",
+          "problems": [],
+          "wordCount": 140,
+          "orderIndex": 0
+        },
+        {
+          "id": "0bdb6853-71fa-4eca-af16-d849ccd08030",
+          "title": "Tipos de Ameaças",
+          "problems": [],
+          "wordCount": 138,
+          "orderIndex": 1
+        },
+        {
+          "id": "84533da5-8ca0-4d16-a03f-33aba80f1345",
+          "title": "Práticas de Proteção",
+          "problems": [],
+          "wordCount": 127,
+          "orderIndex": 2
+        },
+        {
+          "id": "c97704a2-56e5-430b-a1e5-b1573bafa547",
+          "title": "Segurança em Redes",
+          "problems": [],
+          "wordCount": 145,
+          "orderIndex": 3
+        },
+        {
+          "id": "eaed59f7-5a32-4dba-a966-f270f607a2d4",
+          "title": "Legislação e Compliance",
+          "problems": [],
+          "wordCount": 142,
+          "orderIndex": 4
+        },
+        {
+          "id": "053b0693-029b-4822-8320-6e8e5fb8ad29",
+          "title": "Respostas a Incidentes",
+          "problems": [],
+          "wordCount": 129,
+          "orderIndex": 5
+        },
+        {
+          "id": "06dde3de-5e2a-4e0e-be16-c9438a6fe565",
+          "title": "Futuro da Cibersegurança",
+          "problems": [],
+          "wordCount": 141,
+          "orderIndex": 6
+        },
+        {
+          "id": "4061b636-3e2e-418b-81be-10b5b3b1c8ba",
+          "title": "Prova Final",
+          "problems": [
+            "Conteúdo genérico demais"
+          ],
+          "wordCount": 11,
+          "orderIndex": 7
+        }
+      ]
+    },
+    {
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "totalModules": 8,
+      "modulesWithProblems": 1,
+      "modules": [
+        {
+          "id": "b67563a8-bfe9-4218-b0de-e6c66047697a",
+          "title": "Introdução ao Blue Team",
+          "problems": [],
+          "wordCount": 129,
+          "orderIndex": 0
+        },
+        {
+          "id": "dc0d4f3e-d56f-4d70-91cd-6f40999f7b0b",
+          "title": "Fundamentos de Segurança da Informação",
+          "problems": [],
+          "wordCount": 111,
+          "orderIndex": 1
+        },
+        {
+          "id": "301495fb-07d2-4be9-afb9-c169a630dc5b",
+          "title": "Análise de Risco",
+          "problems": [],
+          "wordCount": 118,
+          "orderIndex": 2
+        },
+        {
+          "id": "36c49222-4482-4ebf-8bf3-e34c7c8162b2",
+          "title": "Monitoramento e Resposta a Incidentes",
+          "problems": [],
+          "wordCount": 121,
+          "orderIndex": 3
+        },
+        {
+          "id": "26737a05-3e14-4d9b-8e60-d0796013a39c",
+          "title": "Ferramentas de Segurança",
+          "problems": [],
+          "wordCount": 115,
+          "orderIndex": 4
+        },
+        {
+          "id": "77d39123-0ec0-4ea8-970a-3a6b83d776ed",
+          "title": "Políticas de Segurança",
+          "problems": [],
+          "wordCount": 109,
+          "orderIndex": 5
+        },
+        {
+          "id": "b5f53cb3-48d9-4589-acb9-8dbeff3ab611",
+          "title": "Treinamento e Conscientização",
+          "problems": [],
+          "wordCount": 106,
+          "orderIndex": 6
+        },
+        {
+          "id": "a313a0d4-d1e6-4617-bef8-cf1b2aa4d702",
+          "title": "Prova Final",
+          "problems": [
+            "Conteúdo genérico demais"
+          ],
+          "wordCount": 11,
+          "orderIndex": 7
+        }
+      ]
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { Certificate, Course, UserProfile } from '@/types/course';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import {
   Award,
   Download,
@@ -53,15 +53,16 @@ interface CertificateData {
 export default function CertificateGenerator({
   course,
   userProfile,
-  completionDate,
   finalScore,
   totalXP,
+  completionDate,
   onGenerated
 }: CertificateGeneratorProps) {
-  const [certificate, setCertificate] = useState<CertificateData | null>(null);
+  const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const certificateRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const generateCertificate = async () => {
     try {
@@ -96,14 +97,21 @@ export default function CertificateGenerator({
       if (error) throw error;
 
       setCertificate(data);
-      toast.success('Certificado gerado com sucesso!');
+      toast({
+        title: "Sucesso!",
+        description: "Certificado gerado com sucesso!",
+      });
 
       if (onGenerated) {
         onGenerated(data);
       }
     } catch (error: any) {
       console.error('Erro ao gerar certificado:', error);
-      toast.error('Erro ao gerar certificado');
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar certificado",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -120,10 +128,17 @@ export default function CertificateGenerator({
       link.download = `certificado-${certificate.certificate_number}.pdf`;
       link.click();
       
-      toast.success('Download iniciado!');
+      toast({
+        title: "Sucesso!",
+        description: "Download iniciado!",
+      });
     } catch (error) {
       console.error('Erro no download:', error);
-      toast.error('Erro ao fazer download do certificado');
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer download do certificado",
+        variant: "destructive",
+      });
     }
   };
 
@@ -157,12 +172,19 @@ export default function CertificateGenerator({
           break;
         case 'link':
           await navigator.clipboard.writeText(certificateUrl);
-          toast.success('Link copiado para a área de transferência!');
+          toast({
+            title: "Sucesso!",
+            description: "Link copiado para a área de transferência!",
+          });
           break;
       }
     } catch (error) {
       console.error('Erro ao compartilhar:', error);
-      toast.error('Erro ao compartilhar certificado');
+      toast({
+        title: "Erro",
+        description: "Erro ao compartilhar certificado",
+        variant: "destructive",
+      });
     } finally {
       setSharing(false);
     }

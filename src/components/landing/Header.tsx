@@ -20,9 +20,13 @@ export default function Header() {
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
             <Link to="/" className="inline-flex items-center gap-3 group">
-              <div className="h-9 w-9 rounded-md border border-slate-300 bg-white shadow-sm flex items-center justify-center ring-1 ring-slate-100 transition-colors group-hover:border-slate-400">
-                <span className="text-[11px] font-semibold tracking-tight text-slate-800">ESQ</span>
-              </div>
+              <img
+            src="/images/esquads2.png"
+            alt="Esquads Logo"
+            className="h-12 w-auto object-contain flex-shrink-0 transition-opacity duration-200"
+            loading="eager"
+            style={{ imageRendering: 'crisp-edges' }}
+          />
               <span className="text-slate-900 text-lg md:text-xl font-semibold tracking-tight">Esquads</span>
             </Link>
 

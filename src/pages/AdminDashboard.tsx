@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { Palette } from "lucide-react";
 import ImageGenerationWrapper from "@/components/admin/ImageGenerationWrapper";
@@ -32,6 +32,7 @@ type Course = {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   useEffect(() => {
     document.title = "Admin — Esquads";
   }, []);
@@ -50,8 +51,12 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    if (error) toast.error("Não foi possível carregar os cursos.");
-  }, [error]);
+    if (error) toast({
+      title: "Erro",
+      description: "Não foi possível carregar os cursos.",
+      variant: "destructive",
+    });
+  }, [error, toast]);
 
   const canonical = useMemo(() => {
     try {
@@ -112,17 +117,27 @@ const [audOutrosText, setAudOutrosText] = useState("");
       if (error) throw error as any;
       const jobId = (data as any)?.job_id;
       if (jobId) {
-        toast.success("Geração iniciada. Acompanhe o progresso.");
+        toast({
+          title: "Sucesso!",
+          description: "Geração iniciada. Acompanhe o progresso.",
+        });
         setAiOpen(false);
         navigate(`/admin/generation/${jobId}`);
       } else {
-        toast.success("Geração iniciada. Atualize em alguns segundos.");
+        toast({
+          title: "Sucesso!",
+          description: "Geração iniciada. Atualize em alguns segundos.",
+        });
         setAiOpen(false);
         setTimeout(() => refetch(), 5000);
       }
     } catch (err: any) {
       console.error(err);
-      toast.error("Falha ao iniciar geração por IA.");
+      toast({
+        title: "Erro",
+        description: "Falha ao iniciar geração por IA.",
+        variant: "destructive",
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -138,10 +153,17 @@ const [audOutrosText, setAudOutrosText] = useState("");
     }).select("id").maybeSingle();
 
     if (error) {
-      toast.error("Falha ao criar curso. Verifique permissões/autenticação.");
+      toast({
+        title: "Erro",
+        description: "Falha ao criar curso. Verifique permissões/autenticação.",
+        variant: "destructive",
+      });
       return;
     }
-    toast.success("Curso criado com sucesso.");
+    toast({
+      title: "Sucesso!",
+      description: "Curso criado com sucesso.",
+    });
     refetch();
   };
 

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { Upload, Image as ImageIcon, Link, Palette } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,6 +19,7 @@ export default function CoverImageUpload({
   currentImageUrl,
   onImageUpdated
 }: CoverImageUploadProps) {
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -49,7 +50,7 @@ export default function CoverImageUpload({
       const { error } = await supabase.storage.from('course-images').remove([filePath]);
       if (error) {
         console.error('[CLEANUP] Falha ao remover arquivo órfão:', error);
-        toast.error('Falha ao limpar arquivo antigo após erro. Contate o suporte.');
+        toast({ title: "Erro", description: "Falha ao limpar arquivo antigo após erro. Contate o suporte.", variant: "destructive" });
       } else {
         console.log('[CLEANUP] Arquivo órfão removido com sucesso:', filePath);
       }
@@ -62,12 +63,12 @@ export default function CoverImageUpload({
     try {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
       if (!allowedTypes.includes(file.type)) {
-        toast.error('Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou GIF.');
+        toast({ title: "Erro", description: "Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou GIF.", variant: "destructive" });
         return null;
       }
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
-        toast.error('Arquivo muito grande. Máximo 10MB.');
+        toast({ title: "Erro", description: "Arquivo muito grande. Máximo 10MB.", variant: "destructive" });
         return null;
       }
       const fileExt = file.name.split('.').pop() || 'png';
@@ -78,7 +79,7 @@ export default function CoverImageUpload({
         .upload(filePath, file, { cacheControl: '3600', upsert: false });
       if (error) {
         console.error('[UPLOAD] Erro no upload:', error);
-        toast.error(`Falha no upload da capa: ${error.message}`);
+        toast({ title: "Erro", description: `Falha no upload da capa: ${error.message}`, variant: "destructive" });
         return null;
       }
       const { data: { publicUrl } } = supabase.storage
@@ -88,7 +89,7 @@ export default function CoverImageUpload({
       return { publicUrl, path: data.path };
     } catch (error: any) {
       console.error('[UPLOAD] Erro inesperado:', error);
-      toast.error(`Falha no upload da capa: ${error.message}`);
+      toast({ title: "Erro", description: `Falha no upload da capa: ${error.message}`, variant: "destructive" });
       return null;
     }
   };
@@ -105,18 +106,18 @@ export default function CoverImageUpload({
         .eq('id', courseId);
       if (error) {
         console.error('[UPDATE] Erro ao atualizar curso:', error);
-        toast.error(`Falha ao atualizar a capa no banco de dados: ${error.message}`);
+        toast({ title: "Erro", description: `Falha ao atualizar a capa no banco de dados: ${error.message}`, variant: "destructive" });
         return false;
       }
       console.log('[UPDATE] Capa do curso atualizada com sucesso');
       onImageUpdated(newImageUrl);
-      toast.success('Capa do curso atualizada com sucesso!');
+      toast({ title: "Sucesso", description: "Capa do curso atualizada com sucesso!" });
       setIsOpen(false);
       setImageUrl('');
       return true;
     } catch (error: any) {
       console.error('[UPDATE] Erro inesperado:', error);
-      toast.error(`Falha inesperada ao atualizar a capa: ${error.message}`);
+      toast({ title: "Erro", description: `Falha inesperada ao atualizar a capa: ${error.message}`, variant: "destructive" });
       return false;
     }
   };
@@ -143,7 +144,7 @@ export default function CoverImageUpload({
       }
     } catch (error: any) {
       console.error('[UPLOAD_PROCESS] Erro geral no processo de upload:', error);
-      toast.error(`Ocorreu um erro inesperado: ${error.message}`);
+      toast({ title: "Erro", description: `Ocorreu um erro inesperado: ${error.message}`, variant: "destructive" });
       // Tenta limpar o arquivo se um erro inesperado ocorrer após o upload.
       if (uploadResult) {
           await deleteFromStorage(uploadResult.path);
@@ -161,12 +162,12 @@ export default function CoverImageUpload({
    */
   const handleUrlSubmit = async () => {
     if (!imageUrl.trim()) {
-      toast.error('Digite uma URL válida');
+      toast({ title: "Erro", description: "Digite uma URL válida", variant: "destructive" });
       return;
     }
 
     if (!isValidImageUrl(imageUrl)) {
-      toast.error('URL inválida. Use uma URL completa (http:// ou https://)');
+      toast({ title: "Erro", description: "URL inválida. Use uma URL completa (http:// ou https://)", variant: "destructive" });
       return;
     }
 
@@ -196,18 +197,16 @@ export default function CoverImageUpload({
 
       if (error) {
         console.error('[AI_GENERATION] Erro na geração:', error);
-        toast.error('Erro ao gerar capa com IA', {
-          description: error.message
-        });
+        toast({ title: "Erro", description: `Erro ao gerar capa com IA: ${error.message}`, variant: "destructive" });
         return;
       }
 
       console.log('[AI_GENERATION] Geração iniciada:', data);
-      toast.success('Geração de capa iniciada! A imagem será atualizada em breve.');
+      toast({ title: "Sucesso", description: "Geração de capa iniciada! A imagem será atualizada em breve." });
       setIsOpen(false);
     } catch (error: any) {
       console.error('[AI_GENERATION] Erro inesperado:', error);
-      toast.error('Erro inesperado ao gerar capa');
+      toast({ title: "Erro", description: "Erro inesperado ao gerar capa", variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }

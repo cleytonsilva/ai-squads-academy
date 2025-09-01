@@ -38,10 +38,12 @@ export default function Home() {
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center">
                 <img 
-                  src="https://mocha-cdn.com/0198a1fa-ecd4-794a-96a0-728614787c69/remove.photos-removed-background-(1).png" 
-                  alt="Esquads Logo" 
-                  className="w-8 h-8 object-contain"
-                />
+                src="/images/esquads.webp" 
+                alt="Esquads Logo" 
+                className="w-8 h-8 object-contain flex-shrink-0"
+                loading="eager"
+                style={{ imageRendering: 'crisp-edges' }}
+              />
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Esquads</h1>
             </div>
@@ -136,7 +138,7 @@ export default function Home() {
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg flex items-center justify-center">
                 <img 
-                  src="https://mocha-cdn.com/0198a1fa-ecd4-794a-96a0-728614787c69/remove.photos-removed-background-(1).png" 
+                  src="/images/esquads-favicon-32x32.png" 
                   alt="Esquads Logo" 
                   className="w-6 h-6 object-contain"
                 />

@@ -1,0 +1,17 @@
+{
+  "timestamp": "2025-08-26T22:04:16.139Z",
+  "summary": {
+    "totalModules": 16,
+    "totalCourses": 2,
+    "problematicModules": 0,
+    "invalidStructures": 0,
+    "orphanModules": 0,
+    "duplicateContent": false,
+    "orderIssues": false
+  },
+  "details": {
+    "problematicModules": [],
+    "invalidStructures": [],
+    "orphanModules": []
+  }
+}

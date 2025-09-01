@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,10 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     const mode = searchParams.get('mode');
-    return mode === 'register' ? 'signup' : 'login';
+    return (mode === 'register' || mode === 'signup') ? 'signup' : 'login';
   });
 
   // Redirecionar se já estiver autenticado
@@ -69,6 +70,12 @@ const Auth = () => {
     // Validação do tamanho do username
     if (username.length < 3 || username.length > 20) {
       toast("Tamanho inválido", { description: "Nome de usuário deve ter entre 3 e 20 caracteres", className: "destructive" });
+      return;
+    }
+    
+    // Validação da aceitação dos termos
+    if (!acceptTerms) {
+      toast("Termos obrigatórios", { description: "Você deve aceitar os termos e a política de privacidade", className: "destructive" });
       return;
     }
     
@@ -146,6 +153,15 @@ const Auth = () => {
                     </div>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>{loading ? "Entrando..." : "Entrar"}</Button>
+                  
+                  <div className="text-center mt-4">
+                    <Link 
+                      to="/auth/forgot-password" 
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      Esqueceu sua senha?
+                    </Link>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -214,7 +230,41 @@ const Auth = () => {
                     </div>
                     <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres.</p>
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>{loading ? "Cadastrando..." : "Cadastrar"}</Button>
+                  
+                  {/* Checkbox de aceitação dos termos */}
+                  <div className="flex items-start space-x-2">
+                    <input
+                      type="checkbox"
+                      id="accept-terms"
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      required
+                    />
+                    <label htmlFor="accept-terms" className="text-sm text-muted-foreground leading-5">
+                      Ao criar uma conta, você aceita nossos{" "}
+                      <Link 
+                        to="/terms-of-service" 
+                        className="text-primary hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Termos de Uso
+                      </Link>
+                      {" "}e{" "}
+                      <Link 
+                        to="/privacy-policy" 
+                        className="text-primary hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Política de Privacidade
+                      </Link>
+                      .
+                    </label>
+                  </div>
+                  
+                  <Button type="submit" className="w-full" disabled={loading || !acceptTerms}>{loading ? "Cadastrando..." : "Cadastrar"}</Button>
                 </form>
 
               </TabsContent>

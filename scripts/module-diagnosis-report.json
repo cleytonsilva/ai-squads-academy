@@ -1,0 +1,183 @@
+{
+  "timestamp": "2025-08-26T20:14:40.239Z",
+  "summary": {
+    "totalModules": 16,
+    "emptyContent": 0,
+    "duplicatedContent": 1,
+    "inconsistencies": 0
+  },
+  "duplicatedContent": [
+    {
+      "hash": "1886003877",
+      "count": 2,
+      "modules": [
+        {
+          "moduleId": "4061b636-3e2e-418b-81be-10b5b3b1c8ba",
+          "title": "Prova Final",
+          "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+          "content": {
+            "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+          }
+        },
+        {
+          "moduleId": "a313a0d4-d1e6-4617-bef8-cf1b2aa4d702",
+          "title": "Prova Final",
+          "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+          "content": {
+            "html": "<h2>Prova Final</h2><p>Responda às questões a seguir para concluir o curso.</p>"
+          }
+        }
+      ]
+    }
+  ],
+  "emptyContent": [],
+  "inconsistencies": [],
+  "courseAnalysis": [
+    {
+      "courseId": "ad968c00-e518-4e85-b03e-a676d286449b",
+      "courseTitle": "Fundamentos de Programação",
+      "moduleCount": 0,
+      "modules": []
+    },
+    {
+      "courseId": "2431c90d-f802-483e-8928-ee4674a79eaf",
+      "courseTitle": "Desenvolvimento Web com React",
+      "moduleCount": 0,
+      "modules": []
+    },
+    {
+      "courseId": "bfb7c8cc-fc28-4e98-9747-7e4ca36998f5",
+      "courseTitle": "Banco de Dados e SQL",
+      "moduleCount": 0,
+      "modules": []
+    },
+    {
+      "courseId": "6dcca93f-b843-45c2-ba78-ae1243caeee2",
+      "courseTitle": "DevOps e Deploy",
+      "moduleCount": 0,
+      "modules": []
+    },
+    {
+      "courseId": "fddbc02b-e27c-45fb-a35c-b6fed692db7a",
+      "courseTitle": "Blue Team Fundamentos",
+      "moduleCount": 8,
+      "modules": [
+        {
+          "id": "b67563a8-bfe9-4218-b0de-e6c66047697a",
+          "title": "Introdução ao Blue Team",
+          "hasContent": true,
+          "orderIndex": 0
+        },
+        {
+          "id": "dc0d4f3e-d56f-4d70-91cd-6f40999f7b0b",
+          "title": "Fundamentos de Segurança da Informação",
+          "hasContent": true,
+          "orderIndex": 1
+        },
+        {
+          "id": "301495fb-07d2-4be9-afb9-c169a630dc5b",
+          "title": "Análise de Risco",
+          "hasContent": true,
+          "orderIndex": 2
+        },
+        {
+          "id": "36c49222-4482-4ebf-8bf3-e34c7c8162b2",
+          "title": "Monitoramento e Resposta a Incidentes",
+          "hasContent": true,
+          "orderIndex": 3
+        },
+        {
+          "id": "26737a05-3e14-4d9b-8e60-d0796013a39c",
+          "title": "Ferramentas de Segurança",
+          "hasContent": true,
+          "orderIndex": 4
+        },
+        {
+          "id": "77d39123-0ec0-4ea8-970a-3a6b83d776ed",
+          "title": "Políticas de Segurança",
+          "hasContent": true,
+          "orderIndex": 5
+        },
+        {
+          "id": "b5f53cb3-48d9-4589-acb9-8dbeff3ab611",
+          "title": "Treinamento e Conscientização",
+          "hasContent": true,
+          "orderIndex": 6
+        },
+        {
+          "id": "a313a0d4-d1e6-4617-bef8-cf1b2aa4d702",
+          "title": "Prova Final",
+          "hasContent": true,
+          "orderIndex": 7
+        }
+      ]
+    },
+    {
+      "courseId": "8816aa6b-b5e5-4757-92af-ec2de1d89111",
+      "courseTitle": "Curso de Cibersegurança",
+      "moduleCount": 8,
+      "modules": [
+        {
+          "id": "84cbbe22-ec35-4137-8008-dbde567cd60a",
+          "title": "Introdução à Cibersegurança",
+          "hasContent": true,
+          "orderIndex": 0
+        },
+        {
+          "id": "0bdb6853-71fa-4eca-af16-d849ccd08030",
+          "title": "Tipos de Ameaças",
+          "hasContent": true,
+          "orderIndex": 1
+        },
+        {
+          "id": "84533da5-8ca0-4d16-a03f-33aba80f1345",
+          "title": "Práticas de Proteção",
+          "hasContent": true,
+          "orderIndex": 2
+        },
+        {
+          "id": "c97704a2-56e5-430b-a1e5-b1573bafa547",
+          "title": "Segurança em Redes",
+          "hasContent": true,
+          "orderIndex": 3
+        },
+        {
+          "id": "eaed59f7-5a32-4dba-a966-f270f607a2d4",
+          "title": "Legislação e Compliance",
+          "hasContent": true,
+          "orderIndex": 4
+        },
+        {
+          "id": "053b0693-029b-4822-8320-6e8e5fb8ad29",
+          "title": "Respostas a Incidentes",
+          "hasContent": true,
+          "orderIndex": 5
+        },
+        {
+          "id": "06dde3de-5e2a-4e0e-be16-c9438a6fe565",
+          "title": "Futuro da Cibersegurança",
+          "hasContent": true,
+          "orderIndex": 6
+        },
+        {
+          "id": "4061b636-3e2e-418b-81be-10b5b3b1c8ba",
+          "title": "Prova Final",
+          "hasContent": true,
+          "orderIndex": 7
+        }
+      ]
+    },
+    {
+      "courseId": "a23b7e62-d732-4917-ae64-bea621772b4b",
+      "courseTitle": "Inteligência Artificial Básica",
+      "moduleCount": 0,
+      "modules": []
+    },
+    {
+      "courseId": "f34439f1-12f1-4454-a608-f5aa0c8d7da1",
+      "courseTitle": "Segurança da Informação",
+      "moduleCount": 0,
+      "modules": []
+    }
+  ]
+}

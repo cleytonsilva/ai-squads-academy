@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import type {
   Challenge,
   ChallengeParticipation,
@@ -69,6 +69,7 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
   const [error, setError] = useState<string | null>(null);
   
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // Carregar desafios
   const loadChallenges = useCallback(async () => {
@@ -181,7 +182,11 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
   // Participar de um desafio
   const joinChallenge = useCallback(async (challengeId: string) => {
     if (!user) {
-      toast.error('Você precisa estar logado para participar de desafios');
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para participar de desafios",
+        variant: "destructive",
+      });
       return false;
     }
 
@@ -189,19 +194,30 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
       // Verificar se já está participando
       const existingParticipation = userParticipations.find(p => p.challenge_id === challengeId);
       if (existingParticipation) {
-        toast.info('Você já está participando deste desafio');
+        toast({
+          title: "Informação",
+          description: "Você já está participando deste desafio",
+        });
         return false;
       }
 
       // Buscar dados do desafio
       const challenge = challenges.find(c => c.id === challengeId);
       if (!challenge) {
-        toast.error('Desafio não encontrado');
+        toast({
+          title: "Erro",
+          description: "Desafio não encontrado",
+          variant: "destructive",
+        });
         return false;
       }
 
       if (challenge.is_locked) {
-        toast.error('Este desafio está bloqueado');
+        toast({
+          title: "Erro",
+          description: "Este desafio está bloqueado",
+          variant: "destructive",
+        });
         return false;
       }
 
@@ -239,7 +255,10 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
         })
         .eq('id', challengeId);
 
-      toast.success('Você entrou no desafio com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Você entrou no desafio com sucesso!",
+      });
       
       // Recarregar desafios para atualizar dados
       await loadChallenges();
@@ -247,7 +266,11 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
       return true;
     } catch (err) {
       console.error('Erro ao participar do desafio:', err);
-      toast.error('Erro ao participar do desafio');
+      toast({
+        title: "Erro",
+        description: "Erro ao participar do desafio",
+        variant: "destructive",
+      });
       return false;
     }
   }, [user, userParticipations, challenges, supabase, loadChallenges]);
@@ -259,12 +282,20 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
     try {
       const participation = userParticipations.find(p => p.challenge_id === challengeId);
       if (!participation) {
-        toast.error('Você não está participando deste desafio');
+        toast({
+          title: "Erro",
+          description: "Você não está participando deste desafio",
+          variant: "destructive",
+        });
         return false;
       }
 
       if (participation.is_completed) {
-        toast.error('Não é possível abandonar um desafio já concluído');
+        toast({
+          title: "Erro",
+          description: "Não é possível abandonar um desafio já concluído",
+          variant: "destructive",
+        });
         return false;
       }
 
@@ -292,7 +323,10 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
           .eq('id', challengeId);
       }
 
-      toast.success('Você saiu do desafio');
+      toast({
+        title: "Sucesso",
+        description: "Você saiu do desafio",
+      });
       
       // Recarregar desafios
       await loadChallenges();
@@ -300,7 +334,11 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
       return true;
     } catch (err) {
       console.error('Erro ao abandonar desafio:', err);
-      toast.error('Erro ao abandonar desafio');
+      toast({
+        title: "Erro",
+        description: "Erro ao abandonar desafio",
+        variant: "destructive",
+      });
       return false;
     }
   }, [user, userParticipations, challenges, supabase, loadChallenges]);
@@ -376,7 +414,10 @@ export function useChallenges(filters?: ChallengeFilters): UseChallengesReturn {
           reference_id: challengeId
         });
 
-        toast.success(`Parabéns! Você concluiu o desafio "${challenge.title}" e ganhou ${challenge.reward_points} pontos!`);
+        toast({
+          title: "Parabéns!",
+          description: `Você concluiu o desafio "${challenge.title}" e ganhou ${challenge.reward_points} pontos!`,
+        });
       }
 
       // Recarregar dados
@@ -534,6 +575,7 @@ export function useChallengeManagement() {
   const [error, setError] = useState<string | null>(null);
   
   const { user } = useAuth();
+  const { toast } = useToast();
   // supabase já está importado no topo do arquivo
 
   // Criar novo desafio
@@ -558,12 +600,19 @@ export function useChallengeManagement() {
         throw error;
       }
 
-      toast.success('Desafio criado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Desafio criado com sucesso!",
+      });
       return data;
     } catch (err) {
       console.error('Erro ao criar desafio:', err);
       setError('Erro ao criar desafio');
-      toast.error('Erro ao criar desafio');
+      toast({
+        title: "Erro",
+        description: "Erro ao criar desafio",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setLoading(false);
@@ -593,12 +642,19 @@ export function useChallengeManagement() {
         throw error;
       }
 
-      toast.success('Desafio atualizado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Desafio atualizado com sucesso!",
+      });
       return data;
     } catch (err) {
       console.error('Erro ao atualizar desafio:', err);
       setError('Erro ao atualizar desafio');
-      toast.error('Erro ao atualizar desafio');
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar desafio",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setLoading(false);
@@ -623,7 +679,11 @@ export function useChallengeManagement() {
       }
 
       if (participations && participations.length > 0) {
-        toast.error('Não é possível deletar um desafio com participações ativas');
+        toast({
+          title: "Erro",
+          description: "Não é possível deletar um desafio com participações ativas",
+          variant: "destructive",
+        });
         return false;
       }
 
@@ -636,12 +696,19 @@ export function useChallengeManagement() {
         throw error;
       }
 
-      toast.success('Desafio deletado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Desafio deletado com sucesso!",
+      });
       return true;
     } catch (err) {
       console.error('Erro ao deletar desafio:', err);
       setError('Erro ao deletar desafio');
-      toast.error('Erro ao deletar desafio');
+      toast({
+        title: "Erro",
+        description: "Erro ao deletar desafio",
+        variant: "destructive",
+      });
       return false;
     } finally {
       setLoading(false);

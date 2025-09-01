@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast as showToast } from '@/hooks/use-toast';
 
 /**
  * Hook para escutar atualizações de cursos em tempo real
@@ -20,7 +20,10 @@ export function useRealtimeCourseUpdates({
     
     // Se estamos monitorando um curso específico
     if (courseId && course_id === courseId) {
-      toast.success('Capa do curso atualizada!');
+      showToast({
+        title: "Sucesso",
+        description: "Capa do curso atualizada!"
+      });
       onCoverUpdated?.(course_id, cover_image_url);
       
       // Forçar reload da página após um delay para garantir que a nova imagem seja carregada
@@ -45,16 +48,29 @@ export function useRealtimeCourseUpdates({
     if (courseId && course_id === courseId) {
       switch (status) {
         case 'starting':
-          toast.info('Iniciando geração de capa...');
+          showToast({
+            title: "Info",
+            description: "Iniciando geração de capa..."
+          });
           break;
         case 'calling_api':
-          toast.info('Processando com IA...');
+          showToast({
+            title: "Info",
+            description: "Processando com IA..."
+          });
           break;
         case 'prediction_created':
-          toast.info('Predição criada! Aguardando resultado...');
+          showToast({
+            title: "Info",
+            description: "Predição criada! Aguardando resultado..."
+          });
           break;
         case 'failed':
-          toast.error(`Erro na geração: ${details?.error || 'Erro desconhecido'}`);
+          showToast({
+            title: "Erro",
+            description: `Erro na geração: ${details?.error || 'Erro desconhecido'}`,
+            variant: "destructive"
+          });
           break;
       }
     }

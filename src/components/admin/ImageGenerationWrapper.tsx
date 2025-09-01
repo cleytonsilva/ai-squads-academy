@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import ImageGenerationDialog from './ImageGenerationDialog';
 import { useRealtimeCourseUpdates } from '@/hooks/useRealtimeCourseUpdates';
 
@@ -24,6 +24,7 @@ export default function ImageGenerationWrapper({
   const [userRole, setUserRole] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [generationStarted, setGenerationStarted] = useState(false);
+  const { toast } = useToast();
 
   // Hook para escutar atualizações em tempo real
   const { invalidateCache } = useRealtimeCourseUpdates({
@@ -91,12 +92,20 @@ export default function ImageGenerationWrapper({
   const handleGenerate = async (engine: string) => {
     // Verificar autenticação antes de prosseguir
     if (!authChecked) {
-      toast.error('Verificando autenticação...');
+      toast({
+        title: "Erro",
+        description: "Verificando autenticação...",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!isAuthenticated) {
-      toast.error('Você precisa estar logado como admin ou instrutor para gerar imagens');
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado como admin ou instrutor para gerar imagens",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -123,21 +132,49 @@ export default function ImageGenerationWrapper({
         
         // Mensagem de erro mais específica baseada no tipo de erro
         if (error.message?.includes('401') || error.message?.includes('Not authenticated') || error.message?.includes('Token inválido')) {
-          toast.error('Erro de autenticação. Faça login novamente como admin ou instrutor.');
+          toast({
+            title: "Erro",
+            description: "Erro de autenticação. Faça login novamente como admin ou instrutor.",
+            variant: "destructive",
+          });
           // Tentar reautenticar
           await checkAuthentication();
         } else if (error.message?.includes('403') || error.message?.includes('Not authorized') || error.message?.includes('Acesso negado')) {
-          toast.error('Você não tem permissão para gerar imagens. Role necessário: admin ou instructor.');
+          toast({
+            title: "Erro",
+            description: "Você não tem permissão para gerar imagens. Role necessário: admin ou instructor.",
+            variant: "destructive",
+          });
         } else if (error.message?.includes('500') || error.message?.includes('Internal Server Error')) {
-          toast.error('Erro interno do servidor. Verifique as configurações da Edge Function.');
+          toast({
+            title: "Erro",
+            description: "Erro interno do servidor. Verifique as configurações da Edge Function.",
+            variant: "destructive",
+          });
         } else if (error.message?.includes('REPLICATE_API_TOKEN')) {
-          toast.error('Token da API Replicate não configurado. Contate o administrador.');
+          toast({
+            title: "Erro",
+            description: "Token da API Replicate não configurado. Contate o administrador.",
+            variant: "destructive",
+          });
         } else if (error.message?.includes('Bucket not found')) {
-          toast.error('Bucket de imagens não configurado. Contate o administrador.');
+          toast({
+            title: "Erro",
+            description: "Bucket de imagens não configurado. Contate o administrador.",
+            variant: "destructive",
+          });
         } else if (error.message?.includes('Edge Function returned a non-2xx status code')) {
-          toast.error('Erro de autenticação ou permissão. Verifique se você está logado como admin/instrutor.');
+          toast({
+            title: "Erro",
+            description: "Erro de autenticação ou permissão. Verifique se você está logado como admin/instrutor.",
+            variant: "destructive",
+          });
         } else {
-          toast.error(`Erro na geração de capa: ${error.message || 'Erro desconhecido'}`);
+          toast({
+            title: "Erro",
+            description: `Erro na geração de capa: ${error.message || 'Erro desconhecido'}`,
+            variant: "destructive",
+          });
         }
         return;
       }
@@ -148,20 +185,29 @@ export default function ImageGenerationWrapper({
       if (data?.success || data?.predictionId || data?.jobId) {
         console.log('[GENERATION] Geração de capa iniciada com sucesso');
         setGenerationStarted(true);
-        toast.success('Geração de capa iniciada! Acompanhe o progresso...', {
-          duration: 3000
+        toast({
+          title: "Sucesso",
+          description: "Geração de capa iniciada! Acompanhe o progresso...",
         });
         
         // Não fechar o diálogo imediatamente, aguardar atualização em tempo real
         // O hook useRealtimeCourseUpdates irá fechar quando a capa for atualizada
       } else {
         console.warn('[GENERATION] Resposta inesperada:', data);
-        toast.error('Resposta inesperada do serviço de geração. Tente novamente.');
+        toast({
+          title: "Erro",
+          description: "Resposta inesperada do serviço de geração. Tente novamente.",
+          variant: "destructive",
+        });
       }
       
     } catch (error: unknown) {
       console.error('[GENERATION] Erro inesperado na geração de capa:', error);
-      toast.error('Erro inesperado. Verifique sua conexão e tente novamente.');
+      toast({
+        title: "Erro",
+        description: "Erro inesperado. Verifique sua conexão e tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       // Só parar o loading se não iniciou a geração
       if (!generationStarted) {

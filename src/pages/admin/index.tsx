@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
   BookOpen, 
@@ -108,6 +108,7 @@ interface AdminAction {
 }
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -221,7 +222,11 @@ export default function AdminDashboard() {
       if (error) throw error;
 
       if (profile?.role !== 'admin' && profile?.role !== 'instructor') {
-        toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
+        toast({
+          title: "Acesso Negado",
+          description: "Apenas administradores podem acessar esta página.",
+          variant: "destructive"
+        });
         navigate('/');
         return;
       }
@@ -229,7 +234,11 @@ export default function AdminDashboard() {
       loadDashboardData();
     } catch (error) {
       console.error('Erro ao verificar permissões:', error);
-      toast.error('Erro ao verificar permissões');
+      toast({
+        title: "Erro",
+        description: "Erro ao verificar permissões",
+        variant: "destructive"
+      });
       navigate('/');
     }
   };
@@ -291,7 +300,11 @@ export default function AdminDashboard() {
       await loadUsers();
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
-      toast.error('Erro ao carregar dados do dashboard');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do dashboard",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -418,11 +431,18 @@ export default function AdminDashboard() {
       // Registra ação administrativa
       await logAdminAction('UPDATE_USER_ROLE', userId, `Role alterado para: ${newRole}`);
 
-      toast.success('Role do usuário atualizada!');
+      toast({
+        title: "Sucesso",
+        description: "Role do usuário atualizada!"
+      });
       loadUsers();
     } catch (error) {
       console.error('Erro ao atualizar role:', error);
-      toast.error('Erro ao atualizar role do usuário');
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar role do usuário",
+        variant: "destructive"
+      });
     }
   };
 
@@ -431,12 +451,20 @@ export default function AdminDashboard() {
    */
   const createUser = async () => {
     if (!createUserForm.name || !createUserForm.email || !createUserForm.password) {
-      toast.error('Todos os campos são obrigatórios');
+      toast({
+        title: "Erro",
+        description: "Todos os campos são obrigatórios",
+        variant: "destructive"
+      });
       return;
     }
 
     if (createUserForm.password.length < 8) {
-      toast.error('A senha deve ter pelo menos 8 caracteres');
+      toast({
+        title: "Erro",
+        description: "A senha deve ter pelo menos 8 caracteres",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -473,10 +501,17 @@ export default function AdminDashboard() {
       // Recarrega lista de usuários
       await loadUsers();
       
-      toast.success('Usuário criado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Usuário criado com sucesso!"
+      });
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
-      toast.error('Erro ao criar usuário. Verifique os dados e tente novamente.');
+      toast({
+        title: "Erro",
+        description: "Erro ao criar usuário. Verifique os dados e tente novamente.",
+        variant: "destructive"
+      });
     } finally {
       setCreatingUser(false);
     }
@@ -490,7 +525,11 @@ export default function AdminDashboard() {
 
     // Verifica se não está tentando excluir a si mesmo
     if (selectedUser.id === user?.id) {
-      toast.error('Você não pode excluir sua própria conta!');
+      toast({
+        title: "Erro",
+        description: "Você não pode excluir sua própria conta!",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -521,10 +560,17 @@ export default function AdminDashboard() {
       setShowDeleteUserDialog(false);
       setSelectedUser(null);
       
-      toast.success('Usuário excluído com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Usuário excluído com sucesso!"
+      });
     } catch (error) {
       console.error('Erro ao excluir usuário:', error);
-      toast.error('Erro ao excluir usuário. Tente novamente.');
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir usuário. Tente novamente.",
+        variant: "destructive"
+      });
     } finally {
       setDeletingUser(false);
     }

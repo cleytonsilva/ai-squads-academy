@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { useTheme } from "@/contexts/theme-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,8 @@ type SortOption = 'title' | 'level' | 'duration' | 'updated' | 'progress';
  */
 export default function StudentCourses() {
   const { profile } = useCurrentProfile();
+  const { getThemeColors } = useTheme();
+  const themeColors = getThemeColors();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [sortBy, setSortBy] = useState<SortOption>('title');
@@ -324,28 +327,28 @@ export default function StudentCourses() {
       <CardContent className="space-y-6">
         {/* Estatísticas */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
+          <Card className={`${themeColors.card} ${themeColors.border} border transition-colors duration-200`}>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-              <div className="text-sm text-muted-foreground">Total</div>
+              <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{stats.total}</div>
+              <div className={`text-sm ${themeColors.mutedForeground} uppercase tracking-wider`}>Total</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={`${themeColors.card} ${themeColors.border} border transition-colors duration-200`}>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.enrolled}</div>
-              <div className="text-sm text-muted-foreground">Matriculado</div>
+              <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{stats.enrolled}</div>
+              <div className={`text-sm ${themeColors.mutedForeground} uppercase tracking-wider`}>Matriculado</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={`${themeColors.card} ${themeColors.border} border transition-colors duration-200`}>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.completed}</div>
-              <div className="text-sm text-muted-foreground">Concluído</div>
+              <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{stats.completed}</div>
+              <div className={`text-sm ${themeColors.mutedForeground} uppercase tracking-wider`}>Concluído</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={`${themeColors.card} ${themeColors.border} border transition-colors duration-200`}>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">{stats.available}</div>
-              <div className="text-sm text-muted-foreground">Disponível</div>
+              <div className={`text-2xl font-bold ${themeColors.primaryText} font-mono`}>{stats.available}</div>
+              <div className={`text-sm ${themeColors.mutedForeground} uppercase tracking-wider`}>Disponível</div>
             </CardContent>
           </Card>
         </div>

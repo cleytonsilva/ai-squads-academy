@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/admin/DashboardLayout';
 import { Users as UsersIcon, Plus, Search, Filter, Edit, Trash2, Crown, User as UserIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import type { User, UserProfile, UserWithProfile } from '@/types';
 
 interface CreateUser {
@@ -20,6 +20,7 @@ interface UserWithAuth extends UserProfile {
 }
 
 export default function Users() {
+  const { toast } = useToast();
   const { user: currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserWithAuth[]>([]);
@@ -59,7 +60,11 @@ export default function Users() {
 
       if (error) {
         console.error('Erro ao buscar usuários:', error);
-        toast.error('Erro ao carregar usuários');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar usuários",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -83,7 +88,11 @@ export default function Users() {
       setUsers(usersWithAuth);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
-      toast.error('Erro ao carregar usuários');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar usuários",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -105,7 +114,11 @@ export default function Users() {
 
       if (authError) {
         console.error('Erro ao criar usuário:', authError);
-        toast.error('Erro ao criar usuário');
+        toast({
+          title: "Erro",
+          description: "Erro ao criar usuário",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -122,11 +135,18 @@ export default function Users() {
 
       if (profileError) {
         console.error('Erro ao criar perfil:', profileError);
-        toast.error('Erro ao criar perfil do usuário');
+        toast({
+          title: "Erro",
+          description: "Erro ao criar perfil do usuário",
+          variant: "destructive"
+        });
         return;
       }
 
-      toast.success('Usuário criado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Usuário criado com sucesso!"
+      });
       setShowCreateModal(false);
       setNewUser({
         email: '',
@@ -136,7 +156,11 @@ export default function Users() {
       fetchUsers();
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
-      toast.error('Erro ao criar usuário');
+      toast({
+        title: "Erro",
+        description: "Erro ao criar usuário",
+        variant: "destructive"
+      });
     }
   };
 
@@ -152,7 +176,11 @@ export default function Users() {
 
       if (profileError) {
         console.error('Erro ao deletar perfil:', profileError);
-        toast.error('Erro ao excluir usuário');
+        toast({
+          title: "Erro",
+          description: "Erro ao excluir usuário",
+          variant: "destructive"
+        });
         return;
       }
 
@@ -165,10 +193,17 @@ export default function Users() {
       }
 
       setUsers(users.filter(u => u.id !== userId));
-      toast.success('Usuário excluído com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Usuário excluído com sucesso!"
+      });
     } catch (error) {
       console.error('Erro ao excluir usuário:', error);
-      toast.error('Erro ao excluir usuário');
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir usuário",
+        variant: "destructive"
+      });
     }
   };
 

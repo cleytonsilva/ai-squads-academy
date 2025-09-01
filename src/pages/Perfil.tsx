@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Camera, Settings, Palette, Trophy, BookOpen, Target } from "lucide-react";
+import { User, Camera, Settings, Palette, Trophy, BookOpen, Target, Upload, X, Shield, Lock, Code, Database, Server, Cpu } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useStudentData } from "@/hooks/useStudentData";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileData {
   name: string;
@@ -28,6 +28,7 @@ interface ProfileData {
 }
 
 export default function PerfilPage() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("perfil");
   const [profileData, setProfileData] = useState<ProfileData>({
     name: "",
@@ -59,15 +60,30 @@ export default function PerfilPage() {
   ];
 
   const avatarOptions = [
-    "/placeholder.svg?height=100&width=100&text=Avatar1",
-    "/placeholder.svg?height=100&width=100&text=Avatar2",
-    "/placeholder.svg?height=100&width=100&text=Avatar3",
-    "/placeholder.svg?height=100&width=100&text=Avatar4",
-    "/placeholder.svg?height=100&width=100&text=Avatar5",
-    "/placeholder.svg?height=100&width=100&text=Avatar6",
+    { type: 'icon', icon: Shield, name: 'Segurança' },
+    { type: 'icon', icon: Lock, name: 'Criptografia' },
+    { type: 'icon', icon: Code, name: 'Desenvolvimento' },
+    { type: 'icon', icon: Database, name: 'Banco de Dados' },
+    { type: 'icon', icon: Server, name: 'Servidor' },
+    { type: 'icon', icon: Cpu, name: 'Processamento' },
   ];
 
   const [selectedAvatar, setSelectedAvatar] = useState(avatarOptions[0]);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Função para renderizar avatar baseado no tipo
+  const renderAvatar = (avatarUrl: string | null, className: string = "w-12 h-12") => {
+    if (avatarUrl?.startsWith('icon:')) {
+      const iconName = avatarUrl.replace('icon:', '');
+      const avatarOption = avatarOptions.find(option => option.name === iconName);
+      if (avatarOption) {
+        const IconComponent = avatarOption.icon;
+        return <IconComponent className={className} />;
+      }
+    }
+    return <AvatarImage src={avatarUrl || "/placeholder.svg"} alt="Avatar" />;
+  };
 
   // Carregar dados do perfil
   useEffect(() => {
@@ -106,7 +122,11 @@ export default function PerfilPage() {
         }
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);
-        toast.error('Erro ao carregar dados do perfil');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar dados do perfil",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -147,11 +167,18 @@ export default function PerfilPage() {
 
       if (error) throw error;
 
-      toast.success('Perfil atualizado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Perfil atualizado com sucesso!"
+      });
       await refetchProfile();
     } catch (error) {
       console.error('Erro ao salvar perfil:', error);
-      toast.error('Erro ao salvar perfil');
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar perfil",
+        variant: "destructive"
+      });
     } finally {
       setSaving(false);
     }
@@ -163,23 +190,77 @@ export default function PerfilPage() {
     try {
       setSaving(true);
       
+      // Usar a imagem carregada ou avatar selecionado
+      const avatarToSave = uploadedImage || (selectedAvatar ? `icon:${selectedAvatar.name}` : null);
+      
       const { error } = await supabase
         .from('profiles')
         .update({
-          avatar_url: selectedAvatar,
+          avatar_url: avatarToSave,
           updated_at: new Date().toISOString()
         })
         .eq('id', profile.id);
 
       if (error) throw error;
 
-      toast.success('Avatar atualizado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Avatar atualizado com sucesso!"
+      });
       await refetchProfile();
     } catch (error) {
       console.error('Erro ao salvar avatar:', error);
-      toast.error('Erro ao salvar avatar');
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar avatar",
+        variant: "destructive"
+      });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verificar se é uma imagem
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione apenas arquivos de imagem",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Verificar tamanho do arquivo (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setUploadedImage(result);
+        setSelectedAvatar(''); // Limpar seleção de avatar padrão
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleRemoveUploadedImage = () => {
+    setUploadedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -198,42 +279,60 @@ export default function PerfilPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="px-4 py-6 space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-neutral-700 rounded w-1/4 mb-4"></div>
-          <div className="h-32 bg-neutral-700 rounded mb-6"></div>
-          <div className="h-96 bg-neutral-700 rounded"></div>
+          <div className={`h-8 ${themeColors.muted} rounded w-1/4 mb-4`}></div>
+          <div className={`h-32 ${themeColors.muted} rounded mb-6`}></div>
+          <div className={`h-96 ${themeColors.muted} rounded`}></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wider">MEU PERFIL</h1>
-          <p className="text-sm text-neutral-400">Gerencie suas informações pessoais e configurações</p>
+          <h1 className={`text-2xl font-bold ${themeColors.foreground} tracking-wider`}>MEU PERFIL</h1>
+          <p className={`text-sm ${themeColors.mutedForeground}`}>Gerencie suas informações pessoais e configurações</p>
         </div>
       </div>
 
       {/* Profile Overview */}
-      <Card className="bg-neutral-900 border-neutral-700">
+      <Card className={`${themeColors.card} ${themeColors.border}`}>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-start gap-6">
             <div className="flex flex-col items-center gap-4">
               <Avatar className="w-24 h-24">
-                <AvatarImage src={selectedAvatar || "/placeholder.svg"} alt="Avatar" />
-                <AvatarFallback>
-                  <User className="w-12 h-12" />
-                </AvatarFallback>
+                {uploadedImage ? (
+                  <AvatarImage src={uploadedImage} alt="Avatar" />
+                ) : profile?.avatar_url?.startsWith('icon:') ? (
+                  <AvatarFallback className={`${themeColors.cardBg} ${themeColors.cardForeground}`}>
+                    {(() => {
+                      const iconName = profile.avatar_url.replace('icon:', '');
+                      const avatarOption = avatarOptions.find(option => option.name === iconName);
+                      if (avatarOption) {
+                        const IconComponent = avatarOption.icon;
+                        return <IconComponent className="w-12 h-12" />;
+                      }
+                      return <User className="w-12 h-12" />;
+                    })()}
+                  </AvatarFallback>
+                ) : (
+                  <>
+                    <AvatarImage src={profile?.avatar_url || "/placeholder.svg"} alt="Avatar" />
+                    <AvatarFallback>
+                      <User className="w-12 h-12" />
+                    </AvatarFallback>
+                  </>
+                )}
               </Avatar>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveTab("avatar")}
-                className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent"
+                className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground} bg-transparent`}
               >
                 <Camera className="w-4 h-4 mr-2" />
                 Alterar Avatar
@@ -242,38 +341,38 @@ export default function PerfilPage() {
 
             <div className="flex-1 space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-white">{profileData.name || 'Nome não informado'}</h2>
-                <p className="text-neutral-400">{profileData.email}</p>
-                <p className="text-sm text-neutral-500 mt-2">{profileData.bio || 'Biografia não informada'}</p>
+                <h2 className={`text-xl font-bold ${themeColors.foreground}`}>{profileData.name || 'Nome não informado'}</h2>
+                <p className={`${themeColors.mutedForeground}`}>{profileData.email}</p>
+                <p className={`text-sm ${themeColors.mutedForeground} mt-2`}>{profileData.bio || 'Biografia não informada'}</p>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white font-mono">Nv.{userStats.level}</div>
-                  <div className="text-xs text-neutral-500">Nível</div>
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>Nv.{userStats.level}</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>Nível</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white font-mono">{userStats.xp.toLocaleString()}</div>
-                  <div className="text-xs text-neutral-500">XP Total</div>
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{userStats.xp.toLocaleString()}</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>XP Total</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white font-mono">{userStats.coursesCompleted}</div>
-                  <div className="text-xs text-neutral-500">Cursos Concluídos</div>
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{userStats.coursesCompleted}</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>Cursos Concluídos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white font-mono">{userStats.totalStudyHours}h</div>
-                  <div className="text-xs text-neutral-500">Horas de Estudo</div>
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{userStats.totalStudyHours}h</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>Horas de Estudo</div>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-neutral-400">Progresso para o próximo nível</span>
-                  <span className="text-white font-mono">
+                  <span className={`${themeColors.mutedForeground}`}>Progresso para o próximo nível</span>
+                  <span className={`${themeColors.foreground} font-mono`}>
                     {userStats.xp}/{userStats.nextLevelXp} XP
                   </span>
                 </div>
-                <div className="w-full bg-neutral-800 rounded-full h-2">
+                <div className={`w-full ${themeColors.muted} rounded-full h-2`}>
                   <div
                     className={`${themeColors.primaryBg} h-2 rounded-full transition-all duration-300`}
                     style={{ width: `${(userStats.xp / userStats.nextLevelXp) * 100}%` }}
@@ -286,7 +385,7 @@ export default function PerfilPage() {
       </Card>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-neutral-700">
+      <div className={`flex gap-2 border-b ${themeColors.border}`}>
         {[
           { id: "perfil", label: "Informações Pessoais", icon: User },
           { id: "avatar", label: "Avatar", icon: Camera },
@@ -297,141 +396,70 @@ export default function PerfilPage() {
             key={tab.id}
             variant={activeTab === tab.id ? "default" : "ghost"}
             onClick={() => setActiveTab(tab.id)}
-            className={
-              activeTab === tab.id
-                ? `${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white`
-                : "text-neutral-400 hover:text-white hover:bg-neutral-800"
-            }
+            className={`
+              inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium 
+              ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 
+              focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 
+              h-10 px-4 py-2
+              ${
+                activeTab === tab.id
+                  ? `${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white`
+                  : `${themeColors.mutedForeground} hover:${themeColors.foreground} hover:${themeColors.muted}`
+              }
+            `}
           >
-            <tab.icon className="w-4 h-4 mr-2" />
-            {tab.label}
+            <tab.icon className="w-4 h-4 flex-shrink-0" />
+            <span>{tab.label}</span>
           </Button>
         ))}
       </div>
 
       {/* Tab Content */}
       {activeTab === "perfil" && (
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">INFORMAÇÕES PESSOAIS</CardTitle>
+            <CardTitle className={`text-sm font-medium ${themeColors.mutedForeground} tracking-wider`}>INFORMAÇÕES PESSOAIS</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name" className="text-sm text-neutral-300">
-                    Nome Completo
-                  </Label>
-                  <Input
-                    id="name"
-                    value={profileData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="bg-neutral-800 border-neutral-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email" className="text-sm text-neutral-300">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileData.email}
-                    disabled
-                    className="bg-neutral-800 border-neutral-600 text-white opacity-50"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="school" className="text-sm text-neutral-300">
-                    Escola
-                  </Label>
-                  <Input
-                    id="school"
-                    value={profileData.school || ""}
-                    onChange={(e) => handleInputChange("school", e.target.value)}
-                    className="bg-neutral-800 border-neutral-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="grade" className="text-sm text-neutral-300">
-                    Série
-                  </Label>
-                  <Select value={profileData.grade || ""} onValueChange={(value) => handleInputChange("grade", value)}>
-                    <SelectTrigger className="bg-neutral-800 border-neutral-600 text-white">
-                      <SelectValue placeholder="Selecione a série" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1º Ano">1º Ano</SelectItem>
-                      <SelectItem value="2º Ano">2º Ano</SelectItem>
-                      <SelectItem value="3º Ano">3º Ano</SelectItem>
-                      <SelectItem value="Cursinho">Cursinho</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="name" className={`text-sm ${themeColors.cardForeground}`}>
+                  Nome Completo
+                </Label>
+                <Input
+                  id="name"
+                  value={profileData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  className={`${themeColors.muted} ${themeColors.border} ${themeColors.foreground}`}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="email" className={`text-sm ${themeColors.cardForeground}`}>
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profileData.email}
+                  disabled
+                  className={`${themeColors.muted} ${themeColors.border} ${themeColors.foreground} opacity-50`}
+                />
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="birthDate" className="text-sm text-neutral-300">
-                    Data de Nascimento
-                  </Label>
-                  <Input
-                    id="birthDate"
-                    type="date"
-                    value={profileData.birth_date || ""}
-                    onChange={(e) => handleInputChange("birth_date", e.target.value)}
-                    className="bg-neutral-800 border-neutral-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="city" className="text-sm text-neutral-300">
-                    Cidade
-                  </Label>
-                  <Input
-                    id="city"
-                    value={profileData.city || ""}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    className="bg-neutral-800 border-neutral-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="state" className="text-sm text-neutral-300">
-                    Estado
-                  </Label>
-                  <Input
-                    id="state"
-                    value={profileData.state || ""}
-                    onChange={(e) => handleInputChange("state", e.target.value)}
-                    className="bg-neutral-800 border-neutral-600 text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="goals" className="text-sm text-neutral-300">
-                    Objetivos
-                  </Label>
-                  <Input
-                    id="goals"
-                    value={profileData.goals || ""}
-                    onChange={(e) => handleInputChange("goals", e.target.value)}
-                    className="bg-neutral-800 border-neutral-600 text-white"
-                    placeholder="Ex: Medicina na USP"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="bio" className={`text-sm ${themeColors.cardForeground}`}>
+                  Biografia
+                </Label>
+                <Textarea
+                  id="bio"
+                  value={profileData.bio || ""}
+                  onChange={(e) => handleInputChange("bio", e.target.value)}
+                  className={`${themeColors.muted} ${themeColors.border} ${themeColors.foreground}`}
+                  rows={4}
+                  placeholder="Conte um pouco sobre você..."
+                />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="bio" className="text-sm text-neutral-300">
-                Biografia
-              </Label>
-              <Textarea
-                id="bio"
-                value={profileData.bio || ""}
-                onChange={(e) => handleInputChange("bio", e.target.value)}
-                className="bg-neutral-800 border-neutral-600 text-white"
-                rows={3}
-                placeholder="Conte um pouco sobre você..."
-              />
             </div>
 
             <div className="flex gap-2">
@@ -444,7 +472,7 @@ export default function PerfilPage() {
               </Button>
               <Button
                 variant="outline"
-                className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent"
+                className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground} bg-transparent`}
               >
                 Cancelar
               </Button>
@@ -454,74 +482,142 @@ export default function PerfilPage() {
       )}
 
       {activeTab === "avatar" && (
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">ESCOLHER AVATAR</CardTitle>
+            <CardTitle className={`text-sm font-medium ${themeColors.mutedForeground} tracking-wider`}>ESCOLHER AVATAR</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-              {avatarOptions.map((avatar, index) => (
-                <div
-                  key={index}
-                  className={`relative cursor-pointer rounded-lg p-2 transition-colors ${
-                    selectedAvatar === avatar
-                      ? `border-2 ${themeColors.primaryText.replace("text-", "border-")}`
-                      : "border-2 border-neutral-700 hover:border-neutral-500"
-                  }`}
-                  onClick={() => setSelectedAvatar(avatar)}
-                >
-                  <Avatar className="w-full aspect-square">
-                    <AvatarImage src={avatar || "/placeholder.svg"} alt={`Avatar ${index + 1}`} />
-                    <AvatarFallback>
-                      <User className="w-8 h-8" />
-                    </AvatarFallback>
-                  </Avatar>
-                  {selectedAvatar === avatar && (
-                    <div
-                      className={`absolute -top-1 -right-1 w-4 h-4 ${themeColors.primaryBg} rounded-full flex items-center justify-center`}
+            {/* Seção de Upload de Imagem */}
+            <div className="mb-6">
+              <h3 className={`text-sm font-medium ${themeColors.cardForeground} mb-4`}>Fazer Upload de Imagem</h3>
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                {uploadedImage ? (
+                  <div className="relative">
+                    <Avatar className="w-20 h-20">
+                      <AvatarImage src={uploadedImage} alt="Imagem enviada" />
+                      <AvatarFallback>
+                        <User className="w-8 h-8 text-black" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <button
+                      onClick={handleRemoveUploadedImage}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
                     >
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    </div>
-                  )}
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={handleUploadClick}
+                    className={`w-20 h-20 border-2 border-dashed ${themeColors.border} rounded-full flex items-center justify-center cursor-pointer hover:${themeColors.border.replace("border-", "border-").replace("-700", "-500")} transition-colors`}
+                  >
+                    <Upload className={`w-6 h-6 ${themeColors.mutedForeground}`} />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Button
+                    onClick={handleUploadClick}
+                    variant="outline"
+                    className={`${themeColors.border} ${themeColors.cardForeground} hover:${themeColors.accent}`}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    {uploadedImage ? 'Trocar Imagem' : 'Escolher Imagem'}
+                  </Button>
+                  <p className={`text-xs ${themeColors.mutedForeground} mt-2`}>
+                    Formatos aceitos: JPG, PNG, GIF (máx. 5MB)
+                  </p>
                 </div>
-              ))}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Divisor */}
+            <div className={`border-t ${themeColors.border} my-6`}></div>
+
+            {/* Seção de Avatares Padrão */}
+            <div>
+              <h3 className={`text-sm font-medium ${themeColors.cardForeground} mb-4`}>Avatares Padrão</h3>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                {avatarOptions.map((avatar, index) => {
+                  const IconComponent = avatar.icon;
+                  const isSelected = selectedAvatar?.name === avatar.name && !uploadedImage;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`relative cursor-pointer rounded-lg p-2 transition-colors ${
+                        isSelected
+                          ? `border-2 ${themeColors.primaryText.replace("text-", "border-")}`
+                          : `border-2 ${themeColors.border} hover:${themeColors.border.replace("border-", "border-").replace("-700", "-500")}`
+                      }`}
+                      onClick={() => {
+                        setSelectedAvatar(avatar);
+                        setUploadedImage(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
+                      }}
+                      title={avatar.name}
+                    >
+                      <Avatar className="w-full aspect-square">
+                        <AvatarFallback className={`${themeColors.cardBg} ${themeColors.cardForeground}`}>
+                          <IconComponent className="w-8 h-8" />
+                        </AvatarFallback>
+                      </Avatar>
+                      {isSelected && (
+                        <div
+                          className={`absolute -top-1 -right-1 w-4 h-4 ${themeColors.primaryBg} rounded-full flex items-center justify-center`}
+                        >
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <div className="mt-6">
               <Button
-                onClick={handleSaveAvatar}
-                disabled={saving}
-                className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white`}
-              >
-                {saving ? "Salvando..." : "Salvar Avatar"}
-              </Button>
+                  onClick={handleSaveAvatar}
+                  disabled={saving}
+                  className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white`}
+                >
+                  {saving ? "Salvando..." : "Salvar Avatar"}
+                </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
       {activeTab === "tema" && (
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">PERSONALIZAR TEMA</CardTitle>
+            <CardTitle className={`text-sm font-medium ${themeColors.mutedForeground} tracking-wider`}>PERSONALIZAR TEMA</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-medium text-neutral-300 mb-4">Escolha sua cor preferida</h3>
+                <h3 className={`text-sm font-medium ${themeColors.cardForeground} mb-4`}>Escolha sua cor preferida</h3>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                   {themes.map((theme) => (
                     <div
                       key={theme.id}
                       className={`relative cursor-pointer rounded-lg p-4 transition-colors border-2 ${
-                        currentTheme === theme.id ? "border-white" : "border-neutral-700 hover:border-neutral-500"
+                        currentTheme === theme.id ? `${themeColors.foreground.replace("text-", "border-")}` : `${themeColors.border} hover:${themeColors.border.replace("border-", "border-").replace("-700", "-500")}`
                       }`}
                       onClick={() => setTheme(theme.id)}
                     >
                       <div className={`w-full h-12 ${theme.color} rounded-lg mb-2`}></div>
-                      <p className="text-xs text-center text-neutral-300">{theme.name}</p>
+                      <p className={`text-xs text-center ${themeColors.cardForeground}`}>{theme.name}</p>
                       {currentTheme === theme.id && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                          <div className="w-2 h-2 bg-black rounded-full"></div>
+                        <div className={`absolute -top-1 -right-1 w-4 h-4 ${themeColors.foreground.replace("text-", "bg-")} rounded-full flex items-center justify-center`}>
+                          <div className={`w-2 h-2 ${themeColors.background.replace("bg-", "bg-")} rounded-full`}></div>
                         </div>
                       )}
                     </div>
@@ -529,8 +625,8 @@ export default function PerfilPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-neutral-800 rounded-lg">
-                <h4 className="text-sm font-medium text-neutral-300 mb-2">Prévia do Tema</h4>
+              <div className={`p-4 ${themeColors.muted} rounded-lg`}>
+                <h4 className={`text-sm font-medium ${themeColors.cardForeground} mb-2`}>Prévia do Tema</h4>
                 <div className="space-y-2">
                   <Button
                     className={`${themeColors.primaryBg} hover:${themeColors.primaryBg.replace("bg-", "bg-").replace("-500", "-600")} text-white`}
@@ -555,9 +651,9 @@ export default function PerfilPage() {
                     >
                       Badge Colorido
                     </Badge>
-                    <Badge className="bg-neutral-700 text-neutral-300">Badge Neutro</Badge>
+                    <Badge className={`${themeColors.muted} ${themeColors.cardForeground}`}>Badge Neutro</Badge>
                   </div>
-                  <div className="w-full bg-neutral-700 rounded-full h-2">
+                  <div className={`w-full ${themeColors.muted} rounded-full h-2`}>
                     <div className={`${themeColors.primaryBg} h-2 rounded-full w-3/4`}></div>
                   </div>
                 </div>
@@ -569,47 +665,47 @@ export default function PerfilPage() {
 
       {activeTab === "estatisticas" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className={`${themeColors.card} ${themeColors.border}`}>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">ESTATÍSTICAS GERAIS</CardTitle>
+              <CardTitle className={`text-sm font-medium ${themeColors.mutedForeground} tracking-wider`}>ESTATÍSTICAS GERAIS</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-neutral-800 rounded">
-                  <BookOpen className="w-8 h-8 text-white mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white font-mono">{userStats.coursesCompleted}</div>
-                  <div className="text-xs text-neutral-500">Cursos Concluídos</div>
+                <div className={`text-center p-4 ${themeColors.muted} rounded`}>
+                  <BookOpen className={`w-8 h-8 ${themeColors.foreground} mx-auto mb-2`} />
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{userStats.coursesCompleted}</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>Cursos Concluídos</div>
                 </div>
-                <div className="text-center p-4 bg-neutral-800 rounded">
-                  <Target className="w-8 h-8 text-white mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white font-mono">{userStats.coursesInProgress}</div>
-                  <div className="text-xs text-neutral-500">Em Andamento</div>
+                <div className={`text-center p-4 ${themeColors.muted} rounded`}>
+                  <Target className={`w-8 h-8 ${themeColors.foreground} mx-auto mb-2`} />
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{userStats.coursesInProgress}</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>Em Andamento</div>
                 </div>
-                <div className="text-center p-4 bg-neutral-800 rounded">
-                  <Trophy className="w-8 h-8 text-white mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white font-mono">{userStats.achievementsUnlocked}</div>
-                  <div className="text-xs text-neutral-500">Conquistas</div>
+                <div className={`text-center p-4 ${themeColors.muted} rounded`}>
+                  <Trophy className={`w-8 h-8 ${themeColors.foreground} mx-auto mb-2`} />
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{userStats.achievementsUnlocked}</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>Conquistas</div>
                 </div>
-                <div className="text-center p-4 bg-neutral-800 rounded">
-                  <Settings className="w-8 h-8 text-white mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-white font-mono">{userStats.simuladosCompleted}</div>
-                  <div className="text-xs text-neutral-500">Simulados</div>
+                <div className={`text-center p-4 ${themeColors.muted} rounded`}>
+                  <Settings className={`w-8 h-8 ${themeColors.foreground} mx-auto mb-2`} />
+                  <div className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{userStats.simuladosCompleted}</div>
+                  <div className={`text-xs ${themeColors.mutedForeground}`}>Simulados</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-neutral-900 border-neutral-700">
+          <Card className={`${themeColors.card} ${themeColors.border}`}>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">DESEMPENHO</CardTitle>
+              <CardTitle className={`text-sm font-medium ${themeColors.mutedForeground} tracking-wider`}>DESEMPENHO</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-neutral-400">Média dos Simulados</span>
-                  <span className="text-white font-mono">{userStats.averageScore}/1000</span>
+                  <span className={`${themeColors.mutedForeground}`}>Média dos Simulados</span>
+                  <span className={`${themeColors.foreground} font-mono`}>{userStats.averageScore}/1000</span>
                 </div>
-                <div className="w-full bg-neutral-800 rounded-full h-3">
+                <div className={`w-full ${themeColors.muted} rounded-full h-3`}>
                   <div
                     className={`${themeColors.primaryBg} h-3 rounded-full transition-all duration-300`}
                     style={{ width: `${(userStats.averageScore / 1000) * 100}%` }}
@@ -619,10 +715,10 @@ export default function PerfilPage() {
 
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-neutral-400">Horas de Estudo</span>
-                  <span className="text-white font-mono">{userStats.totalStudyHours}h</span>
+                  <span className={`${themeColors.mutedForeground}`}>Horas de Estudo</span>
+                  <span className={`${themeColors.foreground} font-mono`}>{userStats.totalStudyHours}h</span>
                 </div>
-                <div className="w-full bg-neutral-800 rounded-full h-3">
+                <div className={`w-full ${themeColors.muted} rounded-full h-3`}>
                   <div
                     className={`${themeColors.primaryBg} h-3 rounded-full transition-all duration-300`}
                     style={{ width: `${Math.min((userStats.totalStudyHours / 500) * 100, 100)}%` }}
@@ -632,12 +728,12 @@ export default function PerfilPage() {
 
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-neutral-400">Progresso do Nível</span>
-                  <span className="text-white font-mono">
+                  <span className={`${themeColors.mutedForeground}`}>Progresso do Nível</span>
+                  <span className={`${themeColors.foreground} font-mono`}>
                     {userStats.xp}/{userStats.nextLevelXp} XP
                   </span>
                 </div>
-                <div className="w-full bg-neutral-800 rounded-full h-3">
+                <div className={`w-full ${themeColors.muted} rounded-full h-3`}>
                   <div
                     className={`${themeColors.primaryBg} h-3 rounded-full transition-all duration-300`}
                     style={{ width: `${(userStats.xp / userStats.nextLevelXp) * 100}%` }}

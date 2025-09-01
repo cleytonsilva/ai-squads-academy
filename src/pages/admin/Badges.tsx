@@ -3,6 +3,7 @@ import { useAuth } from '@getmocha/users-service/react';
 import { useNavigate } from 'react-router';
 import DashboardLayout from '@/react-app/components/DashboardLayout';
 import { Award, Plus, Search, Star, Trophy, Target, BookOpen, Edit, Trash2 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import type { Badge, CreateBadge } from '@/shared/types';
 
 export default function Badges() {
@@ -274,7 +275,12 @@ export default function Badges() {
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                       {badge.icon_url ? (
-                        <img src={badge.icon_url} alt={badge.name} className="w-10 h-10 object-contain" />
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={badge.icon_url} alt={badge.name} className="object-contain" />
+                          <AvatarFallback className="bg-transparent">
+                            <Award className="w-8 h-8 text-white" />
+                          </AvatarFallback>
+                        </Avatar>
                       ) : (
                         <Award className="w-8 h-8 text-white" />
                       )}

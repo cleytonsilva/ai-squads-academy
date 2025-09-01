@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/admin/DashboardLayout';
 import { TrendingUp, Crown, Medal, Trophy, Star, Award, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 
 interface User {
   id: string;
@@ -19,6 +19,7 @@ interface User {
 export default function Rankings() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [rankings, setRankings] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,14 +50,22 @@ export default function Rankings() {
 
       if (error) {
         console.error('Erro ao buscar rankings:', error);
-        toast.error('Erro ao carregar rankings');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar rankings",
+          variant: "destructive",
+        });
         return;
       }
 
       setRankings(data || []);
     } catch (error) {
       console.error('Erro ao buscar rankings:', error);
-      toast.error('Erro ao carregar rankings');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar rankings",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

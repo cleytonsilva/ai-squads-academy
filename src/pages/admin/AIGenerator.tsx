@@ -5,12 +5,13 @@ import DashboardLayout from '@/components/admin/DashboardLayout';
 import { Brain, Loader2, BookOpen, Users, Star, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { GenerateCourseRequest, GenerationJob, Course } from '@/types';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AIGenerator() {
   // Declarar TODOS os hooks primeiro, incondicionalmente
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [generationJob, setGenerationJob] = useState<GenerationJob | null>(null);
   const [generatedCourse, setGeneratedCourse] = useState<Course | null>(null);
@@ -62,10 +63,10 @@ export default function AIGenerator() {
 
           if (!courseError && courseData) {
             setGeneratedCourse(courseData);
-            toast.success('Curso gerado com sucesso!');
+            toast({ title: "Sucesso", description: "Curso gerado com sucesso!" });
           }
         } else if (data.status === 'failed') {
-          toast.error(`Erro na geração: ${data.error || 'Erro desconhecido'}`);
+          toast({ title: "Erro", description: `Erro na geração: ${data.error || 'Erro desconhecido'}`, variant: "destructive" });
         }
       } catch (error) {
         console.error('Erro ao verificar status do job:', error);
@@ -124,12 +125,12 @@ export default function AIGenerator() {
 
         if (!jobError && jobData) {
           setGenerationJob(jobData);
-          toast.success('Geração iniciada! Acompanhe o progresso abaixo.');
+          toast({ title: "Sucesso", description: "Geração iniciada! Acompanhe o progresso abaixo." });
         }
       }
     } catch (error: any) {
       console.error('Erro ao gerar curso:', error);
-      toast.error(`Erro ao gerar curso: ${error.message || 'Erro desconhecido'}`);
+      toast({ title: "Erro", description: `Erro ao gerar curso: ${error.message || 'Erro desconhecido'}`, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -149,11 +150,11 @@ export default function AIGenerator() {
 
       if (error) throw error;
 
-      toast.success('Curso publicado com sucesso!');
+      toast({ title: "Sucesso", description: "Curso publicado com sucesso!" });
       navigate(`/admin/courses/${generatedCourse.id}/edit`);
     } catch (error: any) {
       console.error('Erro ao publicar curso:', error);
-      toast.error(`Erro ao publicar curso: ${error.message}`);
+      toast({ title: "Erro", description: `Erro ao publicar curso: ${error.message}`, variant: "destructive" });
     }
   };
 
@@ -208,14 +209,29 @@ export default function AIGenerator() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Público-alvo *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     required
                     value={formData.target_audience}
                     onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    placeholder="Ex: CEOs, RH, Advogados"
-                  />
+                  >
+                    <option value="">Selecione o público-alvo</option>
+                    <option value="Estudantes">Estudantes</option>
+                    <option value="CEOs">CEOs</option>
+                    <option value="RH">Recursos Humanos (RH)</option>
+                    <option value="Advogados">Advogados</option>
+                    <option value="Não técnicos">Profissionais Não Técnicos</option>
+                    <option value="Desenvolvedores">Desenvolvedores</option>
+                    <option value="Designers">Designers</option>
+                    <option value="Analistas">Analistas</option>
+                    <option value="Gerentes">Gerentes</option>
+                    <option value="Consultores">Consultores</option>
+                    <option value="Empreendedores">Empreendedores</option>
+                    <option value="Profissionais de TI">Profissionais de TI</option>
+                    <option value="Vendedores">Vendedores</option>
+                    <option value="Marketing">Profissionais de Marketing</option>
+                    <option value="Geral">Público Geral</option>
+                  </select>
                 </div>
               </div>
 

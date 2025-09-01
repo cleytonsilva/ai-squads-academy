@@ -1,47 +1,54 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useEffect, useRef } from 'react';
 import ReactQuill, { ReactQuillProps } from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 /**
- * Wrapper para ReactQuill que suprime o aviso findDOMNode deprecated
- * Este é um workaround temporário até que o react-quill seja atualizado
- * para ser compatível com React 18+ sem usar findDOMNode
+ * Wrapper para ReactQuill que resolve o warning do findDOMNode deprecated
+ * 
+ * CONTEXTO: O react-quill ainda usa findDOMNode internamente, que é deprecado no React 18+.
+ * Esta é uma solução temporária até que a biblioteca seja atualizada.
+ * 
+ * SOLUÇÃO: Interceptamos especificamente os warnings do findDOMNode do ReactQuill
+ * sem afetar outros warnings importantes do console.
  */
 const ReactQuillWrapper = forwardRef<ReactQuill, ReactQuillProps>(
   (props, ref) => {
-    // Suprime temporariamente os avisos do console relacionados ao findDOMNode
-    React.useEffect(() => {
-      const originalConsoleWarn = console.warn;
-      const originalConsoleError = console.error;
+    const suppressedWarnings = useRef(new Set<string>());
+    
+    useEffect(() => {
+      // Intercepta apenas warnings específicos do findDOMNode do ReactQuill
+      const originalWarn = console.warn;
       
       console.warn = (...args: any[]) => {
-        // Filtra avisos relacionados ao findDOMNode do react-quill
+        const message = args[0];
+        
+        // Verifica se é especificamente o warning do findDOMNode do ReactQuill
         if (
-          typeof args[0] === 'string' && 
-          (args[0].includes('findDOMNode is deprecated') || 
-           args[0].includes('Warning: findDOMNode is deprecated'))
+          typeof message === 'string' && 
+          message.includes('findDOMNode is deprecated') &&
+          // Verifica se o stack trace inclui react-quill
+          (args[1]?.includes?.('ReactQuill') || 
+           new Error().stack?.includes('react-quill'))
         ) {
-          return; // Suprime o aviso
+          // Suprime apenas este warning específico e registra que foi suprimido
+          const warningKey = 'react-quill-findDOMNode';
+          if (!suppressedWarnings.current.has(warningKey)) {
+            suppressedWarnings.current.add(warningKey);
+            // Log uma única vez para desenvolvedores saberem que o warning foi suprimido
+            console.info(
+              '🔇 ReactQuill findDOMNode warning suprimido (conhecido e temporário)'
+            );
+          }
+          return;
         }
-        originalConsoleWarn.apply(console, args);
+        
+        // Permite todos os outros warnings passarem normalmente
+        originalWarn.apply(console, args);
       };
 
-      console.error = (...args: any[]) => {
-        // Filtra erros relacionados ao findDOMNode do react-quill
-        if (
-          typeof args[0] === 'string' && 
-          (args[0].includes('findDOMNode is deprecated') || 
-           args[0].includes('Warning: findDOMNode is deprecated'))
-        ) {
-          return; // Suprime o erro
-        }
-        originalConsoleError.apply(console, args);
-      };
-
-      // Restaura os console originais quando o componente for desmontado
+      // Cleanup: restaura o console.warn original
       return () => {
-        console.warn = originalConsoleWarn;
-        console.error = originalConsoleError;
+        console.warn = originalWarn;
       };
     }, []);
 

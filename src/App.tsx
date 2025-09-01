@@ -8,6 +8,14 @@ import AppLayout from "@/components/AppLayout";
 import RequireAuth, { RequireRole } from "@/components/auth/RequireAuth";
 import { ThemeProvider } from "@/contexts/theme-context";
 
+// Import direto para páginas de recuperação de senha
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
+// Lazy loading para páginas legais
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+
 // Lazy loading para páginas principais
 const Index = lazy(() => import("./pages/Index"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -47,7 +55,37 @@ const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const CertificateManagement = lazy(() => import("./pages/admin/CertificateManagement"));
 const RankingManagement = lazy(() => import("./pages/admin/RankingManagement"));
 const AdminMissions = lazy(() => import("./pages/admin/AdminMissions"));
-const queryClient = new QueryClient();
+const AdminSimulados = lazy(() => import("./pages/admin/AdminSimulados"));
+// Configuração otimizada do QueryClient para evitar carregamentos duplos
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Aumentar staleTime para evitar refetches desnecessários
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      // Aumentar cacheTime para manter dados em cache por mais tempo
+      cacheTime: 10 * 60 * 1000, // 10 minutos
+      // Evitar refetch automático em várias situações
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      // Retry apenas uma vez em caso de erro
+      retry: 1,
+      // Configurar retry delay
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+    mutations: {
+      // Retry para mutations
+      retry: 1,
+    },
+  },
+});
+
+// Debug logs para QueryClient
+if (process.env.NODE_ENV === 'development') {
+  queryClient.getQueryCache().subscribe((event) => {
+    console.log('[QueryClient]', event.type, event.query.queryKey);
+  });
+}
 
 // Componente de loading para Suspense
 const LoadingFallback = () => (
@@ -68,7 +106,13 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/auth-debug" element={<AuthDebug />} />
+              
+              {/* Páginas legais - acessíveis sem autenticação */}
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
 
               <Route element={<RequireAuth />}>
                 <Route path="/app" element={<AppDashboard />} />
@@ -103,6 +147,7 @@ const App = () => (
                 <Route path="/admin/badges" element={<BadgeManagement />} />
                 <Route path="/admin/challenges" element={<AdminChallengeManagement />} />
                 <Route path="/admin/missions" element={<AdminMissions />} />
+                <Route path="/admin/simulados" element={<AdminSimulados />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

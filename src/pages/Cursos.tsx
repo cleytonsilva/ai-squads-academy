@@ -231,31 +231,31 @@ export default function CursosPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="px-4 py-6 space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-neutral-700 rounded w-1/4 mb-4"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-neutral-700 rounded"></div>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-neutral-700 rounded"></div>
-            ))}
-          </div>
+        <div className={`h-8 ${themeColors.muted} rounded w-1/4 mb-4`}></div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className={`h-24 ${themeColors.muted} rounded`}></div>
+          ))}
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className={`h-64 ${themeColors.muted} rounded`}></div>
+          ))}
+        </div>
+      </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-4 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wider">MEUS CURSOS</h1>
-          <p className="text-sm text-neutral-400">Gerencie seus cursos e acompanhe seu progresso</p>
+          <h1 className={`text-2xl font-bold ${themeColors.foreground} tracking-wider`}>MEUS CURSOS</h1>
+          <p className={`text-sm ${themeColors.mutedForeground}`}>Gerencie seus cursos e acompanhe seu progresso</p>
         </div>
         <div className="flex gap-2">
           <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
@@ -266,37 +266,37 @@ export default function CursosPage() {
 
       {/* Search and Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <Card className="lg:col-span-1 bg-neutral-900 border-neutral-700">
+        <Card className={`lg:col-span-1 ${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${themeColors.mutedForeground}`} />
               <Input
                 placeholder="Buscar cursos..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-neutral-800 border-neutral-600 text-white placeholder-neutral-400"
+                className={`pl-10 ${themeColors.muted} ${themeColors.border} ${themeColors.foreground} placeholder:${themeColors.mutedForeground}`}
               />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">EM ANDAMENTO</p>
-                <p className="text-2xl font-bold text-white font-mono">{cursosEmAndamento}</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>EM ANDAMENTO</p>
+                <p className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{cursosEmAndamento}</p>
               </div>
-              <BookOpen className="w-8 h-8 text-white" />
+              <BookOpen className={`w-8 h-8 ${themeColors.foreground}`} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">CONCLUÍDOS</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>CONCLUÍDOS</p>
                 <p className="text-2xl font-bold text-green-500 font-mono">{cursosConcluidos}</p>
               </div>
               <BookOpen className="w-8 h-8 text-green-500" />
@@ -304,14 +304,14 @@ export default function CursosPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-900 border-neutral-700">
+        <Card className={`${themeColors.card} ${themeColors.border}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-neutral-400 tracking-wider">HORAS ESTUDADAS</p>
-                <p className="text-2xl font-bold text-white font-mono">{horasEstudadas}h</p>
+                <p className={`text-xs ${themeColors.mutedForeground} tracking-wider`}>HORAS ESTUDADAS</p>
+                <p className={`text-2xl font-bold ${themeColors.foreground} font-mono`}>{horasEstudadas}h</p>
               </div>
-              <Clock className="w-8 h-8 text-white" />
+              <Clock className={`w-8 h-8 ${themeColors.foreground}`} />
             </div>
           </CardContent>
         </Card>
@@ -322,14 +322,14 @@ export default function CursosPage() {
         {filteredCursos.map((curso) => (
           <Card
             key={curso.id}
-            className="bg-neutral-900 border-neutral-700 hover:border-neutral-500 transition-colors cursor-pointer"
+            className={`${themeColors.card} ${themeColors.border} hover:${themeColors.border.replace('border-neutral-200', 'border-neutral-300').replace('border-neutral-700', 'border-neutral-500')} transition-colors cursor-pointer`}
             onClick={() => setSelectedCourse(curso)}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-sm font-bold text-white tracking-wider">{curso.title}</CardTitle>
-                  <p className="text-xs text-neutral-400">{curso.instructor}</p>
+                  <CardTitle className={`text-sm font-bold ${themeColors.foreground} tracking-wider`}>{curso.title}</CardTitle>
+                  <p className={`text-xs ${themeColors.mutedForeground}`}>{curso.instructor}</p>
                 </div>
                 <Badge className={getStatusColor(curso.status)}>
                   {curso.status === "em_andamento"
@@ -341,9 +341,9 @@ export default function CursosPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-neutral-300">{curso.description}</p>
+              <p className={`text-sm ${themeColors.cardForeground}`}>{curso.description}</p>
 
-              <div className="flex items-center gap-4 text-xs text-neutral-400">
+              <div className={`flex items-center gap-4 text-xs ${themeColors.mutedForeground}`}>
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   <span>{curso.duration}h</span>
@@ -359,17 +359,17 @@ export default function CursosPage() {
               </div>
 
               <div className="flex gap-2">
-                <Badge className="bg-neutral-800 text-neutral-300 text-xs">{curso.category}</Badge>
-                <Badge className="bg-neutral-800 text-neutral-300 text-xs">{curso.level}</Badge>
+                <Badge className={`${themeColors.muted} ${themeColors.cardForeground} text-xs`}>{curso.category}</Badge>
+                <Badge className={`${themeColors.muted} ${themeColors.cardForeground} text-xs`}>{curso.level}</Badge>
               </div>
 
               {curso.status !== "disponivel" && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-neutral-400">Progresso</span>
-                    <span className="text-white font-mono">{curso.progress}%</span>
+                    <span className={`${themeColors.mutedForeground}`}>Progresso</span>
+                    <span className={`${themeColors.foreground} font-mono`}>{curso.progress}%</span>
                   </div>
-                  <div className="w-full bg-neutral-800 rounded-full h-2">
+                  <div className={`w-full ${themeColors.muted} rounded-full h-2`}>
                     <div
                       className={`${themeColors.primaryBg} h-2 rounded-full transition-all duration-300`}
                       style={{ width: `${curso.progress}%` }}
@@ -386,7 +386,7 @@ export default function CursosPage() {
                     e.stopPropagation();
                     handleViewCourse(curso.id);
                   }}
-                  className="text-neutral-300 border-neutral-600 hover:bg-neutral-800 hover:text-white flex-1"
+                  className={`${themeColors.cardForeground} ${themeColors.border} hover:${themeColors.muted} hover:${themeColors.foreground} flex-1`}
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   Visualizar Curso
@@ -400,16 +400,16 @@ export default function CursosPage() {
       {/* Course Detail Modal */}
       {selectedCourse && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="bg-neutral-900 border-neutral-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <Card className={`${themeColors.card} ${themeColors.border} w-full max-w-4xl max-h-[90vh] overflow-y-auto`}>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold text-white tracking-wider">{selectedCourse.title}</CardTitle>
-                <p className="text-sm text-neutral-400">{selectedCourse.instructor}</p>
+                <CardTitle className={`text-xl font-bold ${themeColors.foreground} tracking-wider`}>{selectedCourse.title}</CardTitle>
+                <p className={`text-sm ${themeColors.mutedForeground}`}>{selectedCourse.instructor}</p>
               </div>
               <Button
                 variant="ghost"
                 onClick={() => setSelectedCourse(null)}
-                className="text-neutral-400 hover:text-white"
+                className={`${themeColors.mutedForeground} hover:${themeColors.foreground}`}
               >
                 ✕
               </Button>
@@ -418,28 +418,28 @@ export default function CursosPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">DESCRIÇÃO</h3>
-                    <p className="text-sm text-neutral-300">{selectedCourse.description}</p>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>DESCRIÇÃO</h3>
+                    <p className={`text-sm ${themeColors.cardForeground}`}>{selectedCourse.description}</p>
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">DETALHES</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>DETALHES</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Duração:</span>
-                        <span className="text-white">{selectedCourse.duration}h</span>
+                        <span className={`${themeColors.mutedForeground}`}>Duração:</span>
+                        <span className={`${themeColors.foreground}`}>{selectedCourse.duration}h</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Estudantes:</span>
-                        <span className="text-white">{selectedCourse.students_count}</span>
+                        <span className={`${themeColors.mutedForeground}`}>Estudantes:</span>
+                        <span className={`${themeColors.foreground}`}>{selectedCourse.students_count}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Avaliação:</span>
-                        <span className="text-white">{selectedCourse.rating}/5.0</span>
+                        <span className={`${themeColors.mutedForeground}`}>Avaliação:</span>
+                        <span className={`${themeColors.foreground}`}>{selectedCourse.rating}/5.0</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-neutral-400">Nível:</span>
-                        <span className="text-white">{selectedCourse.level}</span>
+                        <span className={`${themeColors.mutedForeground}`}>Nível:</span>
+                        <span className={`${themeColors.foreground}`}>{selectedCourse.level}</span>
                       </div>
                     </div>
                   </div>
@@ -447,13 +447,13 @@ export default function CursosPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">PROGRESSO</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>PROGRESSO</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-neutral-400">Concluído</span>
-                        <span className="text-white font-mono">{selectedCourse.progress}%</span>
+                        <span className={`${themeColors.mutedForeground}`}>Concluído</span>
+                        <span className={`${themeColors.foreground} font-mono`}>{selectedCourse.progress}%</span>
                       </div>
-                      <div className="w-full bg-neutral-800 rounded-full h-3">
+                      <div className={`w-full ${themeColors.muted} rounded-full h-3`}>
                         <div
                           className={`${themeColors.primaryBg} h-3 rounded-full transition-all duration-300`}
                           style={{ width: `${selectedCourse.progress}%` }}
@@ -463,16 +463,16 @@ export default function CursosPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-medium text-neutral-300 tracking-wider mb-2">CATEGORIAS</h3>
+                    <h3 className={`text-sm font-medium ${themeColors.cardForeground} tracking-wider mb-2`}>CATEGORIAS</h3>
                     <div className="flex gap-2">
-                      <Badge className="bg-neutral-800 text-neutral-300">{selectedCourse.category}</Badge>
-                      <Badge className="bg-neutral-800 text-neutral-300">{selectedCourse.level}</Badge>
+                      <Badge className={`${themeColors.muted} ${themeColors.cardForeground}`}>{selectedCourse.category}</Badge>
+                      <Badge className={`${themeColors.muted} ${themeColors.cardForeground}`}>{selectedCourse.level}</Badge>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-4 border-t border-neutral-700">
+              <div className={`flex gap-2 pt-4 border-t ${themeColors.border}`}>
                 <Button
                   onClick={() => {
                     handleStartCourse(selectedCourse.id);
@@ -488,14 +488,14 @@ export default function CursosPage() {
                   onClick={() => {
                     handleViewContent(selectedCourse.id);
                   }}
-                  className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent"
+                  className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground} bg-transparent`}
                 >
                   <List className="w-4 h-4 mr-2" />
                   Ver Conteúdo
                 </Button>
                 <Button
                   variant="outline"
-                  className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300 bg-transparent"
+                  className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground} bg-transparent`}
                 >
                   <Star className="w-4 h-4 mr-2" />
                   Favoritar
@@ -509,16 +509,16 @@ export default function CursosPage() {
       {/* Modal de Módulos do Curso */}
       {showModulesModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="bg-neutral-900 border-neutral-700 w-full max-w-2xl max-h-[80vh] overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between border-b border-neutral-700">
+          <Card className={`${themeColors.card} ${themeColors.border} w-full max-w-2xl max-h-[80vh] overflow-hidden`}>
+            <CardHeader className={`flex flex-row items-center justify-between border-b ${themeColors.border}`}>
               <div>
-                <CardTitle className="text-lg font-bold text-white tracking-wider">Módulos do Curso</CardTitle>
-                <p className="text-sm text-neutral-400">Conteúdo organizado por módulos</p>
+                <CardTitle className={`text-lg font-bold ${themeColors.foreground} tracking-wider`}>Módulos do Curso</CardTitle>
+                <p className={`text-sm ${themeColors.mutedForeground}`}>Conteúdo organizado por módulos</p>
               </div>
               <Button
                 variant="ghost"
                 onClick={() => setShowModulesModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className={`${themeColors.mutedForeground} hover:${themeColors.foreground}`}
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -528,7 +528,7 @@ export default function CursosPage() {
                 <div className="p-6 space-y-4">
                   <div className="animate-pulse">
                     {[...Array(4)].map((_, i) => (
-                      <div key={i} className="h-16 bg-neutral-700 rounded mb-3"></div>
+                      <div key={i} className={`h-16 ${themeColors.muted} rounded mb-3`}></div>
                     ))}
                   </div>
                 </div>
@@ -539,7 +539,7 @@ export default function CursosPage() {
                       {courseModules.map((module, index) => (
                         <div
                           key={module.id}
-                          className="bg-neutral-800 border border-neutral-700 rounded-lg p-4 hover:border-neutral-600 transition-colors"
+                          className={`${themeColors.muted} border ${themeColors.border} rounded-lg p-4 hover:${themeColors.border.replace('border-neutral-200', 'border-neutral-300').replace('border-neutral-700', 'border-neutral-600')} transition-colors`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -547,14 +547,14 @@ export default function CursosPage() {
                                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                                   {index + 1}
                                 </div>
-                                <h4 className="text-white font-medium">{module.title}</h4>
+                                <h4 className={`${themeColors.foreground} font-medium`}>{module.title}</h4>
                               </div>
                               {module.description && (
-                                <p className="text-neutral-400 text-sm mb-3 ml-11">{module.description}</p>
+                                <p className={`${themeColors.mutedForeground} text-sm mb-3 ml-11`}>{module.description}</p>
                               )}
                               <div className="flex items-center gap-4 ml-11">
                                 {module.duration && (
-                                  <div className="flex items-center gap-1 text-neutral-500 text-xs">
+                                  <div className={`flex items-center gap-1 ${themeColors.mutedForeground} text-xs`}>
                                     <Clock className="w-3 h-3" />
                                     <span>{module.duration} min</span>
                                   </div>
@@ -572,23 +572,23 @@ export default function CursosPage() {
                     </div>
                   ) : (
                     <div className="p-8 text-center">
-                      <BookOpen className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
-                      <h3 className="text-white font-medium mb-2">Nenhum módulo encontrado</h3>
-                      <p className="text-neutral-400 text-sm">Este curso ainda não possui módulos configurados.</p>
+                      <BookOpen className={`w-12 h-12 ${themeColors.mutedForeground} mx-auto mb-4`} />
+                      <h3 className={`${themeColors.foreground} font-medium mb-2`}>Nenhum módulo encontrado</h3>
+                      <p className={`${themeColors.mutedForeground} text-sm`}>Este curso ainda não possui módulos configurados.</p>
                     </div>
                   )}
                 </div>
               )}
             </CardContent>
-            <div className="border-t border-neutral-700 p-4">
+            <div className={`border-t ${themeColors.border} p-4`}>
               <div className="flex justify-between items-center">
-                <p className="text-neutral-400 text-sm">
+                <p className={`${themeColors.mutedForeground} text-sm`}>
                   {courseModules.length} módulo{courseModules.length !== 1 ? 's' : ''} disponível{courseModules.length !== 1 ? 'is' : ''}
                 </p>
                 <Button
                   onClick={() => setShowModulesModal(false)}
                   variant="outline"
-                  className="border-neutral-700 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300"
+                  className={`${themeColors.border} ${themeColors.mutedForeground} hover:${themeColors.muted} hover:${themeColors.cardForeground}`}
                 >
                   Fechar
                 </Button>

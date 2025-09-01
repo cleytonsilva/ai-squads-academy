@@ -22,8 +22,12 @@ export type Database = {
           image_url: string | null
           key: string | null
           name: string
-          style: Json
+          style: string | null
           updated_at: string
+          category: string | null
+          icon_url: string | null
+          criteria: Json | null
+          is_active: boolean
         }
         Insert: {
           created_at?: string
@@ -32,8 +36,12 @@ export type Database = {
           image_url?: string | null
           key?: string | null
           name: string
-          style?: Json
+          style?: string | null
           updated_at?: string
+          category?: string | null
+          icon_url?: string | null
+          criteria?: Json | null
+          is_active?: boolean
         }
         Update: {
           created_at?: string
@@ -42,8 +50,12 @@ export type Database = {
           image_url?: string | null
           key?: string | null
           name?: string
-          style?: Json
+          style?: string | null
           updated_at?: string
+          category?: string | null
+          icon_url?: string | null
+          criteria?: Json | null
+          is_active?: boolean
         }
         Relationships: []
       }
@@ -491,6 +503,8 @@ export type Database = {
           id: string
           source: string | null
           user_id: string
+          earned_at: string
+          course_id: string | null
         }
         Insert: {
           awarded_at?: string
@@ -499,6 +513,8 @@ export type Database = {
           id?: string
           source?: string | null
           user_id: string
+          earned_at?: string
+          course_id?: string | null
         }
         Update: {
           awarded_at?: string
@@ -507,8 +523,25 @@ export type Database = {
           id?: string
           source?: string | null
           user_id?: string
+          earned_at?: string
+          course_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_missions: {
         Row: {
@@ -645,6 +678,147 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      badge_templates: {
+        Row: {
+          id: string
+          course_id: string
+          name: string
+          description: string | null
+          completion_percentage: number
+          is_active: boolean
+          design_config: Json
+          requirements: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          name: string
+          description?: string | null
+          completion_percentage?: number
+          is_active?: boolean
+          design_config?: Json
+          requirements?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          name?: string
+          description?: string | null
+          completion_percentage?: number
+          is_active?: boolean
+          design_config?: Json
+          requirements?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "badge_templates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generation_events: {
+        Row: {
+          id: string
+          event_type: string
+          event_data: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_type: string
+          event_data?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_type?: string
+          event_data?: Json | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          id: string
+          user_id: string
+          course_id: string
+          completion_percentage: number | null
+          last_accessed: string | null
+          time_spent_minutes: number | null
+          modules_completed: number | null
+          total_modules: number | null
+          quiz_scores: Json | null
+          created_at: string
+          updated_at: string
+          is_completed: boolean
+          module_id: string | null
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          course_id: string
+          completion_percentage?: number | null
+          last_accessed?: string | null
+          time_spent_minutes?: number | null
+          modules_completed?: number | null
+          total_modules?: number | null
+          quiz_scores?: Json | null
+          created_at?: string
+          updated_at?: string
+          is_completed?: boolean
+          module_id?: string | null
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          course_id?: string
+          completion_percentage?: number | null
+          last_accessed?: string | null
+          time_spent_minutes?: number | null
+          modules_completed?: number | null
+          total_modules?: number | null
+          quiz_scores?: Json | null
+          created_at?: string
+          updated_at?: string
+          is_completed?: boolean
+          module_id?: string | null
+          completed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
             referencedColumns: ["id"]
           },
         ]

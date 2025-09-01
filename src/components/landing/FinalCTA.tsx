@@ -11,11 +11,11 @@ export default function FinalCTA() {
               <Sparkles className="w-4 h-4" />
               Comece grátis em 1 minuto
             </div>
-            <h3 className="mt-4 text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">Pronto para subir de nível?</h3>
-            <p className="mt-2 text-slate-700 text-sm md:text-base">Crie sua conta e desbloqueie sua trilha de cibersegurança.</p>
+            <h3 className="mt-4 text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">Pronto para subir de nível em cibersegurança?</h3>
+            <p className="mt-2 text-slate-700 text-sm md:text-base">Crie sua conta agora e desbloqueie missões que vão transformar seu aprendizado em prática real.</p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <a href="#comecar" className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 text-white px-5 py-3 text-sm font-medium hover:bg-slate-800 shadow-sm ring-1 ring-slate-900/10 transition-all hover:shadow-md hover:-translate-y-0.5">
-                Criar conta
+              <a href="/auth?mode=signup" className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 text-white px-5 py-3 text-sm font-medium hover:bg-slate-800 shadow-sm ring-1 ring-slate-900/10 transition-all hover:shadow-md hover:-translate-y-0.5 animate-pulse" style={{animationDuration: '3s'}}>
+                Criar conta grátis
                 <ArrowRight className="w-4 h-4" />
               </a>
               <a href="#planos" className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white text-slate-900 px-5 py-3 text-sm font-medium hover:bg-slate-50 transition-all hover:-translate-y-0.5">

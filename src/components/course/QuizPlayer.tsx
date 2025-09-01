@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Quiz, QuizQuestion, QuizAttempt } from '@/types/course';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import {
   Play,
   CheckCircle,
@@ -60,8 +60,9 @@ interface QuestionResult {
   points: number;
 }
 
-export default function QuizPlayer({ quiz, userId, courseId, moduleId, onComplete, onClose }: QuizPlayerProps) {
-  const [state, setState] = useState<QuizState>({
+export default function QuizPlayer({ quiz, userId, onComplete }: QuizPlayerProps) {
+  const { toast } = useToast();
+  const [state, setState] = useState<QuizPlayerState>({
     currentQuestionIndex: 0,
     answers: {},
     timeRemaining: quiz.time_limit_minutes ? quiz.time_limit_minutes * 60 : 0,
@@ -247,9 +248,16 @@ export default function QuizPlayer({ quiz, userId, courseId, moduleId, onComplet
       }));
 
       if (passed) {
-        toast.success(`Quiz concluído! Você ganhou ${totalXP} XP!`);
+        toast({
+          title: "Sucesso!",
+          description: `Quiz concluído! Você ganhou ${totalXP} XP!`,
+        });
       } else {
-        toast.error('Quiz não passou. Tente novamente!');
+        toast({
+          title: "Quiz Reprovado",
+          description: "Quiz não passou. Tente novamente!",
+          variant: "destructive",
+        });
       }
 
       if (onComplete) {
@@ -257,7 +265,11 @@ export default function QuizPlayer({ quiz, userId, courseId, moduleId, onComplet
       }
     } catch (error: any) {
       console.error('Erro ao submeter quiz:', error);
-      toast.error('Erro ao submeter quiz');
+      toast({
+        title: "Erro",
+        description: "Erro ao submeter quiz",
+        variant: "destructive",
+      });
       setState(prev => ({ ...prev, loading: false }));
     }
   };

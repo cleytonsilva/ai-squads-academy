@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { useAuth } from './useAuth';
 
 // Interfaces para tipagem
@@ -102,7 +102,11 @@ export function useBadges(userId?: string) {
       console.error('Erro ao carregar badges do usuário:', err);
       setError('Erro ao carregar badges');
       if (!isAdmin) { // Só mostra erro se não for admin
-        toast.error('Erro ao carregar badges do usuário');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar badges do usuário",
+          variant: "destructive"
+        });
       }
     } finally {
       setLoading(false);
@@ -202,7 +206,11 @@ export function useBadges(userId?: string) {
   const awardBadge = async (badgeTemplateId: string, userId?: string) => {
     const targetUser = userId || targetUserId;
     if (!targetUser) {
-      toast.error('Usuário não identificado');
+      toast({
+        title: "Erro",
+        description: "Usuário não identificado",
+        variant: "destructive"
+      });
       return false;
     }
 
@@ -220,7 +228,10 @@ export function useBadges(userId?: string) {
       }
 
       if (existingBadge) {
-        toast.info('Usuário já possui este badge');
+        toast({
+          title: "Info",
+          description: "Usuário já possui este badge"
+        });
         return false;
       }
 
@@ -235,7 +246,10 @@ export function useBadges(userId?: string) {
 
       if (insertError) throw insertError;
 
-      toast.success('Badge concedido com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Badge concedido com sucesso!"
+      });
       
       // Recarregar badges se for o usuário atual
       if (targetUser === targetUserId) {
@@ -245,7 +259,11 @@ export function useBadges(userId?: string) {
       return true;
     } catch (err) {
       console.error('Erro ao conceder badge:', err);
-      toast.error('Erro ao conceder badge');
+      toast({
+        title: "Erro",
+        description: "Erro ao conceder badge",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -272,7 +290,10 @@ export function useBadges(userId?: string) {
       }
 
       if (eligibleBadges.length > 0) {
-        toast.success(`Parabéns! Você conquistou ${eligibleBadges.length} novo(s) badge(s)!`);
+        toast({
+          title: "Parabéns!",
+          description: `Você conquistou ${eligibleBadges.length} novo(s) badge(s)!`
+        });
       }
     } catch (err) {
       console.error('Erro ao verificar novos badges:', err);
@@ -385,7 +406,11 @@ export function useAllBadges() {
     } catch (err) {
       console.error('Erro ao carregar todos os badges:', err);
       setError('Erro ao carregar badges');
-      toast.error('Erro ao carregar badges');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar badges",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -424,12 +449,19 @@ export function useAllBadges() {
 
       if (error) throw error;
 
-      toast.success('Badge revogado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Badge revogado com sucesso!"
+      });
       await loadAllUserBadges();
       return true;
     } catch (err) {
       console.error('Erro ao revogar badge:', err);
-      toast.error('Erro ao revogar badge');
+      toast({
+        title: "Erro",
+        description: "Erro ao revogar badge",
+        variant: "destructive"
+      });
       return false;
     }
   };
@@ -508,7 +540,11 @@ export function useBadgeTemplates() {
     } catch (err) {
       console.error('Erro ao carregar templates:', err);
       setError('Erro ao carregar templates');
-      toast.error('Erro ao carregar templates');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar templates",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -527,12 +563,19 @@ export function useBadgeTemplates() {
 
       if (error) throw error;
 
-      toast.success('Template de badge criado!');
+      toast({
+        title: "Sucesso",
+        description: "Template de badge criado!"
+      });
       await loadTemplates();
       return data;
     } catch (err) {
       console.error('Erro ao criar template:', err);
-      toast.error('Erro ao criar template');
+      toast({
+        title: "Erro",
+        description: "Erro ao criar template",
+        variant: "destructive"
+      });
       return null;
     }
   };
@@ -551,12 +594,19 @@ export function useBadgeTemplates() {
 
       if (error) throw error;
 
-      toast.success('Template atualizado!');
+      toast({
+        title: "Sucesso",
+        description: "Template atualizado!"
+      });
       await loadTemplates();
       return data;
     } catch (err) {
       console.error('Erro ao atualizar template:', err);
-      toast.error('Erro ao atualizar template');
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar template",
+        variant: "destructive"
+      });
       return null;
     }
   };
@@ -573,12 +623,19 @@ export function useBadgeTemplates() {
 
       if (error) throw error;
 
-      toast.success('Template deletado!');
+      toast({
+        title: "Sucesso",
+        description: "Template deletado!"
+      });
       await loadTemplates();
       return true;
     } catch (err) {
       console.error('Erro ao deletar template:', err);
-      toast.error('Erro ao deletar template');
+      toast({
+        title: "Erro",
+        description: "Erro ao deletar template",
+        variant: "destructive"
+      });
       return false;
     }
   };

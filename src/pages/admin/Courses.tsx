@@ -4,12 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/admin/DashboardLayout';
 import { BookOpen, Plus, Search, Filter, MoreVertical, Eye, Edit, Trash2, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import type { Course } from '@/types/course';
 
 export default function Courses() {
   const { user, isPending } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,7 +34,7 @@ export default function Courses() {
       // Verificar se há uma sessão ativa
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Sessão expirada. Por favor, faça login novamente.');
+        toast({ title: "Erro", description: "Sessão expirada. Por favor, faça login novamente.", variant: "destructive" });
         navigate('/login');
         return;
       }
@@ -57,14 +58,14 @@ export default function Courses() {
 
       if (error) {
         console.error('Erro ao buscar cursos:', error);
-        toast.error('Erro ao carregar cursos');
+        toast({ title: "Erro", description: "Erro ao carregar cursos", variant: "destructive" });
         return;
       }
 
       setCourses(data || []);
     } catch (error) {
       console.error('Erro ao buscar cursos:', error);
-      toast.error('Erro ao carregar cursos');
+      toast({ title: "Erro", description: "Erro ao carregar cursos", variant: "destructive" });
     } finally {
       setLoading(false);
     }

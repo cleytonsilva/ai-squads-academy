@@ -1,6 +1,32 @@
-import { ShieldCheck, Play, Layers, Target } from 'lucide-react';
+import { ShieldCheck, Play, Layers, Target, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useDecryptAnimation } from '@/hooks/useDecryptAnimation';
+import { useScrollReveal, useScrollRevealStagger } from '@/hooks/useScrollReveal';
 
 export default function Hero() {
+  const [currentTerm, setCurrentTerm] = useState(0);
+  const terms = ['missões práticas', 'CTFs', 'laboratórios em nuvem', 'simulações de ataque'];
+  
+  // Animação de descriptografia para o título principal
+  const heroTitle = 'Cibersegurança para todos, sem complicação';
+  const decryptedTitle = useDecryptAnimation(heroTitle, 2500);
+
+  // Scroll reveal animations
+  const badgeReveal = useScrollReveal({ delay: 0 }, 'hero');
+  const titleReveal = useScrollReveal({ delay: 200 }, 'hero');
+  const descriptionReveal = useScrollReveal({ delay: 400 }, 'hero');
+  const buttonsReveal = useScrollReveal({ delay: 600 }, 'hero');
+  const badgesReveal = useScrollReveal({ delay: 800 }, 'hero');
+  const dashboardReveal = useScrollReveal({ delay: 300 }, 'fromRight');
+  const cardsStagger = useScrollRevealStagger(4, { delay: 100 }, 'staggered');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTerm((prev) => (prev + 1) % terms.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const scrollToPlans = () => {
     document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -21,22 +47,46 @@ export default function Hero() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-14 pb-16 md:pt-20 md:pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 shadow-sm transition-all hover:-translate-y-0.5">
+            <span 
+              ref={badgeReveal.ref}
+              className={`inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 ${badgeReveal.animationClasses}`}
+              style={badgeReveal.animationStyles}
+            >
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               Aprenda praticando em missões reais
             </span>
-            <h1 className="mt-5 text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-slate-900">
-              Cibersegurança gamificada para você e sua equipe
+            <h1 
+              ref={titleReveal.ref}
+              className={`mt-5 text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-slate-900 ${titleReveal.animationClasses}`}
+              style={titleReveal.animationStyles}
+            >
+              {decryptedTitle}
             </h1>
-            <p className="mt-4 text-base md:text-lg text-slate-700">
-              Domine defesa, ofensiva e nuvem com trilhas práticas, laboratórios, simulações e certificações.
-              Evolua com missões, suba no ranking e valide seu conhecimento com credenciais verificáveis.
-            </p>
+            <div 
+              ref={descriptionReveal.ref}
+              className={`mt-4 text-base md:text-lg text-slate-700 ${descriptionReveal.animationClasses}`}
+              style={descriptionReveal.animationStyles}
+            >
+              <p className="mb-2">
+                Treine com{" "}
+                <span className="font-semibold text-indigo-600 animate-pulse">
+                  {terms[currentTerm]}
+                </span>
+                , simulações de ataque e defesa.
+              </p>
+              <p>
+                Evolua do básico ao avançado e conquiste certificações de mercado.
+              </p>
+            </div>
 
-            <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <a href="#comecar" className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 text-white px-5 py-3 text-sm font-medium hover:bg-slate-800 shadow-sm ring-1 ring-slate-900/10 transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div 
+              ref={buttonsReveal.ref}
+              className={`mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 ${buttonsReveal.animationClasses}`}
+              style={buttonsReveal.animationStyles}
+            >
+              <a href="/auth?mode=signup" className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 text-white px-5 py-3 text-sm font-medium hover:bg-slate-800 shadow-sm ring-1 ring-slate-900/10 transition-all hover:shadow-md hover:-translate-y-0.5">
                 <Play className="w-4 h-4" />
-                Começar grátis
+                Criar conta grátis
               </a>
               <button onClick={scrollToPlans} className="inline-flex items-center justify-center gap-2 rounded-md bg-white text-slate-900 px-5 py-3 text-sm font-medium border border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all hover:-translate-y-0.5">
                 <Layers className="w-4 h-4" />
@@ -49,7 +99,11 @@ export default function Hero() {
             </div>
 
             {/* Badges */}
-            <div className="mt-6 flex flex-wrap items-center gap-2">
+            <div 
+              ref={badgesReveal.ref}
+              className={`mt-6 flex flex-wrap items-center gap-2 ${badgesReveal.animationClasses}`}
+              style={badgesReveal.animationStyles}
+            >
               <span className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[12px] font-medium text-indigo-700 transition-all hover:-translate-y-0.5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                   <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path>
@@ -78,11 +132,18 @@ export default function Hero() {
           </div>
 
           <div className="lg:col-span-6">
-            <div className="relative transition-transform duration-500 ease-out hover:scale-[1.01]">
+            <div 
+              ref={dashboardReveal.ref}
+              className={`relative transition-transform duration-500 ease-out hover:scale-[1.01] ${dashboardReveal.animationClasses}`}
+              style={dashboardReveal.animationStyles}
+            >
               <div className="absolute -inset-2 rounded-2xl bg-gradient-to-br from-slate-100 via-white to-slate-50"></div>
               <div className="relative rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_30px_80px_-20px_rgba(37,99,235,0.25)]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow">
+                <div 
+                  ref={cardsStagger.containerRef}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                >
+                  <div className={`rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow ${cardsStagger.getItemClasses(0)}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-md bg-white border border-slate-200 flex items-center justify-center">
@@ -106,7 +167,7 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow">
+                  <div className={`rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow ${cardsStagger.getItemClasses(1)}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-md bg-white border border-slate-200 flex items-center justify-center">
@@ -136,7 +197,7 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow">
+                  <div className={`rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow ${cardsStagger.getItemClasses(2)}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-md bg-white border border-slate-200 flex items-center justify-center">
@@ -162,7 +223,7 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow">
+                  <div className={`rounded-xl border border-slate-200 p-4 bg-slate-50/70 hover:bg-slate-50 transition-all hover:-translate-y-0.5 hover:shadow ${cardsStagger.getItemClasses(3)}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-md bg-white border border-slate-200 flex items-center justify-center">
@@ -191,12 +252,7 @@ export default function Hero() {
                 <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow">
                   <div className="flex items-center gap-3">
                     <div className="h-9 w-9 rounded-md bg-slate-900 text-white flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4.5 h-4.5">
-                        <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
-                        <path d="M20 2v4"></path>
-                        <path d="M22 4h-4"></path>
-                        <circle cx="4" cy="20" r="2"></circle>
-                      </svg>
+                      <Sparkles className="w-4.5 h-4.5" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-slate-900 tracking-tight">Trilha sugerida</p>

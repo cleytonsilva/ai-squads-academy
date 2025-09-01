@@ -25,7 +25,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChallenges } from '@/hooks/useChallenges';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -303,13 +303,18 @@ export default function ChallengeDetails({
     ? (completedRequirements / totalRequirements) * 100 
     : 0;
 
+  const { toast } = useToast();
+
   // Handlers
   const handleJoinChallenge = async () => {
     if (!challenge) return;
     
     const success = await joinChallenge(challenge.id);
     if (success) {
-      toast.success('Você entrou no desafio!');
+      toast({
+        title: "Sucesso!",
+        description: "Você entrou no desafio!",
+      });
     }
   };
   
@@ -318,7 +323,10 @@ export default function ChallengeDetails({
     
     const success = await leaveChallenge(challenge.id);
     if (success) {
-      toast.success('Você saiu do desafio');
+      toast({
+        title: "Sucesso!",
+        description: "Você saiu do desafio",
+      });
     }
   };
   
@@ -327,7 +335,10 @@ export default function ChallengeDetails({
     
     const success = await resetProgress(challenge.id);
     if (success) {
-      toast.success('Progresso reiniciado');
+      toast({
+        title: "Sucesso!",
+        description: "Progresso reiniciado",
+      });
     }
   };
   
@@ -342,17 +353,26 @@ export default function ChallengeDetails({
       } catch (error) {
         // Fallback para clipboard
         navigator.clipboard.writeText(window.location.href);
-        toast.success('Link copiado para a área de transferência!');
+        toast({
+          title: "Sucesso!",
+          description: "Link copiado para a área de transferência!",
+        });
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copiado para a área de transferência!');
+      toast({
+        title: "Sucesso!",
+        description: "Link copiado para a área de transferência!",
+      });
     }
   };
   
   const toggleBookmark = () => {
     setIsBookmarked(!isBookmarked);
-    toast.success(isBookmarked ? 'Removido dos favoritos' : 'Adicionado aos favoritos');
+    toast({
+      title: "Sucesso!",
+      description: isBookmarked ? "Removido dos favoritos" : "Adicionado aos favoritos",
+    });
   };
 
   // Loading state

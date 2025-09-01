@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import type {
   Course,
   GenerationJob,
@@ -16,6 +16,7 @@ export function useCourses(): UseCoursesReturn {
   const [generationJob, setGenerationJob] = useState<GenerationJob | null>(null);
   const [jobProgress, setJobProgress] = useState<any>(null);
   const [generatedCourse, setGeneratedCourse] = useState<Course | null>(null);
+  const { toast } = useToast();
 
   // Fetch all courses
   const fetchCourses = async () => {
@@ -48,11 +49,18 @@ export function useCourses(): UseCoursesReturn {
       }
 
       setCourses(data || []);
-      toast.success('Cursos carregados com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Cursos carregados com sucesso!",
+      });
     } catch (err: any) {
       console.error('Erro ao buscar cursos:', err);
       setError(err.message || 'Erro ao carregar cursos');
-      toast.error(err.message || 'Erro ao carregar cursos');
+      toast({
+        title: "Erro",
+        description: err.message || "Erro ao carregar cursos",
+        variant: "destructive",
+      });
       
       // Se for erro de autenticação, limpar o estado
       if (err.message.includes('autenticação') || err.message.includes('sessão')) {
@@ -103,7 +111,11 @@ export function useCourses(): UseCoursesReturn {
     } catch (err: any) {
       console.error('Erro ao gerar curso:', err);
       setError(err.message || 'Erro ao gerar curso');
-      toast.error('Erro ao gerar curso: ' + (err.message || 'Erro desconhecido'));
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar curso: " + (err.message || "Erro desconhecido"),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -148,11 +160,18 @@ export function useCourses(): UseCoursesReturn {
             }
 
             clearInterval(pollInterval);
-            toast.success('Curso gerado com sucesso!');
+            toast({
+              title: "Sucesso",
+              description: "Curso gerado com sucesso!",
+            });
           } else if (jobData.status === 'failed') {
             clearInterval(pollInterval);
             setError(jobData.error || 'Erro na geração do curso');
-            toast.error('Falha na geração do curso');
+            toast({
+              title: "Erro",
+              description: "Falha na geração do curso",
+              variant: "destructive",
+            });
           }
         }
       } catch (err: any) {
@@ -190,11 +209,18 @@ export function useCourses(): UseCoursesReturn {
         setGeneratedCourse(prev => prev ? { ...prev, status: 'published' as CourseStatus } : null);
       }
 
-      toast.success('Curso publicado com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Curso publicado com sucesso!",
+      });
     } catch (err: any) {
       console.error('Erro ao publicar curso:', err);
       setError(err.message || 'Erro ao publicar curso');
-      toast.error('Erro ao publicar curso');
+      toast({
+        title: "Erro",
+        description: "Erro ao publicar curso",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -220,11 +246,18 @@ export function useCourses(): UseCoursesReturn {
         setGeneratedCourse(null);
       }
 
-      toast.success('Curso excluído com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Curso excluído com sucesso!",
+      });
     } catch (err: any) {
       console.error('Erro ao excluir curso:', err);
       setError(err.message || 'Erro ao excluir curso');
-      toast.error('Erro ao excluir curso');
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir curso",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

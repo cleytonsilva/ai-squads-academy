@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, Activity, AlertCircle, CheckCircle, Clock, Zap } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface GenerationEvent {
   id: string;
@@ -25,6 +25,7 @@ interface GenerationStats {
 }
 
 export default function GenerationMonitor() {
+  const { toast } = useToast();
   const [events, setEvents] = useState<GenerationEvent[]>([]);
   const [stats, setStats] = useState<GenerationStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +45,7 @@ export default function GenerationMonitor() {
 
       if (eventsError) {
         console.error('Erro ao carregar eventos:', eventsError);
-        toast.error('Erro ao carregar eventos');
+        toast({ title: "Erro", description: "Erro ao carregar eventos", variant: "destructive" });
         return;
       }
 
@@ -65,7 +66,7 @@ export default function GenerationMonitor() {
 
     } catch (error) {
       console.error('Erro inesperado:', error);
-      toast.error('Erro inesperado ao carregar dados');
+      toast({ title: "Erro", description: "Erro inesperado ao carregar dados", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

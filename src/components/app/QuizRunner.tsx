@@ -144,7 +144,11 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty, 
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
-          toast.error('Autenticação necessária. Faça login para continuar.');
+          toast({
+            title: "Erro de Autenticação",
+            description: "Autenticação necessária. Faça login para continuar.",
+            variant: "destructive",
+          });
           return;
         }
         const { data: profile } = await supabase
@@ -215,9 +219,16 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty, 
           const newXp = Math.max(0, (profile?.xp || 0) + delta);
           await supabase.from("profiles").update({ xp: newXp }).eq("id", profileId);
           if (delta >= 0) {
-            toast.success(`+${delta} XP - Bom trabalho!`);
+            toast({
+              title: "XP Ganho!",
+              description: `+${delta} XP - Bom trabalho!`,
+            });
           } else {
-            toast.error(`${delta} XP - Pontos deduzidos pelo desempenho.`);
+            toast({
+              title: "XP Perdido",
+              description: `${delta} XP - Pontos deduzidos pelo desempenho.`,
+              variant: "destructive",
+            });
           }
         }
 
@@ -264,14 +275,21 @@ export default function QuizRunner({ quiz, onClose, courseId, courseDifficulty, 
               },
             });
 
-            toast.success('Certificado emitido! Você pode visualizá-lo em Conquistas.');
+            toast({
+              title: "Certificado Emitido!",
+              description: "Você pode visualizá-lo em Conquistas.",
+            });
           }
         }
 
         setSaved(true);
       } catch (err) {
         console.error("Salvar tentativa de quiz:", err);
-        toast.error('Erro ao salvar tentativa. Tente novamente depois.');
+        toast({
+          title: "Erro ao Salvar",
+          description: "Erro ao salvar tentativa. Tente novamente depois.",
+          variant: "destructive",
+        });
       } finally {
         setSaving(false);
       }

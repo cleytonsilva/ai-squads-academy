@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Computador - E-mail</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #008080;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        /* Desktop */
+        .desktop {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.03),
+                    rgba(0, 0, 0, 0.03) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+        }
+        
+        /* Taskbar */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to bottom, #c0c0c0, #808080);
+            border-top: 2px solid #ffffff;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            z-index: 1000;
+        }
+        
+        .start-button {
+            width: 60px;
+            height: 30px;
+            background: linear-gradient(to bottom, #c0c0c0, #808080);
+            border: 2px solid #000000;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #000;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .start-button:hover {
+            background: linear-gradient(to bottom, #e0e0e0, #a0a0a0);
+        }
+        
+        .taskbar-time {
+            margin-left: auto;
+            font-size: 10px;
+            color: #000;
+        }
+        
+        .taskbar-score {
+            margin-right: 20px;
+            font-size: 10px;
+            color: #000;
+            background: #ffff00;
+            padding: 5px 10px;
+            border: 1px solid #000;
+            border-radius: 3px;
+        }
+        
+        /* Desktop Icons */
+        .desktop-icons {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .desktop-icon {
+            width: 64px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        
+        .desktop-icon:hover {
+            transform: scale(1.1);
+        }
+        
+        .desktop-icon.selected {
+            background: rgba(0, 0, 255, 0.3);
+            border: 1px dashed #0000ff;
+        }
+        
+        .icon-image {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 5px;
+            image-rendering: pixelated;
+        }
+        
+        .icon-label {
+            font-size: 8px;
+            color: #ffffff;
+            text-align: center;
+            text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            line-height: 1.2;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            width: 250px;
+            background: linear-gradient(to bottom, #ffff00, #ffd700);
+            border: 2px solid #000000;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            animation: slideIn 0.5s ease-out;
+            cursor: pointer;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .notification-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .notification-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+        }
+        
+        .notification-title {
+            font-size: 8px;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .notification-text {
+            font-size: 7px;
+            color: #000;
+            line-height: 1.3;
+        }
+        
+        .notification-danger {
+            background: linear-gradient(to bottom, #ff6600, #ff3300);
+        }
+        
+        .notification-danger .notification-title {
+            color: #ffffff;
+        }
+        
+        .notification-danger .notification-text {
+            color: #ffffff;
+        }
+        
+        /* Email Window */
+        .email-window {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 500px;
+            background: linear-gradient(to bottom, #c0c0c0, #a0a0a0);
+            border: 3px solid #000000;
+            border-radius: 5px;
+            display: none;
+            z-index: 3000;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        }
+        
+        .email-window.active {
+            display: block;
+            animation: windowOpen 0.3s ease-out;
+        }
+        
+        @keyframes windowOpen {
+            from {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .window-header {
+            height: 25px;
+            background: linear-gradient(to right, #0000ff, #000080);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            border-bottom: 2px solid #000000;
+        }
+        
+        .window-title {
+            font-size: 10px;
+            color: #ffffff;
+        }
+        
+        .window-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .window-control {
+            width: 16px;
+            height: 16px;
+            background: #c0c0c0;
+            border: 1px solid #000;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #000;
+            cursor: pointer;
+        }
+        
+        .window-control:hover {
+            background: #ffffff;
+        }
+        
+        .email-content {
+            height: calc(100% - 25px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .email-toolbar {
+            height: 30px;
+            background: #e0e0e0;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
+        }
+        
+        .toolbar-button {
+            width: 24px;
+            height: 24px;
+            background: #c0c0c0;
+            border: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        
+        .toolbar-button:hover {
+            background: #ffffff;
+        }
+        
+        .email-body {
+            flex: 1;
+            background: #ffffff;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #000;
+            line-height: 1.5;
+        }
+        
+        .email-header-info {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        .email-field {
+            margin-bottom: 5px;
+        }
+        
+        .email-field-label {
+            font-weight: bold;
+            color: #000080;
+        }
+        
+        .email-subject {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #000;
+        }
+        
+        .email-image {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            image-rendering: auto;
+        }
+        
+        .email-link {
+            color: #0000ff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        .email-link:hover {
+            color: #000080;
+        }
+        
+        /* Score Popup */
+        .score-popup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(to bottom, #00ff00, #00cc00);
+            border: 3px solid #000000;
+            border-radius: 10px;
+            padding: 15px 25px;
+            z-index: 5000;
+            font-size: 12px;
+            color: #000;
+            display: none;
+            animation: scorePopup 1s ease-out;
+        }
+        
+        .score-popup.show {
+            display: block;
+        }
+        
+        .score-popup.negative {
+            background: linear-gradient(to bottom, #ff0000, #cc0000);
+            color: #fff;
+        }
+        
+        @keyframes scorePopup {
+            0% {
+                transform: translateX(-50%) translateY(-20px);
+                opacity: 0;
+            }
+            50% {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-50%) translateY(-20px);
+                opacity: 0;
+            }
+        }
+        
+        /* Final Score Screen */
+        .final-score-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 6000;
+        }
+        
+        .final-score-screen.active {
+            display: flex;
+        }
+        
+        .final-score-content {
+            background: linear-gradient(to bottom, #000080, #000040);
+            border: 5px solid #00ffff;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+        
+        .final-score-title {
+            font-size: 20px;
+            color: #00ffff;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .final-score-value {
+            font-size: 48px;
+            color: #ffff00;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px #ffff00;
+        }
+        
+        .final-score-details {
+            font-size: 12px;
+            color: #ffffff;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        
+        .final-score-rating {
+            font-size: 16px;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: #000;
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        .final-score-rating.excellent {
+            color: #00ff00;
+            border-color: #00ff00;
+        }
+        
+        .final-score-rating.good {
+            color: #ffff00;
+            border-color: #ffff00;
+        }
+        
+        .final-score-rating.poor {
+            color: #ff0000;
+            border-color: #ff0000;
+        }
+        
+        .play-again-btn {
+            padding: 15px 30px;
+            background: linear-gradient(to bottom, #00ff00, #00cc00);
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .play-again-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        
+        /* Virus Alert */
+        .virus-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            background: linear-gradient(to bottom, #ff0000, #cc0000);
+            border: 3px solid #800000;
+            border-radius: 10px;
+            padding: 20px;
+            display: none;
+            z-index: 4000;
+            text-align: center;
+            animation: virusAlert 0.5s ease-out;
+        }
+        
+        .virus-alert.active {
+            display: block;
+        }
+        
+        @keyframes virusAlert {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .virus-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 15px;
+            background: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #ff0000;
+        }
+        
+        .virus-title {
+            font-size: 14px;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #800000;
+        }
+        
+        .virus-message {
+            font-size: 10px;
+            color: #ffffff;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .virus-button {
+            padding: 8px 16px;
+            background: #ffffff;
+            color: #ff0000;
+            border: 2px solid #800000;
+            border-radius: 5px;
+            font-size: 10px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        
+        .virus-button:hover {
+            background: #f0f0f0;
+        }
+        
+        /* Web Browser Window */
+        .browser-window {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px;
+            height: 500px;
+            background: linear-gradient(to bottom, #c0c0c0, #a0a0a0);
+            border: 3px solid #000000;
+            border-radius: 5px;
+            display: none;
+            z-index: 3000;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        }
+        
+        .browser-window.active {
+            display: block;
+            animation: windowOpen 0.3s ease-out;
+        }
+        
+        .browser-address-bar {
+            height: 30px;
+            background: #ffffff;
+            border-bottom: 1px solid #808080;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+        
+        .address-input {
+            flex: 1;
+            height: 20px;
+            border: 1px solid #808080;
+            padding: 0 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+        
+        .browser-content {
+            height: calc(100% - 55px);
+            background: #ffffff;
+            overflow-y: auto;
+        }
+        
+        .browser-page {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #000;
+        }
+        
+        .browser-page h1 {
+            color: #000080;
+            margin-bottom: 15px;
+        }
+        
+        .browser-page p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000080;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+        }
+        
+        .loading-screen.hidden {
+            display: none;
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+        
+        .loading-bar {
+            width: 300px;
+            height: 20px;
+            background: #000040;
+            border: 2px solid #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(to right, #00ff00, #00cc00);
+            width: 0%;
+            animation: loading 2s ease-out forwards;
+        }
+        
+        @keyframes loading {
+            to {
+                width: 100%;
+            }
+        }
+        
+        /* Email Counter */
+        .email-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #000080;
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-size: 10px;
+            color: #00ffff;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-text">SISTEMA DE E-MAIL INICIANDO...</div>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+    </div>
+    
+    <!-- Desktop -->
+    <div class="desktop" id="desktop">
+        <!-- Email Counter -->
+        <div class="email-counter" id="email-counter">
+            E-MAILS: <span id="emails-received">0</span>/6
+        </div>
+        
+        <!-- Desktop Icons -->
+        <div class="desktop-icons">
+            <div class="desktop-icon" id="email-icon">
+                <svg class="icon-image" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="8" width="28" height="18" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+                    <path d="M2 8 L16 18 L30 8" fill="none" stroke="#000000" stroke-width="2"/>
+                    <rect x="6" y="12" width="20" height="12" fill="#ffcc00"/>
+                </svg>
+                <div class="icon-label">E-mail</div>
+            </div>
+            
+            <div class="desktop-icon">
+                <svg class="icon-image" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="4" width="24" height="24" fill="#0000ff" stroke="#000000" stroke-width="2"/>
+                    <rect x="8" y="8" width="16" height="16" fill="#ffffff"/>
+                    <circle cx="16" cy="16" r="6" fill="#ff0000"/>
+                </svg>
+                <div class="icon-label">Internet</div>
+            </div>
+            
+            <div class="desktop-icon">
+                <svg class="icon-image" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="10" width="28" height="16" fill="#00cc00" stroke="#000000" stroke-width="2"/>
+                    <rect x="6" y="6" width="20" height="4" fill="#00cc00"/>
+                    <rect x="12" y="2" width="8" height="4" fill="#00cc00"/>
+                </svg>
+                <div class="icon-label">Documentos</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <div class="start-button">START</div>
+        <div class="taskbar-score">PONTOS: <span id="score">0</span></div>
+        <div class="taskbar-time" id="taskbar-time">12:00</div>
+    </div>
+    
+    <!-- Score Popup -->
+    <div class="score-popup" id="score-popup">
+        <span id="score-text">+10 pontos!</span>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification" style="display: none;">
+        <div class="notification-header">
+            <svg class="notification-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="12" height="8" fill="#ffffff" stroke="#000000"/>
+                <path d="M2 4 L8 8 L14 4" fill="none" stroke="#000000"/>
+            </svg>
+            <div class="notification-title">Novo E-mail</div>
+        </div>
+        <div class="notification-text">Você recebeu um novo e-mail importante. Clique para visualizar.</div>
+    </div>
+    
+    <!-- Email Window -->
+    <div class="email-window" id="email-window">
+        <div class="window-header">
+            <div class="window-title" id="email-window-title">E-mail - Mensagem Importante</div>
+            <div class="window-controls">
+                <div class="window-control" id="email-minimize">_</div>
+                <div class="window-control" id="email-maximize">□</div>
+                <div class="window-control" id="email-close">×</div>
+            </div>
+        </div>
+        <div class="email-content">
+            <div class="email-toolbar">
+                <div class="toolbar-button">↶</div>
+                <div class="toolbar-button">↷</div>
+                <div class="toolbar-button">✉</div>
+                <div class="toolbar-button">📎</div>
+                <div class="toolbar-button">🗑</div>
+            </div>
+            <div class="email-body" id="email-body">
+                <!-- Conteúdo dinâmico do e-mail -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Browser Window -->
+    <div class="browser-window" id="browser-window">
+        <div class="window-header">
+            <div class="window-title" id="browser-window-title">Navegador - Site</div>
+            <div class="window-controls">
+                <div class="window-control" id="browser-minimize">_</div>
+                <div class="window-control" id="browser-maximize">□</div>
+                <div class="window-control" id="browser-close">×</div>
+            </div>
+        </div>
+        <div class="browser-address-bar">
+            <input type="text" class="address-input" id="browser-address" value="https://exemplo.com" readonly>
+        </div>
+        <div class="browser-content">
+            <div class="browser-page" id="browser-page">
+                <!-- Conteúdo dinâmico do navegador -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Virus Alert -->
+    <div class="virus-alert" id="virus-alert">
+        <div class="virus-icon">⚠</div>
+        <div class="virus-title">VÍRUS DETECTADO!</div>
+        <div class="virus-message">
+            Seu computador foi infectado com um trojan!<br>
+            Dados pessoais foram comprometidos.<br>
+            <strong>ALERTA DE SEGURANÇA CRÍTICO!</strong>
+        </div>
+        <button class="virus-button" id="virus-scan">Escanear Agora</button>
+        <button class="virus-button" id="virus-ignore">Ignorar</button>
+    </div>
+    
+    <!-- Final Score Screen -->
+    <div class="final-score-screen" id="final-score-screen">
+        <div class="final-score-content">
+            <div class="final-score-title">JORNADA DE E-MAILS CONCLUÍDA!</div>
+            <div class="final-score-value" id="final-score-value">0</div>
+            <div class="final-score-details" id="final-score-details">
+                E-mails recebidos: 0/6<br>
+                Acertos: 0<br>
+                Erros: 0<br>
+                Taxa de sucesso: 0%
+            </div>
+            <div class="final-score-rating" id="final-score-rating">INICIANTE</div>
+            <button class="play-again-btn" id="play-again-btn">JOGAR NOVAMENTE</button>
+        </div>
+    </div>
+    
+    <script>
+        // Banco de e-mails
+        const emails = [
+            {
+                id: 1,
+                from: "suporte@banco-seguro.com.br",
+                subject: "URGENTE: Sua conta será bloqueada",
+                body: "Prezado cliente, detectamos atividades suspeitas em sua conta. Por motivos de segurança, sua conta será bloqueada em 24 horas a menos que você confirme sua identidade.",
+                link: "https://banco-segurissimo.com/confirmar-identidade",
+                linkText: "Confirmar identidade",
+                isPhishing: true,
+                image: "https://picsum.photos/seed/bank1/400/200.jpg",
+                notificationType: "normal",
+                score: { correct: 20, incorrect: -30 }
+            },
+            {
+                id: 2,
+                from: "notificacao@amazon.com.br",
+                subject: "Seu pedido #12345 foi enviado",
+                body: "Olá, seu pedido foi enviado com sucesso! Você pode acompanhar a entrega através do nosso sistema de rastreamento.",
+                link: "https://www.amazon.com.br/rastreamento/12345",
+                linkText: "Acompanhar entrega",
+                isPhishing: false,
+                image: "https://picsum.photos/seed/package1/400/200.jpg",
+                notificationType: "normal",
+                score: { correct: 15, incorrect: -15 }
+            },
+            {
+                id: 3,
+                from: "security@microsoft.com",
+                subject: "Sua senha expirará em 24 horas",
+                body: "Sua senha do Microsoft Office 365 expirará em 24 horas. Clique no link abaixo para redefinir sua senha e evitar o bloqueio da sua conta.",
+                link: "https://account.microsoft-secure-reset.com/reset",
+                linkText: "Redefinir senha",
+                isPhishing: true,
+                image: "https://picsum.photos/seed/microsoft1/400/200.jpg",
+                notificationType: "danger",
+                score: { correct: 25, incorrect: -40 }
+            },
+            {
+                id: 4,
+                from: "newsletter@technews.com",
+                subject: "As últimas notícias de tecnologia",
+                body: "Confira nossa seleção semanal das melhores notícias do mundo da tecnologia, com lançamentos e análises exclusivas.",
+                link: "https://technews.com/ultimas-noticias",
+                linkText: "Ler notícias",
+                isPhishing: false,
+                image: "https://picsum.photos/seed/tech1/400/200.jpg",
+                notificationType: "normal",
+                score: { correct: 10, incorrect: -10 }
+            },
+            {
+                id: 5,
+                from: "admin@instagram.com",
+                subject: "Sua conta foi hackeada",
+                body: "Detectamos um login suspeito em sua conta do Instagram. Clique imediatamente para recuperar sua conta e proteger seu perfil.",
+                link: "https://instagram-account-recovery.com/secure",
+                linkText: "Recuperar conta",
+                isPhishing: true,
+                image: "https://picsum.photos/seed/instagram1/400/200.jpg",
+                notificationType: "danger",
+                score: { correct: 30, incorrect: -50 }
+            },
+            {
+                id: 6,
+                from: "comunicado@receita.fazenda.gov.br",
+                subject: "Sua restituição do IRPF está disponível",
+                body: "Prezado contribuinte, sua restituição do Imposto de Renda Pessoa Física está disponível para saque. Acesse o portal da Receita Federal.",
+                link: "https://receita.fazenda.gov.br/restituicao",
+                linkText: "Acessar portal",
+                isPhishing: false,
+                image: "https://picsum.photos/seed/gov1/400/200.jpg",
+                notificationType: "normal",
+                score: { correct: 20, incorrect: -20 }
+            }
+        ];
+        
+        // Elementos do DOM
+        const loadingScreen = document.getElementById('loading-screen');
+        const emailIcon = document.getElementById('email-icon');
+        const notification = document.getElementById('notification');
+        const emailWindow = document.getElementById('email-window');
+        const browserWindow = document.getElementById('browser-window');
+        const virusAlert = document.getElementById('virus-alert');
+        const finalScoreScreen = document.getElementById('final-score-screen');
+        const taskbarTime = document.getElementById('taskbar-time');
+        const scoreElement = document.getElementById('score');
+        const scorePopup = document.getElementById('score-popup');
+        const scoreText = document.getElementById('score-text');
+        const emailsReceived = document.getElementById('emails-received');
+        const emailCounter = document.getElementById('email-counter');
+        
+        // Controles das janelas
+        const emailClose = document.getElementById('email-close');
+        const browserClose = document.getElementById('browser-close');
+        const virusScan = document.getElementById('virus-scan');
+        const virusIgnore = document.getElementById('virus-ignore');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        
+        // Variáveis do jogo
+        let currentScore = 0;
+        let emailsProcessed = 0;
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+        let currentEmail = null;
+        let emailQueue = [...emails];
+        let notificationTimeout;
+        
+        // Inicialização
+        window.addEventListener('load', () => {
+            // Esconder tela de carregamento após 2 segundos
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                
+                // Iniciar envio de e-mails
+                setTimeout(() => {
+                    sendNextEmail();
+                }, 2000);
+            }, 2000);
+            
+            // Atualizar hora
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
+        
+        // Atualizar hora
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            taskbarTime.textContent = `${hours}:${minutes}`;
+        }
+        
+        // Enviar próximo e-mail
+        function sendNextEmail() {
+            if (emailQueue.length === 0) {
+                // Todos os e-mails foram processados
+                setTimeout(() => {
+                    showFinalScore();
+                }, 2000);
+                return;
+            }
+            
+            // Pegar próximo e-mail
+            currentEmail = emailQueue.shift();
+            
+            // Mostrar notificação
+            showNotification();
+            
+            // Agendar próximo e-mail
+            setTimeout(() => {
+                if (emailQueue.length > 0) {
+                    sendNextEmail();
+                }
+            }, 8000 + Math.random() * 7000); // Entre 8 e 15 segundos
+        }
+        
+        // Mostrar notificação
+        function showNotification() {
+            // Configurar notificação
+            notification.className = `notification ${currentEmail.notificationType}`;
+            notification.querySelector('.notification-text').textContent = 
+                `E-mail de ${currentEmail.from.split('@')[0]}: ${currentEmail.subject}`;
+            
+            notification.style.display = 'block';
+            
+            // Esconder após 10 segundos
+            notificationTimeout = setTimeout(() => {
+                notification.style.display = 'none';
+            }, 10000);
+        }
+        
+        // Event Listeners
+        emailIcon.addEventListener('click', () => {
+            if (currentEmail) {
+                openEmailWindow(currentEmail);
+            }
+        });
+        
+        notification.addEventListener('click', () => {
+            clearTimeout(notificationTimeout);
+            notification.style.display = 'none';
+            if (currentEmail) {
+                openEmailWindow(currentEmail);
+            }
+        });
+        
+        emailClose.addEventListener('click', () => {
+            emailWindow.classList.remove('active');
+        });
+        
+        browserClose.addEventListener('click', () => {
+            browserWindow.classList.remove('active');
+        });
+        
+        virusScan.addEventListener('click', () => {
+            virusAlert.classList.remove('active');
+            setTimeout(() => {
+                alert('Escaneamento concluído! Vírus removido com sucesso.');
+            }, 1000);
+        });
+        
+        virusIgnore.addEventListener('click', () => {
+            virusAlert.classList.remove('active');
+            updateScore(-50, 'Ignorou vírus!');
+        });
+        
+        playAgainBtn.addEventListener('click', () => {
+            resetGame();
+        });
+        
+        // Funções
+        function openEmailWindow(email) {
+            // Preencher conteúdo do e-mail
+            document.getElementById('email-window-title').textContent = `E-mail - ${email.subject}`;
+            
+            const emailBody = document.getElementById('email-body');
+            emailBody.innerHTML = `
+                <div class="email-header-info">
+                    <div class="email-field">
+                        <span class="email-field-label">De:</span> ${email.from}
+                    </div>
+                    <div class="email-field">
+                        <span class="email-field-label">Para:</span> voce@usuario.com
+                    </div>
+                    <div class="email-field">
+                        <span class="email-field-label">Data:</span> ${new Date().toLocaleString('pt-BR')}
+                    </div>
+                </div>
+                
+                <div class="email-subject">${email.subject}</div>
+                
+                <p>${email.body}</p>
+                
+                <p><a href="#" class="email-link" data-type="${email.isPhishing ? 'phishing' : 'safe'}" data-email-id="${email.id}">${email.linkText}</a></p>
+                
+                <img src="${email.image}" alt="Imagem do e-mail" class="email-image">
+                
+                <p><small>Este é um e-mail automático. Por favor não responda.</small></p>
+            `;
+            
+            // Adicionar event listeners aos links
+            const emailLinks = emailBody.querySelectorAll('.email-link');
+            emailLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleEmailLinkClick(link);
+                });
+            });
+            
+            emailWindow.classList.add('active');
+            emailIcon.classList.add('selected');
+        }
+        
+        function handleEmailLinkClick(link) {
+            const isPhishing = link.dataset.type === 'phishing';
+            const emailId = parseInt(link.dataset.emailId);
+            const email = emails.find(e => e.id === emailId);
+            
+            if (isPhishing) {
+                // 70% chance de ser vírus, 30% chance de ser site seguro
+                if (Math.random() > 0.3) {
+                    showVirusAlert();
+                    updateScore(email.score.incorrect, 'Clicou em link phishing!');
+                    incorrectAnswers++;
+                } else {
+                    openBrowserWindow(email, 'phishing');
+                    updateScore(email.score.incorrect / 2, 'Clicou em link suspeito!');
+                    incorrectAnswers++;
+                }
+            } else {
+                openBrowserWindow(email, 'safe');
+                updateScore(email.score.correct, 'Clicou em link seguro!');
+                correctAnswers++;
+            }
+            
+            // Marcar e-mail como processado
+            emailsProcessed++;
+            emailsReceived.textContent = emailsProcessed;
+            
+            // Fechar janela de e-mail
+            emailWindow.classList.remove('active');
+        }
+        
+        function openBrowserWindow(email, type) {
+            // Configurar janela do navegador
+            document.getElementById('browser-window-title').textContent = `Navegador - ${new URL(email.link).hostname}`;
+            document.getElementById('browser-address').value = email.link;
+            
+            const browserPage = document.getElementById('browser-page');
+            
+            if (type === 'phishing') {
+                browserPage.innerHTML = `
+                    <h1>${email.subject}</h1>
+                    <p>Esta página parece suspeita. Verifique a URL com cuidado.</p>
+                    <form>
+                        <p><label>Usuário: <input type="text" style="border: 1px solid #ccc; padding: 5px; width: 200px;"></label></p>
+                        <p><label>Senha: <input type="password" style="border: 1px solid #ccc; padding: 5px; width: 200px;"></label></p>
+                        <p><button type="button" style="padding: 10px 20px; background: #ff0000; color: white; border: none; cursor: pointer;">Enviar</button></p>
+                    </form>
+                `;
+            } else {
+                browserPage.innerHTML = `
+                    <h1>Página Legítima</h1>
+                    <p>Esta é uma página segura e confiável.</p>
+                    <p>Conteúdo do site: ${email.subject}</p>
+                    <p>Agradecemos sua visita!</p>
+                `;
+            }
+            
+            browserWindow.classList.add('active');
+        }
+        
+        function showVirusAlert() {
+            virusAlert.classList.add('active');
+            
+            // Efeitos sonoros simulados
+            document.body.style.animation = 'shake 0.5s';
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, 500);
+        }
+        
+        function updateScore(points, message) {
+            currentScore += points;
+            scoreElement.textContent = currentScore;
+            
+            // Mostrar popup de pontuação
+            scoreText.textContent = `${points > 0 ? '+' : ''}${points} pontos!`;
+            scorePopup.className = `score-popup ${points > 0 ? '' : 'negative'} show`;
+            
+            setTimeout(() => {
+                scorePopup.classList.remove('show');
+            }, 1000);
+        }
+        
+        function showFinalScore() {
+            const successRate = emailsProcessed > 0 ? Math.round((correctAnswers / emailsProcessed) * 100) : 0;
+            
+            document.getElementById('final-score-value').textContent = currentScore;
+            document.getElementById('final-score-details').innerHTML = `
+                E-mails recebidos: ${emailsProcessed}/6<br>
+                Acertos: ${correctAnswers}<br>
+                Erros: ${incorrectAnswers}<br>
+                Taxa de sucesso: ${successRate}%
+            `;
+            
+            const ratingElement = document.getElementById('final-score-rating');
+            if (successRate >= 80) {
+                ratingElement.textContent = 'EXPERT EM SEGURANÇA!';
+                ratingElement.className = 'final-score-rating excellent';
+            } else if (successRate >= 60) {
+                ratingElement.textContent = 'BOM TRABALHO!';
+                ratingElement.className = 'final-score-rating good';
+            } else {
+                ratingElement.textContent = 'PRECISA MELHORAR';
+                ratingElement.className = 'final-score-rating poor';
+            }
+            
+            finalScoreScreen.classList.add('active');
+            
+            // Enviar pontuação para a plataforma
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'gameScore',
+                    game: 'email-phishing-simulator',
+                    score: currentScore,
+                    successRate: successRate,
+                    correctAnswers: correctAnswers,
+                    incorrectAnswers: incorrectAnswers
+                }, '*');
+            }
+        }
+        
+        function resetGame() {
+            // Resetar variáveis
+            currentScore = 0;
+            emailsProcessed = 0;
+            correctAnswers = 0;
+            incorrectAnswers = 0;
+            emailQueue = [...emails];
+            
+            // Resetar UI
+            scoreElement.textContent = '0';
+            emailsReceived.textContent = '0';
+            finalScoreScreen.classList.remove('active');
+            emailWindow.classList.remove('active');
+            browserWindow.classList.remove('active');
+            notification.style.display = 'none';
+            
+            // Iniciar novo jogo
+            setTimeout(() => {
+                sendNextEmail();
+            }, 1000);
+        }
+        
+        // Adicionar efeito de shake
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+# Dependências
+node_modules/
+bun.lockb
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+.next/
+.nuxt/
+.output/
+.vercel/
+
+# Cache
+.cache/
+.parcel-cache/
+.vite/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated files
+*.min.js
+*.min.css
+
+# Documentation
+CHANGELOG.md
+LICENSE
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+
+# Backups
+backup*/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

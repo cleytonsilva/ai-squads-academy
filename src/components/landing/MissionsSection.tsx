@@ -10,8 +10,8 @@ export default function MissionsSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="flex items-end justify-between gap-6">
           <div>
-            <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">Missões que evoluem com você</h2>
-            <p className="mt-2 text-slate-700 text-sm md:text-base">Comece do básico e avance até pentests e defesa avançada.</p>
+            <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">Do básico ao avançado em segurança digital</h2>
+            <p className="mt-2 text-slate-700 text-sm md:text-base">Comece com fundamentos e avance para exploração de vulnerabilidades, cloud security e defesa avançada. Missões são liberadas semanalmente para manter você sempre atualizado.</p>
           </div>
           <button onClick={scrollToPlans} className="hidden md:inline-flex items-center gap-2 text-sm font-medium text-slate-900 border border-slate-300 rounded-md px-3 py-2 hover:bg-slate-50 transition-all hover:-translate-y-0.5">
             Requisitos por plano
@@ -28,7 +28,7 @@ export default function MissionsSection() {
               </div>
               <div>
                 <h3 className="text-base font-semibold tracking-tight text-slate-900">Fundamentos de Segurança</h3>
-                <p className="text-xs text-slate-600">Privilégios, rede e criptografia</p>
+                <p className="text-xs text-slate-600">Criptografia, redes, políticas básicas</p>
               </div>
             </div>
             <div className="mt-4 space-y-3">
@@ -61,7 +61,7 @@ export default function MissionsSection() {
               </div>
               <div>
                 <h3 className="text-base font-semibold tracking-tight text-slate-900">Web Exploitation</h3>
-                <p className="text-xs text-slate-600">OWASP Top 10 na prática</p>
+                <p className="text-xs text-slate-600">SQL Injection, XSS, vulnerabilidades críticas</p>
               </div>
             </div>
             <div className="mt-4 space-y-3">
@@ -93,8 +93,8 @@ export default function MissionsSection() {
                 <Cloud className="w-5 h-5 text-slate-800" />
               </div>
               <div>
-                <h3 className="text-base font-semibold tracking-tight text-slate-900">Cloud Sec Ops</h3>
-                <p className="text-xs text-slate-600">AWS e Azure: IAM, VPC, WAF</p>
+                <h3 className="text-base font-semibold tracking-tight text-slate-900">Cloud SecOps</h3>
+                <p className="text-xs text-slate-600">IAM, VPC, WAF, proteção de workloads em nuvem</p>
               </div>
             </div>
             <div className="mt-4 space-y-3">
@@ -127,11 +127,11 @@ export default function MissionsSection() {
               <Swords className="w-5 h-5 text-emerald-700" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-900 tracking-tight">Novas missões toda semana</p>
-              <p className="text-xs text-slate-600">Temporadas com temas e recompensas exclusivas.</p>
+              <p className="text-sm font-medium text-slate-900 tracking-tight">Missões liberadas semanalmente</p>
+              <p className="text-xs text-slate-600">Conteúdo sempre atualizado com as últimas tendências.</p>
             </div>
           </div>
-          <a href="#comecar" className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-all hover:-translate-y-0.5">
+          <a href="/auth?mode=signup" className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 transition-all hover:-translate-y-0.5">
             Começar agora
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>

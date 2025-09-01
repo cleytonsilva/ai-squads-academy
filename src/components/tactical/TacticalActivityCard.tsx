@@ -18,9 +18,9 @@ export function TacticalActivityCard({ activities, title = "ATIVIDADES RECENTES"
   const themeColors = getThemeColors();
 
   return (
-    <Card className="bg-neutral-900 border-neutral-700">
+    <Card className={`${themeColors.card} ${themeColors.border}`}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-neutral-300 tracking-wider">
+        <CardTitle className={`text-sm font-medium ${themeColors.mutedForeground} tracking-wider`}>
           {title}
         </CardTitle>
       </CardHeader>
@@ -29,15 +29,15 @@ export function TacticalActivityCard({ activities, title = "ATIVIDADES RECENTES"
           {activities.map((atividade, index) => (
             <div
               key={index}
-              className={`text-xs border-l-2 border-${themeColors.primaryText.split("-")[1]}-500 pl-3 hover:bg-neutral-800 p-2 rounded transition-colors`}
+              className={`text-xs border-l-2 border-${themeColors.primaryText.split("-")[1]}-500 pl-3 ${themeColors.muted.replace('bg-', 'hover:bg-')} p-2 rounded transition-colors`}
             >
-              <div className="text-neutral-500 font-mono">{atividade.time}</div>
-              <div className="text-white">
+              <div className={`${themeColors.mutedForeground} font-mono`}>{atividade.time}</div>
+              <div className={themeColors.foreground}>
                 Você {atividade.action} <span className={themeColors.primaryText}>{atividade.subject}</span>
                 {atividade.course && (
                   <span>
                     {" "}
-                    em <span className="text-white font-mono">{atividade.course}</span>
+                    em <span className={`${themeColors.foreground} font-mono`}>{atividade.course}</span>
                   </span>
                 )}
               </div>

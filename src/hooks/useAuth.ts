@@ -24,6 +24,8 @@ interface AuthState {
   signOut: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: UserMetadata) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 export function useAuth(): AuthState {
@@ -89,6 +91,20 @@ export function useAuth(): AuthState {
         emailRedirectTo: redirectUrl, 
         data: userData
       },
+    });
+    if (error) throw error;
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    if (error) throw error;
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: password
     });
     if (error) throw error;
   };
@@ -190,7 +206,7 @@ export function useAuth(): AuthState {
 
     checkSession();
 
-    // Escutar mudanças na autenticação
+    // Escutar mudanças na autenticação com refresh automático
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 useAuth.ts:180 Auth state change:', {
@@ -201,6 +217,28 @@ export function useAuth(): AuthState {
           current_time: Math.floor(Date.now() / 1000),
           time_until_expiry: session?.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 'N/A'
         });
+        
+        // Melhor tratamento de refresh de token
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('✅ useAuth.ts:192 Token refreshed successfully:', {
+            expires_at: session?.expires_at,
+            current_time: Math.floor(Date.now() / 1000),
+            time_until_expiry: session?.expires_at ? session.expires_at - Math.floor(Date.now() / 1000) : 'N/A'
+          });
+        }
+        
+        if (event === 'SIGNED_OUT' || !session) {
+          console.log('❌ useAuth.ts:200 Processando logout/sem sessão...');
+          if (mounted) {
+            setUser(null);
+          }
+          // Redirecionar para auth apenas se não estiver já lá
+          if (window.location.pathname !== '/auth' && window.location.pathname !== '/') {
+            console.log('➡️ useAuth.ts:206 Redirecionando para /auth');
+            navigate('/auth', { replace: true });
+          }
+          return;
+        }
         
         if (session?.user) {
           console.log('✅ useAuth.ts:190 Processando evento com sessão válida...');
@@ -293,6 +331,8 @@ export function useAuth(): AuthState {
     isAuthenticated: !!user,
     signOut,
     signIn,
-    signUp
+    signUp,
+    resetPassword,
+    updatePassword
   };
 }

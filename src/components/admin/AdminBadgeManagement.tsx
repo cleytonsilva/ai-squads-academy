@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
   Edit, 
@@ -79,6 +79,7 @@ interface BadgeStats {
  * Administradores criam, editam e monitoram badges, mas NÃO acumulam badges
  */
 export default function AdminBadgeManagement() {
+  const { toast } = useToast();
   const [templates, setTemplates] = useState<BadgeTemplate[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [badgeStats, setBadgeStats] = useState<Record<string, BadgeStats>>({});
@@ -144,7 +145,7 @@ export default function AdminBadgeManagement() {
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados');
+      toast({ title: "Erro", description: "Erro ao carregar dados", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -249,13 +250,13 @@ export default function AdminBadgeManagement() {
 
       if (error) throw error;
 
-      toast.success('Template de badge criado com sucesso!');
+      toast({ title: "Sucesso", description: "Template de badge criado com sucesso!" });
       setIsCreateDialogOpen(false);
       resetForm();
       loadTemplates();
     } catch (error) {
       console.error('Erro ao criar template:', error);
-      toast.error('Erro ao criar template de badge');
+      toast({ title: "Erro", description: "Erro ao criar template de badge", variant: "destructive" });
     }
   };
 
@@ -270,14 +271,14 @@ export default function AdminBadgeManagement() {
 
       if (error) throw error;
 
-      toast.success('Template atualizado com sucesso!');
+      toast({ title: "Sucesso", description: "Template atualizado com sucesso!" });
       setIsEditDialogOpen(false);
       setSelectedTemplate(null);
       resetForm();
       loadTemplates();
     } catch (error) {
       console.error('Erro ao atualizar template:', error);
-      toast.error('Erro ao atualizar template');
+      toast({ title: "Erro", description: "Erro ao atualizar template", variant: "destructive" });
     }
   };
 
@@ -290,11 +291,11 @@ export default function AdminBadgeManagement() {
 
       if (error) throw error;
 
-      toast.success('Template excluído com sucesso!');
+      toast({ title: "Sucesso", description: "Template excluído com sucesso!" });
       loadTemplates();
     } catch (error) {
       console.error('Erro ao excluir template:', error);
-      toast.error('Erro ao excluir template');
+      toast({ title: "Erro", description: "Erro ao excluir template", variant: "destructive" });
     }
   };
 
@@ -304,7 +305,7 @@ export default function AdminBadgeManagement() {
       toast.info('Funcionalidade de ativar/desativar será implementada em breve');
     } catch (error) {
       console.error('Erro ao alterar status:', error);
-      toast.error('Erro ao alterar status do template');
+      toast({ title: "Erro", description: "Erro ao alterar status do template", variant: "destructive" });
     }
   };
 

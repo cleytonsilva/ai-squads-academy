@@ -1,50 +1,68 @@
 import { Briefcase, TrendingUp, Puzzle, Layers, Lock, Calendar, ArrowRight, Download } from 'lucide-react';
+import { useScrollReveal, useScrollRevealStagger } from '@/hooks/useScrollReveal';
 
 export default function EnterpriseSection() {
+  // Scroll reveal animations
+  const leftContentReveal = useScrollReveal({ delay: 0 }, 'fromLeft');
+  const rightContentReveal = useScrollReveal({ delay: 200 }, 'fromRight');
+  const featuresStagger = useScrollRevealStagger(4, { delay: 300 }, 'staggered');
+  const buttonsReveal = useScrollReveal({ delay: 600 }, 'default');
+
   return (
     <section id="empresas" className="relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-6">
+          <div 
+            ref={leftContentReveal.ref}
+            className={`lg:col-span-6 ${leftContentReveal.animationClasses}`}
+            style={leftContentReveal.animationStyles}
+          >
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 shadow-sm">
               <Briefcase className="w-4 h-4" />
               Para empresas
             </div>
-            <h3 className="mt-4 text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">Capacite squads de segurança</h3>
-            <p className="mt-2 text-slate-700 text-sm md:text-base">Trilhas por função, relatórios de progresso, integrações e SLAs.</p>
+            <h3 className="mt-4 text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">Capacite squads de segurança com eficiência</h3>
+            <p className="mt-2 text-slate-700 text-sm md:text-base">Crie trilhas por função, acompanhe indicadores de desempenho e gere relatórios de conformidade. Monitore engajamento e reduza riscos de forma mensurável.</p>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all">
+            <div 
+              ref={featuresStagger.containerRef}
+              className="mt-6 grid grid-cols-2 gap-3"
+            >
+              <div className={`rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all ${featuresStagger.getItemClasses(0)}`}>
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4.5 h-4.5 text-slate-800" />
                   <span className="text-sm font-medium">Métricas de skill</span>
                 </div>
-                <p className="mt-1 text-xs text-slate-600">Medição por domínio e senioridade.</p>
+                <p className="mt-1 text-xs text-slate-600">Avaliações contínuas e mensuráveis.</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all">
+              <div className={`rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all ${featuresStagger.getItemClasses(1)}`}>
                 <div className="flex items-center gap-2">
                   <Puzzle className="w-4.5 h-4.5 text-slate-800" />
                   <span className="text-sm font-medium">Integrações</span>
                 </div>
-                <p className="mt-1 text-xs text-slate-600">Slack, Okta, Microsoft.</p>
+                <p className="mt-1 text-xs text-slate-600">Conecte com Google, Slack e Microsoft.</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all">
+              <div className={`rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all ${featuresStagger.getItemClasses(2)}`}>
                 <div className="flex items-center gap-2">
                   <Layers className="w-4.5 h-4.5 text-slate-800" />
                   <span className="text-sm font-medium">Trilhas por função</span>
                 </div>
-                <p className="mt-1 text-xs text-slate-600">SOC, AppSec, CloudSec, GRC.</p>
+                <p className="mt-1 text-xs text-slate-600">SOC, DevSecOps, GRC.</p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all">
+              <div className={`rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all ${featuresStagger.getItemClasses(3)}`}>
                 <div className="flex items-center gap-2">
                   <Lock className="w-4.5 h-4.5 text-slate-800" />
                   <span className="text-sm font-medium">Compliance</span>
                 </div>
-                <p className="mt-1 text-xs text-slate-600">Relatórios e evidências.</p>
+                <p className="mt-1 text-xs text-slate-600">Acompanhe requisitos regulatórios com relatórios automáticos.</p>
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-3">
+            <div 
+              ref={buttonsReveal.ref}
+              className={`mt-6 flex items-center gap-3 ${buttonsReveal.animationClasses}`}
+              style={buttonsReveal.animationStyles}
+            >
               <a href="#contato" className="inline-flex items-center gap-2 rounded-md bg-slate-900 text-white px-4 py-2 text-sm font-medium hover:bg-slate-800 transition-all hover:-translate-y-0.5">
                 Agendar demo
                 <Calendar className="w-4 h-4" />
@@ -56,7 +74,11 @@ export default function EnterpriseSection() {
             </div>
           </div>
 
-          <div className="lg:col-span-6">
+          <div 
+            ref={rightContentReveal.ref}
+            className={`lg:col-span-6 ${rightContentReveal.animationClasses}`}
+            style={rightContentReveal.animationStyles}
+          >
             <div className="relative rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_30px_-12px_rgba(37,99,235,0.25)] overflow-hidden">
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-sky-100 blur-3xl opacity-70 animate-pulse" style={{animationDuration: '9s'}}></div>

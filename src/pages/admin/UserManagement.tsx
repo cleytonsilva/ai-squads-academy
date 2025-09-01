@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/admin/DashboardLayout';
 import { Users as UsersIcon, Plus, Search, Filter, Edit, Trash2, Crown, User as UserIcon, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import type { Tables } from '@/integrations/supabase/types';
 
 type Profile = Tables<'profiles'> & {
@@ -24,6 +24,7 @@ interface CreateUserData {
 export default function UserManagement() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [creatingUser, setCreatingUser] = useState(false);
@@ -61,7 +62,11 @@ export default function UserManagement() {
 
       if (error) {
         console.error('Error fetching users:', error);
-        toast.error('Erro ao carregar usuários');
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar usuários",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -91,7 +96,11 @@ export default function UserManagement() {
       setUsers(usersWithAuth);
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Erro ao carregar usuários');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar usuários",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -102,12 +111,20 @@ export default function UserManagement() {
     
     // Validação básica
     if (!newUser.email.trim()) {
-      toast.error('Email é obrigatório');
+      toast({
+        title: "Erro",
+        description: "Email é obrigatório",
+        variant: "destructive",
+      });
       return;
     }
     
     if (!newUser.display_name.trim()) {
-      toast.error('Nome de exibição é obrigatório');
+      toast({
+        title: "Erro",
+        description: "Nome de exibição é obrigatório",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -128,13 +145,21 @@ export default function UserManagement() {
 
       if (authError) {
         console.error('Error creating auth user:', authError);
-        toast.error('Erro ao criar usuário: ' + authError.message);
+        toast({
+          title: "Erro",
+          description: "Erro ao criar usuário: " + authError.message,
+          variant: "destructive",
+        });
         return;
       }
 
       if (!authData.user) {
         console.error('No user data returned from auth creation');
-        toast.error('Erro ao criar usuário - dados não retornados');
+        toast({
+          title: "Erro",
+          description: "Erro ao criar usuário - dados não retornados",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -153,7 +178,11 @@ export default function UserManagement() {
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
-        toast.error('Erro ao criar perfil do usuário: ' + profileError.message);
+        toast({
+          title: "Erro",
+          description: "Erro ao criar perfil do usuário: " + profileError.message,
+          variant: "destructive",
+        });
         
         // Tentar limpar o usuário auth se o perfil falhou
         try {
@@ -165,7 +194,10 @@ export default function UserManagement() {
       }
 
       console.log('Perfil criado com sucesso');
-      toast.success('Usuário criado com sucesso! Uma senha temporária foi gerada.');
+      toast({
+        title: "Sucesso!",
+        description: "Usuário criado com sucesso! Uma senha temporária foi gerada.",
+      });
       setShowCreateModal(false);
       setNewUser({
         email: '',
@@ -175,7 +207,11 @@ export default function UserManagement() {
       fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
-      toast.error('Erro ao criar usuário: ' + (error?.message || 'Erro desconhecido'));
+      toast({
+        title: "Erro",
+        description: "Erro ao criar usuário: " + (error?.message || "Erro desconhecido"),
+        variant: "destructive",
+      });
     } finally {
       setCreatingUser(false);
     }
@@ -209,11 +245,18 @@ export default function UserManagement() {
         throw authError;
       }
 
-      toast.success('Usuário excluído com sucesso!');
+      toast({
+        title: "Sucesso!",
+        description: "Usuário excluído com sucesso!",
+      });
       fetchUsers(); // Reload the users list
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error('Erro ao excluir usuário: ' + (error?.message || 'Erro desconhecido'));
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir usuário: " + (error?.message || "Erro desconhecido"),
+        variant: "destructive",
+      });
     } finally {
       setDeletingUserId(null);
     }
@@ -229,17 +272,28 @@ export default function UserManagement() {
 
       if (error) {
         console.error('Error updating role:', error);
-        toast.error('Erro ao atualizar papel do usuário');
+        toast({
+          title: "Erro",
+          description: "Erro ao atualizar papel do usuário",
+          variant: "destructive",
+        });
         return;
       }
 
-      toast.success('Papel do usuário atualizado com sucesso');
+      toast({
+        title: "Sucesso!",
+        description: "Papel do usuário atualizado com sucesso",
+      });
       setUsers(users.map(u => 
         u.user_id === userId ? { ...u, role: newRole } : u
       ));
     } catch (error) {
       console.error('Error updating role:', error);
-      toast.error('Erro ao atualizar papel do usuário');
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar papel do usuário",
+        variant: "destructive",
+      });
     } finally {
       setUpdatingRoleUserId(null);
     }

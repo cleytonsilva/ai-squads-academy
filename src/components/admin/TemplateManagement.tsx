@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Award, Plus, Edit, Trash2, Eye, Save, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
 
 // Interfaces para tipagem
@@ -58,6 +58,7 @@ interface Course {
 
 export default function TemplateManagement() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [badgeTemplates, setBadgeTemplates] = useState<BadgeTemplate[]>([]);
   const [certificateTemplates, setCertificateTemplates] = useState<CertificateTemplate[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -134,7 +135,11 @@ export default function TemplateManagement() {
       setCourses(coursesData || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar templates');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar templates",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -157,7 +162,10 @@ export default function TemplateManagement() {
           .eq('id', editingBadge.id);
 
         if (error) throw error;
-        toast.success('Template de badge atualizado!');
+        toast({
+          title: "Sucesso",
+          description: "Template de badge atualizado!",
+        });
       } else {
         // Criar
         const { error } = await supabase
@@ -165,7 +173,10 @@ export default function TemplateManagement() {
           .insert([data]);
 
         if (error) throw error;
-        toast.success('Template de badge criado!');
+        toast({
+          title: "Sucesso",
+          description: "Template de badge criado!",
+        });
       }
 
       setShowBadgeDialog(false);
@@ -174,7 +185,11 @@ export default function TemplateManagement() {
       loadData();
     } catch (error) {
       console.error('Erro ao salvar template de badge:', error);
-      toast.error('Erro ao salvar template de badge');
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar template de badge",
+        variant: "destructive",
+      });
     }
   };
 
@@ -191,7 +206,10 @@ export default function TemplateManagement() {
           .eq('id', editingCertificate.id);
 
         if (error) throw error;
-        toast.success('Template de certificado atualizado!');
+        toast({
+          title: "Sucesso",
+          description: "Template de certificado atualizado!",
+        });
       } else {
         // Criar
         const { error } = await supabase
@@ -199,7 +217,10 @@ export default function TemplateManagement() {
           .insert([certificateForm]);
 
         if (error) throw error;
-        toast.success('Template de certificado criado!');
+        toast({
+          title: "Sucesso",
+          description: "Template de certificado criado!",
+        });
       }
 
       setShowCertificateDialog(false);
@@ -208,7 +229,11 @@ export default function TemplateManagement() {
       loadData();
     } catch (error) {
       console.error('Erro ao salvar template de certificado:', error);
-      toast.error('Erro ao salvar template de certificado');
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar template de certificado",
+        variant: "destructive",
+      });
     }
   };
 
@@ -227,11 +252,18 @@ export default function TemplateManagement() {
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('Template de badge excluído!');
+      toast({
+        title: "Sucesso",
+        description: "Template de badge excluído!",
+      });
       loadData();
     } catch (error) {
       console.error('Erro ao excluir template de badge:', error);
-      toast.error('Erro ao excluir template de badge');
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir template de badge",
+        variant: "destructive",
+      });
     }
   };
 
@@ -250,11 +282,18 @@ export default function TemplateManagement() {
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('Template de certificado excluído!');
+      toast({
+        title: "Sucesso",
+        description: "Template de certificado excluído!",
+      });
       loadData();
     } catch (error) {
       console.error('Erro ao excluir template de certificado:', error);
-      toast.error('Erro ao excluir template de certificado');
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir template de certificado",
+        variant: "destructive",
+      });
     }
   };
 

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChallenges } from '@/hooks/useChallenges';
-import { toast } from 'sonner';
+import { useToast } from "@/hooks/use-toast";
 
 // Interface para props do componente
 interface ChallengeProgressProps {
@@ -202,13 +202,18 @@ export default function ChallengeProgress({
     ? (completedRequirements / totalRequirements) * 100 
     : 0;
 
+  const { toast } = useToast();
+
   // Handlers
   const handleJoinChallenge = async () => {
     if (!challenge) return;
     
     const success = await joinChallenge(challenge.id);
     if (success) {
-      toast.success('Você entrou no desafio!');
+      toast({
+        title: "Sucesso!",
+        description: "Você entrou no desafio!",
+      });
     }
   };
   
@@ -217,7 +222,10 @@ export default function ChallengeProgress({
     
     const success = await leaveChallenge(challenge.id);
     if (success) {
-      toast.success('Você saiu do desafio');
+      toast({
+        title: "Sucesso!",
+        description: "Você saiu do desafio",
+      });
     }
   };
 

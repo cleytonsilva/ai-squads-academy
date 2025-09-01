@@ -1,0 +1,346 @@
+/* Estilos personalizados para o editor Tiptap */
+
+/* Container principal do editor */
+.tiptap-wrapper {
+  @apply border border-gray-200 rounded-lg overflow-hidden;
+}
+
+/* Estilos base do editor */
+.tiptap-editor {
+  @apply min-h-[200px] p-4 focus:outline-none;
+  line-height: 1.6;
+}
+
+/* Placeholder */
+.tiptap-editor[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  @apply text-gray-400 pointer-events-none;
+  float: left;
+  height: 0;
+}
+
+/* Cabeçalhos */
+.tiptap-editor h1 {
+  @apply text-3xl font-bold text-gray-900 mt-6 mb-4 leading-tight;
+}
+
+.tiptap-editor h2 {
+  @apply text-2xl font-semibold text-gray-800 mt-5 mb-3 leading-tight;
+}
+
+.tiptap-editor h3 {
+  @apply text-xl font-medium text-gray-700 mt-4 mb-2 leading-tight;
+}
+
+.tiptap-editor h4 {
+  @apply text-lg font-medium text-gray-700 mt-3 mb-2 leading-tight;
+}
+
+.tiptap-editor h5 {
+  @apply text-base font-medium text-gray-700 mt-3 mb-2 leading-tight;
+}
+
+.tiptap-editor h6 {
+  @apply text-sm font-medium text-gray-700 mt-3 mb-2 leading-tight;
+}
+
+/* Parágrafos */
+.tiptap-editor p {
+  @apply mb-4 text-gray-600 leading-relaxed;
+}
+
+.tiptap-editor p:last-child {
+  @apply mb-0;
+}
+
+/* Listas */
+.tiptap-editor .tiptap-bullet-list,
+.tiptap-editor .tiptap-ordered-list {
+  @apply ml-6 mb-4;
+}
+
+.tiptap-editor .tiptap-bullet-list li,
+.tiptap-editor .tiptap-ordered-list li {
+  @apply mb-1 leading-relaxed;
+}
+
+.tiptap-editor .tiptap-bullet-list {
+  list-style-type: disc;
+}
+
+.tiptap-editor .tiptap-ordered-list {
+  list-style-type: decimal;
+}
+
+/* Listas aninhadas */
+.tiptap-editor .tiptap-bullet-list .tiptap-bullet-list {
+  list-style-type: circle;
+  @apply mt-1 mb-1;
+}
+
+.tiptap-editor .tiptap-bullet-list .tiptap-bullet-list .tiptap-bullet-list {
+  list-style-type: square;
+}
+
+/* Citações */
+.tiptap-editor .tiptap-blockquote {
+  @apply border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg mb-4 italic;
+}
+
+.tiptap-editor .tiptap-blockquote p {
+  @apply mb-2 text-gray-700;
+}
+
+.tiptap-editor .tiptap-blockquote p:last-child {
+  @apply mb-0;
+}
+
+/* Código inline */
+.tiptap-editor code {
+  @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800;
+}
+
+/* Blocos de código */
+.tiptap-editor .tiptap-code-block {
+  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4 font-mono text-sm;
+}
+
+.tiptap-editor .tiptap-code-block code {
+  @apply bg-transparent p-0 text-gray-100;
+}
+
+/* Imagens */
+.tiptap-editor .tiptap-image {
+  @apply max-w-full h-auto rounded-lg shadow-md my-4;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Vídeos do YouTube */
+.tiptap-editor .tiptap-youtube {
+  @apply rounded-lg shadow-md my-4;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Links */
+.tiptap-editor .tiptap-link {
+  @apply text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors;
+}
+
+.tiptap-editor .tiptap-link:visited {
+  @apply text-purple-600;
+}
+
+/* Tabelas */
+.tiptap-editor .tiptap-table {
+  @apply w-full border-collapse border border-gray-300 mb-4 rounded-lg overflow-hidden;
+}
+
+.tiptap-editor .tiptap-table-header {
+  @apply bg-gray-100 font-semibold border border-gray-300 px-3 py-2 text-left;
+}
+
+.tiptap-editor .tiptap-table-cell {
+  @apply border border-gray-300 px-3 py-2 text-left;
+}
+
+.tiptap-editor .tiptap-table-row:nth-child(even) .tiptap-table-cell {
+  @apply bg-gray-50;
+}
+
+/* Destaque */
+.tiptap-editor .tiptap-highlight {
+  @apply bg-yellow-200 px-1 rounded;
+}
+
+/* Formatação de texto */
+.tiptap-editor strong {
+  @apply font-bold;
+}
+
+.tiptap-editor em {
+  @apply italic;
+}
+
+.tiptap-editor u {
+  text-decoration: underline;
+}
+
+.tiptap-editor s {
+  text-decoration: line-through;
+}
+
+/* Alinhamento de texto */
+.tiptap-editor [data-text-align="left"] {
+  text-align: left;
+}
+
+.tiptap-editor [data-text-align="center"] {
+  text-align: center;
+}
+
+.tiptap-editor [data-text-align="right"] {
+  text-align: right;
+}
+
+.tiptap-editor [data-text-align="justify"] {
+  text-align: justify;
+}
+
+/* Estilos para o modo de foco */
+.tiptap-editor:focus {
+  @apply ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Estilos para seleção */
+.tiptap-editor ::selection {
+  @apply bg-blue-200;
+}
+
+/* Estilos para modo somente leitura */
+.tiptap-editor[contenteditable="false"] {
+  @apply bg-gray-50 cursor-default;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  .tiptap-editor {
+    @apply p-3 text-sm;
+  }
+  
+  .tiptap-editor h1 {
+    @apply text-2xl;
+  }
+  
+  .tiptap-editor h2 {
+    @apply text-xl;
+  }
+  
+  .tiptap-editor h3 {
+    @apply text-lg;
+  }
+  
+  .tiptap-editor .tiptap-table {
+    @apply text-sm;
+  }
+  
+  .tiptap-editor .tiptap-table-header,
+  .tiptap-editor .tiptap-table-cell {
+    @apply px-2 py-1;
+  }
+}
+
+/* Animações */
+.tiptap-editor {
+  transition: all 0.2s ease-in-out;
+}
+
+.tiptap-editor .tiptap-image {
+  transition: transform 0.2s ease-in-out;
+}
+
+.tiptap-editor .tiptap-image:hover {
+  transform: scale(1.02);
+}
+
+/* Estilos para drag and drop */
+.tiptap-editor.drag-over {
+  @apply border-blue-500 border-2 border-dashed bg-blue-50;
+}
+
+/* Estilos para loading */
+.tiptap-editor.loading {
+  @apply opacity-50 pointer-events-none;
+}
+
+/* Estilos para erro */
+.tiptap-editor.error {
+  @apply border-red-500 bg-red-50;
+}
+
+/* Estilos para o toolbar */
+.tiptap-toolbar {
+  @apply flex flex-wrap gap-1 p-2 border border-gray-200 rounded-lg bg-gray-50;
+}
+
+.tiptap-toolbar-group {
+  @apply flex gap-1 border-r border-gray-300 pr-2 mr-2;
+}
+
+.tiptap-toolbar-group:last-child {
+  @apply border-r-0 pr-0 mr-0;
+}
+
+/* Estilos para botões do toolbar */
+.tiptap-toolbar-button {
+  @apply h-8 w-8 p-0 transition-colors;
+}
+
+.tiptap-toolbar-button:hover {
+  @apply bg-gray-200;
+}
+
+.tiptap-toolbar-button.active {
+  @apply bg-blue-500 text-white;
+}
+
+.tiptap-toolbar-button.active:hover {
+  @apply bg-blue-600;
+}
+
+/* Estilos para dropdown */
+.tiptap-dropdown {
+  @apply bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50;
+}
+
+.tiptap-dropdown-item {
+  @apply px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer rounded;
+}
+
+.tiptap-dropdown-item.active {
+  @apply bg-blue-500 text-white;
+}
+
+/* Estilos para bubble menu */
+.tiptap-bubble-menu {
+  @apply bg-gray-900 text-white rounded-lg shadow-lg p-1 flex gap-1;
+}
+
+.tiptap-bubble-menu button {
+  @apply text-white hover:bg-gray-700 p-2 rounded transition-colors;
+}
+
+/* Estilos para floating menu */
+.tiptap-floating-menu {
+  @apply bg-white border border-gray-200 rounded-lg shadow-lg p-1;
+}
+
+/* Estilos para caracteres especiais */
+.tiptap-editor .ProseMirror-selectednode {
+  @apply ring-2 ring-blue-500 ring-opacity-50 rounded;
+}
+
+/* Estilos para colaboração */
+.tiptap-editor .collaboration-cursor {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.tiptap-editor .collaboration-cursor::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  left: -1px;
+  width: 3px;
+  height: 1.2em;
+  background: #0d0d0d;
+}

@@ -1,0 +1,50 @@
+{
+  "timestamp": "2025-09-01T04:33:18.591Z",
+  "error": "StorageApiError: new row violates row-level security policy",
+  "tests": [
+    {
+      "test": "Autenticação do Usuário",
+      "status": "FAIL",
+      "details": "Erro ao obter dados do usuário autenticado",
+      "error": "Auth session missing!",
+      "timestamp": "2025-09-01T04:33:18.724Z"
+    },
+    {
+      "test": "Role do Usuário",
+      "status": "FAIL",
+      "details": "Não é possível verificar role - usuário não autenticado",
+      "error": null,
+      "timestamp": "2025-09-01T04:33:18.881Z"
+    },
+    {
+      "test": "Verificação do Bucket",
+      "status": "FAIL",
+      "details": "Bucket course-images não encontrado",
+      "error": null,
+      "timestamp": "2025-09-01T04:33:20.289Z"
+    },
+    {
+      "test": "Acesso à Tabela Profiles",
+      "status": "PASS",
+      "details": "Tabela profiles acessível (2 registros)",
+      "error": null,
+      "timestamp": "2025-09-01T04:33:20.990Z"
+    },
+    {
+      "test": "Upload com Service Role",
+      "status": "FAIL",
+      "details": "Upload falhou mesmo com service role",
+      "error": "mime type text/plain is not supported",
+      "timestamp": "2025-09-01T04:33:21.634Z"
+    }
+  ],
+  "summary": {
+    "authStatus": "FAILED",
+    "userRole": null,
+    "rlsPolicies": null,
+    "profilesAccess": "WORKING",
+    "recommendations": [
+      "Verificar se o usuário está logado corretamente"
+    ]
+  }
+}

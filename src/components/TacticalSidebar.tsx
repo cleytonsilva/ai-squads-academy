@@ -11,17 +11,17 @@ import {
   User, 
   ChevronLeft, 
   ChevronRight,
-  Zap,
   Star,
   Settings,
   LogOut
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useTheme } from "@/contexts/theme-context";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 import { useStudentData } from "@/hooks/useStudentData";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface TacticalSidebarProps {
   className?: string;
@@ -36,6 +36,7 @@ interface NavItem {
 }
 
 export default function TacticalSidebar({ className }: TacticalSidebarProps) {
+  const { toast } = useToast();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const { getThemeColors } = useTheme();
@@ -99,18 +100,28 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
       
       try {
         await Promise.race([logoutPromise, timeoutPromise]);
-        toast.success("Logout realizado com sucesso!");
+        toast({
+          title: "Sucesso",
+          description: "Logout realizado com sucesso!"
+        });
       } catch (logoutError) {
         console.warn('Erro no logout do Supabase (continuando com logout local):', logoutError);
         // Continuar mesmo com erro - limpar estado local
-        toast.success("Logout realizado com sucesso!");
+        toast({
+          title: "Sucesso",
+          description: "Logout realizado com sucesso!"
+        });
       }
       
       // Redirecionar para página inicial
       window.location.href = '/';
     } catch (error) {
       console.error('Erro no logout:', error);
-      toast.error("Erro ao fazer logout");
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer logout",
+        variant: "destructive"
+      });
       // Em caso de erro crítico, ainda tentar redirecionar
       window.location.href = '/';
     }
@@ -128,27 +139,31 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
       className={`
         ${isCollapsed ? 'w-16' : 'w-64'} 
         transition-all duration-300 ease-in-out
-        bg-neutral-900 border-r border-neutral-700 
+        ${themeColors.card} ${themeColors.border} border-r
         flex flex-col h-screen sticky top-0
         ${className}
       `}
     >
       {/* Header */}
-      <div className="p-4 border-b border-neutral-700">
+      <div className={`p-4 border-b ${themeColors.border}`}>
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-white tracking-wider text-sm">ESQUADS</span>
+              <img
+            src="/images/esquads2.png"
+            alt="Esquads Logo"
+            className="w-8 h-8 object-contain flex-shrink-0 transition-opacity duration-200"
+            loading="eager"
+            style={{ imageRendering: 'crisp-edges' }}
+          />
+              <span className={`font-bold ${themeColors.foreground} tracking-wider text-sm`}>ESQUADS</span>
             </div>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-neutral-400 hover:text-white hover:bg-neutral-800 h-8 w-8"
+            className={`${themeColors.mutedForeground} ${themeColors.foreground.replace('text-', 'hover:text-')} ${themeColors.muted.replace('bg-', 'hover:bg-')} h-8 w-8`}
           >
             {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
@@ -156,11 +171,11 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
       </div>
 
       {/* User Profile */}
-      <div className="p-4 border-b border-neutral-700">
+      <div className={`p-4 border-b ${themeColors.border}`}>
         <div className="flex items-center gap-3">
-          <Avatar className={`${isCollapsed ? 'h-8 w-8' : 'h-12 w-12'} border-2 border-neutral-600`}>
+          <Avatar className={`${isCollapsed ? 'h-8 w-8' : 'h-12 w-12'} border-2 ${themeColors.border}`}>
             <AvatarImage src={profile?.avatar_url} alt={profile?.display_name || 'Operador'} />
-            <AvatarFallback className="bg-neutral-800 text-white font-mono">
+            <AvatarFallback className={`${themeColors.muted} ${themeColors.foreground} font-mono`}>
               {profile?.display_name?.charAt(0) || 'O'}
             </AvatarFallback>
           </Avatar>
@@ -169,12 +184,12 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-green-500 font-mono tracking-wider">ONLINE</span>
+                <span className="text-[10px] text-green-500 font-orbitron tracking-wider">ONLINE</span>
               </div>
-              <h3 className="text-sm font-bold text-white truncate font-mono tracking-wider">
+              <h3 className={`text-sm font-bold ${themeColors.foreground} truncate font-orbitron tracking-wider`}>
                 {(profile?.display_name || 'OPERADOR').toUpperCase()}
               </h3>
-              <div className="flex items-center gap-2 text-xs text-neutral-400 font-mono">
+              <div className={`flex items-center gap-2 text-[10px] ${themeColors.mutedForeground} font-orbitron`}>
                 <Star className="w-3 h-3" />
                 <span>Nv.{level}</span>
                 <span>•</span>
@@ -186,11 +201,11 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
         
         {!isCollapsed && (
           <div className="mt-3">
-            <div className="flex justify-between text-xs text-neutral-400 mb-1">
+            <div className={`flex justify-between text-[10px] ${themeColors.mutedForeground} mb-1`}>
               <span>Próximo nível</span>
               <span>{Math.round((xp % 1000) / 10)}%</span>
             </div>
-            <div className="w-full bg-neutral-800 rounded-full h-1.5">
+            <div className={`w-full ${themeColors.muted} rounded-full h-1.5`}>
               <div
                 className={`${themeColors.primaryBg} h-1.5 rounded-full transition-all duration-300`}
                 style={{ width: `${(xp % 1000) / 10}%` }}
@@ -213,24 +228,24 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
                 className={`
                   w-full justify-start h-auto p-3
                   ${isActive 
-                    ? `${themeColors.primaryBg} text-white hover:${themeColors.primaryBg.replace('bg-', 'bg-').replace('-500', '-600')}` 
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    ? `${themeColors.primaryBg} ${themeColors.background.replace('bg-', 'text-')} hover:${themeColors.primaryBg.replace('bg-', 'bg-').replace('-500', '-600')}` 
+                    : `${themeColors.mutedForeground} ${themeColors.foreground.replace('text-', 'hover:text-')} ${themeColors.muted.replace('bg-', 'hover:bg-')}`
                   }
                   transition-all duration-200
                 `}
               >
                 <div className="flex items-center gap-3 w-full">
-                  <Icon className={`h-4 w-4 ${isActive ? 'text-white' : ''}`} />
+                  <Icon className={`h-4 w-4 ${isActive ? themeColors.background.replace('bg-', 'text-') : ''}`} />
                   
                   {!isCollapsed && (
                     <>
                       <div className="flex-1 text-left">
-                        <div className={`text-xs font-bold tracking-wider font-mono ${
-                          isActive ? 'text-white' : 'text-neutral-300'
+                        <div className={`text-[11px] font-bold tracking-wider font-orbitron ${
+                          isActive ? themeColors.background.replace('bg-', 'text-') : themeColors.foreground
                         }`}>
                           {item.label}
                         </div>
-                        <div className="text-xs text-neutral-500 font-mono">
+                        <div className={`text-[9px] ${themeColors.mutedForeground} font-orbitron`}>
                           {item.description}
                         </div>
                       </div>
@@ -246,9 +261,9 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-neutral-700 space-y-2">
+      <div className={`p-4 border-t ${themeColors.border} space-y-2`}>
         {!isCollapsed && (
-          <div className="text-xs text-neutral-500 font-mono mb-3">
+          <div className={`text-xs ${themeColors.mutedForeground} font-mono mb-3`}>
             <div className="flex justify-between items-center mb-1">
               <span>STATUS DO SISTEMA</span>
               <div className="flex items-center gap-1">
@@ -256,22 +271,25 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
                 <span className="text-green-500">OPERACIONAL</span>
               </div>
             </div>
-            <div className="text-xs text-neutral-600">
+            <div className={`text-xs ${themeColors.mutedForeground} opacity-75`}>
               Última sincronização: agora
             </div>
           </div>
         )}
         
-        <Link to="/app/perfil">
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "sm"}
-            className="w-full text-neutral-400 hover:text-white hover:bg-neutral-800 font-mono text-xs"
-          >
-            <Settings className="h-4 w-4" />
-            {!isCollapsed && <span className="ml-2">CONFIGURAÇÕES</span>}
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <ThemeToggle />
+          <Link to="/app/perfil" className="flex-1">
+            <Button
+              variant="ghost"
+              size={isCollapsed ? "icon" : "sm"}
+              className={`w-full ${themeColors.mutedForeground} ${themeColors.foreground.replace('text-', 'hover:text-')} ${themeColors.muted.replace('bg-', 'hover:bg-')} font-mono text-xs`}
+            >
+              <Settings className="h-4 w-4" />
+              {!isCollapsed && <span className="ml-2">CONFIGURAÇÕES</span>}
+            </Button>
+          </Link>
+        </div>
         
         <Button
           variant="ghost"

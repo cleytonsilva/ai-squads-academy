@@ -761,7 +761,7 @@ async function callReplicateAPI(
     recraft: {
       prompt,
       style: 'realistic_image',
-      size: '1920x1080',
+      size: '1820x1024', // Tamanho válido do Replicate que mantém proporção adequada para capas
       output_format: 'webp'
     }
   };
