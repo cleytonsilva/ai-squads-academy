@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import TiptapAdminEditor from '@/components/ui/tiptap/tiptap-admin-editor';
 import { Module } from '@/types/course';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +34,11 @@ interface ModuleEditorProps {
   onCancel?: () => void;
 }
 
+export interface ModuleEditorRef {
+  handleSave: () => Promise<void>;
+  setContent: (content: string) => void;
+}
+
 interface ModuleFormData {
   title: string;
   description: string;
@@ -43,7 +48,7 @@ interface ModuleFormData {
   order_index: number;
 }
 
-export default function ModuleEditor({ module, courseId, onSave, onCancel }: ModuleEditorProps) {
+const ModuleEditor = forwardRef<ModuleEditorRef, ModuleEditorProps>(({ module, courseId, onSave, onCancel }, ref) => {
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('content');
@@ -52,13 +57,25 @@ export default function ModuleEditor({ module, courseId, onSave, onCancel }: Mod
     title: module.title || '',
     description: module.description || '',
     module_type: module.module_type || 'lesson',
-    content: module.content_jsonb?.content || '',
+    content: module.content_jsonb?.html || module.content_jsonb?.content || '',
     estimated_duration: module.estimated_duration || 15,
     order_index: module.order_index || 0
   });
 
   // Ref para o editor Tiptap
   const tiptapRef = useRef<any>(null);
+
+  // Expor funções via useImperativeHandle
+  useImperativeHandle(ref, () => ({
+    handleSave,
+    setContent: (content: string) => {
+      // Atualiza o estado local para manter visualização/estatísticas em sincronia
+      setFormData(prev => ({ ...prev, content }));
+      if (tiptapRef.current && (tiptapRef.current as any).setContent) {
+        (tiptapRef.current as any).setContent(content);
+      }
+    },
+  }));
 
   const handleSave = async () => {
     try {
@@ -75,7 +92,7 @@ export default function ModuleEditor({ module, courseId, onSave, onCancel }: Mod
         estimated_duration: formData.estimated_duration,
         order_index: formData.order_index,
         content_jsonb: {
-          content,
+          html: content,
           summary: formData.description,
           word_count: content.replace(/<[^>]*>/g, '').split(/\s+/).length,
           last_edited: new Date().toISOString()
@@ -85,7 +102,7 @@ export default function ModuleEditor({ module, courseId, onSave, onCancel }: Mod
 
       // Update module in database
       const { data, error } = await supabase
-        .from('course_modules')
+        .from('modules')
         .update(updateData)
         .eq('id', module.id)
         .select()
@@ -365,4 +382,8 @@ export default function ModuleEditor({ module, courseId, onSave, onCancel }: Mod
       </div>
     </div>
   );
-}
+});
+
+ModuleEditor.displayName = 'ModuleEditor';
+
+export default ModuleEditor;

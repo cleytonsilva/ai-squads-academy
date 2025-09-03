@@ -26,6 +26,16 @@ import DashboardLayout from "@/components/admin/DashboardLayout";
 import CourseCoverManager from "@/components/admin/CourseCoverManager";
 import { useRealtimeCourseUpdates } from "@/hooks/useRealtimeCourseUpdates";
 
+// Função única de normalização para evitar inconsistências
+const normalizeContentForComparison = (content: string): string => {
+  return content
+    .replace(/\s+/g, ' ')  // Normalizar espaços
+    .replace(/><\//g, '></')  // Normalizar tags
+    .replace(/<p><\/p>/g, '')  // Remover parágrafos vazios
+    .replace(/&nbsp;/g, ' ')  // Converter &nbsp; para espaço
+    .trim();
+};
+
 interface Course {
   id: string;
   title: string;
@@ -51,10 +61,23 @@ export default function AdminCourseEditor() {
   const getHtml = (payload: unknown): string => {
     try {
       if (payload && typeof payload === "object" && payload !== null && "html" in (payload as any)) {
-        return (payload as any).html || "";
+        const html = (payload as any).html || "";
+        console.log('🔍 [getHtml] Extraindo HTML do content_jsonb:', {
+          payload,
+          extractedHtml: html.substring(0, 200) + '...',
+          htmlLength: html.length
+        });
+        return html;
       }
-      return typeof payload === "string" ? (payload as string) : "";
-    } catch {
+      const stringPayload = typeof payload === "string" ? (payload as string) : "";
+      console.log('🔍 [getHtml] Payload como string:', {
+        payload,
+        result: stringPayload.substring(0, 200) + '...',
+        length: stringPayload.length
+      });
+      return stringPayload;
+    } catch (error) {
+      console.error('❌ [getHtml] Erro ao extrair HTML:', error);
       return "";
     }
   };
@@ -71,6 +94,7 @@ export default function AdminCourseEditor() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExtendingContent, setIsExtendingContent] = useState(false);
 
   // Ref para o editor Tiptap
   const tiptapRef = useRef<any>(null);
@@ -108,17 +132,38 @@ export default function AdminCourseEditor() {
   });
 
   // Função handleSaveModule melhorada com debounce e proteção contra race conditions
-  const handleSaveModule = useCallback(async (force = false) => {
-    if (!selectedModuleId || (isSaving && !force)) {
-      console.warn('⚠️ Salvamento em andamento ou módulo não selecionado');
+  const handleSaveModule = useCallback(async (force = false, opts?: { content?: string; moduleId?: string; title?: string }) => {
+    const moduleId = opts?.moduleId ?? selectedModuleId;
+    if (!moduleId) {
+      console.warn('⚠️ [SAVE] Nenhum moduleId disponível (selectedModuleId é null/undefined). Cancelando salvamento.');
+      toast({ title: "Aviso", description: "Nenhum módulo selecionado para salvar.", variant: "destructive" });
+      return;
+    }
+    
+    if (isSaving && !force) {
+      console.warn('⚠️ [SAVE] Salvamento já em andamento');
       return;
     }
     
     try {
       setIsSaving(true);
       
-      const currentContent = tiptapRef.current?.getHTML() || moduleHtml;
-      const trimmedTitle = moduleTitle.trim();
+      // Priorizar sempre o conteúdo do editor TipTap, com possibilidade de override
+      const editorContent = tiptapRef.current?.getHTML();
+      const currentContent = opts?.content ?? editorContent ?? moduleHtml;
+      const trimmedTitle = (opts?.title ?? moduleTitle).trim();
+      
+      console.log('💾 [SAVE DEBUG] Conteúdo sendo salvo:', {
+        editorAvailable: !!tiptapRef.current,
+        editorContentLength: editorContent?.length || 0,
+        moduleHtmlLength: moduleHtml.length,
+        usingEditorContent: !!editorContent && !opts?.content,
+        usedOverrideContent: !!opts?.content,
+        finalContentLength: currentContent.length,
+        finalContentPreview: currentContent.substring(0, 300) + '...',
+        force,
+        moduleId
+      });
       
       // Validação básica
       if (!trimmedTitle) {
@@ -126,10 +171,18 @@ export default function AdminCourseEditor() {
         return;
       }
       
-      console.log('💾 Salvando módulo:', { 
-        id: selectedModuleId, 
+      console.log('💾 [SAVE DEBUG] Salvando módulo:', { 
+        id: moduleId, 
         title: trimmedTitle,
-        contentLength: currentContent.length 
+        contentLength: currentContent.length,
+        contentPreview: currentContent.substring(0, 200) + '...',
+        hasUnsavedChanges,
+        moduleHtmlLength: moduleHtml.length,
+        editorContent: editorContent?.substring(0, 200) + '...',
+        editorContentLength: editorContent?.length || 0,
+        usingEditorContent: !!editorContent && !opts?.content,
+        usedOverrideContent: !!opts?.content,
+        force
       });
       
       const updateData = {
@@ -142,41 +195,83 @@ export default function AdminCourseEditor() {
         }
       };
       
-      // Usar supabaseModuleRetry para melhor tratamento de erros
-      const { error } = await supabaseModuleRetry(
+      console.log('💾 [SAVE DEBUG] Content_jsonb a ser salvo:', updateData.content_jsonb);
+      
+      // Usar supabaseModuleRetry com select() (sem single) para evitar 406 quando nenhuma linha é retornada
+      const { data: updatedRows, error } = await supabaseModuleRetry(
         () => supabase
           .from("modules")
           .update(updateData)
-          .eq("id", selectedModuleId),
-        selectedModuleId,
+          .eq("id", moduleId)
+          .select("id, title, content_jsonb"),
+        moduleId,
         'update'
       );
         
       if (error) throw error;
       
-      console.log('✅ Módulo salvo com sucesso');
+      console.log('✅ [SAVE DEBUG] Módulo salvo com sucesso no banco de dados');
       toast({ title: "Sucesso", description: "Módulo salvo" });
       
-      // Atualizar estado local
+      // Extrair HTML persistido do retorno do update
+      const persistedHtml = (() => {
+        try {
+          const row = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows;
+          if (row && typeof row.content_jsonb === 'object' && row.content_jsonb !== null) {
+            return row.content_jsonb.html || '';
+          }
+          if (typeof row?.content_jsonb === 'string') return row.content_jsonb;
+          return '';
+        } catch {
+          return '';
+        }
+      })();
+
+      if (Array.isArray(updatedRows) && updatedRows.length === 0) {
+        console.warn('⚠️ [SAVE DEBUG] Update retornou 0 linhas (possível política RLS bloqueando a atualização ou ID inexistente). Mantendo conteúdo local.');
+      }
+
+      // Atualizar estado local com o conteúdo efetivamente persistido (ou o atual, se none)
       setHasUnsavedChanges(false);
-      setModuleHtml(currentContent);
-      
-      // Refetch apenas se necessário
-      if (force) {
-        setTimeout(() => refetch(), 100);
+      setModuleHtml(persistedHtml || currentContent);
+
+      // Sincronizar o editor Tiptap se houver divergência
+      try {
+        const currentEditor = tiptapRef.current?.getHTML?.();
+        const normSaved = normalizeContentForComparison(currentContent);
+        const normPersisted = normalizeContentForComparison(persistedHtml || '');
+        if (currentEditor != null) {
+          const normEditor = normalizeContentForComparison(currentEditor);
+          if (normEditor !== normPersisted) {
+            tiptapRef.current?.setContent?.(persistedHtml || currentContent);
+            console.log('🖊️ [SAVE DEBUG] Editor sincronizado com conteúdo persistido');
+          }
+        }
+        console.log('🗄️ [SAVE VERIFY] Comparação saved vs persisted (update retorno):', {
+          savedLength: normSaved.length,
+          persistedLength: normPersisted.length,
+          equal: normSaved === normPersisted,
+          savedPreview: normSaved.substring(0, 200) + '...',
+          persistedPreview: normPersisted.substring(0, 200) + '...'
+        });
+      } catch (syncErr) {
+        console.warn('⚠️ [SAVE DEBUG] Erro ao sincronizar editor após salvamento:', syncErr);
       }
       
+      // REMOVIDO: refetch e leitura adicional após salvamento para evitar sobrescrita do conteúdo e reduzir I/O
+      console.log('✅ [SAVE DEBUG] Salvamento concluído sem refetch; estado e editor sincronizados com conteúdo persistido');
+      
     } catch (error: any) {
-      console.error('❌ Erro ao salvar módulo:', error);
+      console.error('❌ [SAVE DEBUG] Erro ao salvar módulo:', error);
       toast({ title: "Erro", description: `Erro ao salvar módulo: ${error?.message || 'Erro desconhecido'}`, variant: "destructive" });
       throw error;
     } finally {
       setIsSaving(false);
     }
   }, [selectedModuleId, moduleTitle, moduleHtml, isSaving]);
-  
-  // Debounced version para auto-save
-  const { debouncedSave, forceSave } = useModuleSaveDebounce(handleSaveModule, 2000);
+
+  // Debounced version para auto-save - deve ser declarado antes dos useEffect que o utilizam
+  const { debouncedSave, forceSave, cancelSave, isSaving: isDebouncing, isPending } = useModuleSaveDebounce(handleSaveModule, 2000);
   
   // Função para detectar mudanças de forma robusta
   const detectChanges = useCallback(() => {
@@ -188,15 +283,7 @@ export default function AdminCourseEditor() {
     const currentContent = tiptapRef.current?.getHTML() || moduleHtml;
     const currentTitle = moduleTitle.trim();
     
-    // Normalizar conteúdo para comparação
-    const normalizeContent = (content: string) => {
-      return content
-        .replace(/\s+/g, ' ')
-        .replace(/><\//g, '></')
-        .trim();
-    };
-    
-    const hasContentChanges = normalizeContent(currentContent) !== normalizeContent(originalContent);
+    const hasContentChanges = normalizeContentForComparison(currentContent) !== normalizeContentForComparison(originalContent);
     const hasTitleChanges = currentTitle !== originalTitle;
     
     return hasContentChanges || hasTitleChanges;
@@ -291,18 +378,81 @@ export default function AdminCourseEditor() {
       const newContent = getHtml(m.content_jsonb);
       setModuleHtml(newContent);
       
-      console.log('📄 Conteúdo do módulo:', newContent.substring(0, 100) + '...');
+      console.log('📄 [LOAD DEBUG] Carregando módulo:', {
+        id: m.id,
+        title: m.title,
+        contentJsonb: m.content_jsonb,
+        extractedContent: newContent.substring(0, 200) + '...',
+        contentLength: newContent.length
+      });
       
-      // Atualizar o editor Tiptap com delay para garantir que o estado foi atualizado
+      // Atualizar o editor Tiptap com delay aumentado para garantir sincronização
       if (tiptapRef.current && tiptapRef.current.setContent) {
         setTimeout(() => {
           try {
-            tiptapRef.current?.setContent(newContent);
-            console.log('✅ Editor Tiptap atualizado com sucesso');
+            // Verificar se o conteúdo atual do editor é diferente do novo conteúdo
+            if (!tiptapRef.current || !tiptapRef.current.getHTML) {
+              console.warn('⚠️ [SYNC] Editor não disponível para verificação inicial');
+              return;
+            }
+            const currentEditorContent = tiptapRef.current.getHTML() || '';
+            
+            const normalizedCurrent = normalizeContentForComparison(currentEditorContent);
+            const normalizedNew = normalizeContentForComparison(newContent);
+            
+            if (normalizedCurrent !== normalizedNew) {
+              console.log('🔄 [SYNC] Atualizando editor com novo conteúdo:', {
+                moduleId: selectedModuleId,
+                currentLength: currentEditorContent.length,
+                newLength: newContent.length,
+                normalizedCurrentLength: normalizedCurrent.length,
+                normalizedNewLength: normalizedNew.length,
+                currentPreview: currentEditorContent.substring(0, 100) + '...',
+                newPreview: newContent.substring(0, 100) + '...'
+              });
+              
+              // Forçar limpeza e nova inserção
+              if (tiptapRef.current && tiptapRef.current.setContent) {
+                tiptapRef.current.setContent('');
+              } else {
+                console.warn('⚠️ [SYNC] Editor não disponível para clearContent');
+                return;
+              }
+              setTimeout(() => {
+                if (tiptapRef.current && tiptapRef.current.setContent) {
+                  tiptapRef.current.setContent(newContent);
+                  
+                  // Verificar se a atualização foi bem-sucedida
+                  setTimeout(() => {
+                    if (!tiptapRef.current || !tiptapRef.current.getHTML) {
+                      console.warn('⚠️ [SYNC] Editor não disponível para verificação');
+                      return;
+                    }
+                    const updatedContent = tiptapRef.current.getHTML() || '';
+                    const normalizedUpdated = normalizeContentForComparison(updatedContent);
+                    const success = normalizedUpdated === normalizedNew;
+                    
+                    console.log('✅ [SYNC] Verificação pós-atualização:', {
+                      success,
+                      updatedLength: updatedContent.length,
+                      expectedLength: newContent.length,
+                      normalizedMatch: normalizedUpdated === normalizedNew,
+                      updatedPreview: updatedContent.substring(0, 100) + '...'
+                    });
+                    
+                    if (!success) {
+                      console.error('❌ [SYNC] Falha na sincronização do editor!');
+                    }
+                  }, 100);
+                }
+              }, 50);
+            } else {
+              console.log('ℹ️ [SYNC] Editor já possui o conteúdo correto');
+            }
           } catch (editorError) {
             console.warn('⚠️ Erro ao atualizar editor Tiptap:', editorError);
           }
-        }, 150);
+        }, 300);
       }
       
       // Resetar flag de mudanças não salvas
@@ -363,8 +513,12 @@ export default function AdminCourseEditor() {
         if (tiptapRef.current && tiptapRef.current.setContent) {
           setTimeout(() => {
             try {
-              tiptapRef.current?.setContent(newContent);
-              console.log('✅ Editor atualizado com conteúdo do novo módulo');
+              if (tiptapRef.current && tiptapRef.current.setContent) {
+                tiptapRef.current.setContent(newContent);
+                console.log('✅ Editor atualizado com conteúdo do novo módulo');
+              } else {
+                console.warn('⚠️ Editor não disponível para setContent');
+              }
             } catch (error) {
               console.warn('⚠️ Erro ao atualizar editor:', error);
             }
@@ -390,9 +544,22 @@ export default function AdminCourseEditor() {
   }, [data?.course]);
 
   useEffect(() => {
+    console.log('🔍 [MODULE-INIT] useEffect disparado:', {
+      hasDataModules: !!data?.modules,
+      modulesLength: data?.modules?.length || 0,
+      hasSelectedModuleId: !!selectedModuleId,
+      selectedModuleId,
+      shouldSelectFirst: data?.modules && data.modules.length > 0 && !selectedModuleId
+    });
+    
     if (data?.modules && data.modules.length > 0 && !selectedModuleId) {
       const first = data.modules[0];
-      console.log('🎯 Selecionando primeiro módulo:', first.title);
+      console.log('🎯 [MODULE-INIT] Selecionando primeiro módulo:', {
+        moduleTitle: first.title,
+        moduleId: first.id,
+        moduleOrderIndex: first.order_index,
+        hasContentJsonb: !!first.content_jsonb
+      });
       setSelectedModuleId(first.id);
       setModuleTitle(first.title);
       const content = getHtml(first.content_jsonb);
@@ -402,8 +569,12 @@ export default function AdminCourseEditor() {
       if (tiptapRef.current && tiptapRef.current.setContent) {
         setTimeout(() => {
           try {
-            tiptapRef.current?.setContent(content);
-            console.log('✅ Editor atualizado com conteúdo do primeiro módulo');
+            if (tiptapRef.current && tiptapRef.current.setContent) {
+              tiptapRef.current.setContent(content);
+              console.log('✅ Editor atualizado com conteúdo do primeiro módulo');
+            } else {
+              console.warn('⚠️ Editor não disponível para setContent');
+            }
           } catch (error) {
             console.warn('⚠️ Erro ao atualizar editor:', error);
           }
@@ -412,7 +583,28 @@ export default function AdminCourseEditor() {
     }
   }, [data?.modules, selectedModuleId]);
   
+  // REMOVIDO: useEffect problemático que estava causando conflitos de sincronização
+  // A sincronização do editor agora é feita apenas no handleSelectModule
+  
   useEffect(() => {
+    console.log('🔍 [CHANGES] useEffect disparado:', {
+      isExtendingContent,
+      hasCurrentModule: !!currentModule,
+      switchingModule,
+      selectedModuleId,
+      currentModuleId: currentModule?.id,
+      moduleTitle,
+      moduleHtmlLength: moduleHtml?.length || 0,
+      hasUnsavedChanges,
+      shouldCheckChanges: currentModule && !switchingModule && selectedModuleId === currentModule.id
+    });
+    
+    // Não verificar mudanças durante extensão de conteúdo para evitar sobrescrita
+    if (isExtendingContent) {
+      console.log('🛡️ Proteção ativa: ignorando verificação de mudanças durante extensão');
+      return;
+    }
+    
     if (currentModule && !switchingModule && selectedModuleId === currentModule.id) {
       const originalContent = getHtml(currentModule.content_jsonb);
       const originalTitle = currentModule.title;
@@ -420,23 +612,63 @@ export default function AdminCourseEditor() {
       // Usar o conteúdo do editor se disponível, senão usar o estado local
       const currentContent = tiptapRef.current?.getHTML() || moduleHtml;
       
-      const hasContentChanges = currentContent.trim() !== originalContent.trim();
+      const normalizedCurrent = normalizeContentForComparison(currentContent);
+      const normalizedOriginal = normalizeContentForComparison(originalContent);
+      
+      const hasContentChanges = normalizedCurrent !== normalizedOriginal;
       const hasTitleChanges = moduleTitle.trim() !== originalTitle.trim();
       
       const hasChanges = hasContentChanges || hasTitleChanges;
       
-      if (hasChanges !== hasUnsavedChanges) {
-        console.log('🔄 Mudanças detectadas:', { hasContentChanges, hasTitleChanges, moduleTitle: moduleTitle.trim(), originalTitle });
-        setHasUnsavedChanges(hasChanges);
-      }
+      console.log('🔄 [CHANGES] Verificando mudanças:', { 
+        hasContentChanges, 
+        hasTitleChanges, 
+        hasChanges,
+        currentTitle: moduleTitle.trim(), 
+        originalTitle,
+        currentContentLength: currentContent.length,
+        originalContentLength: originalContent.length,
+        normalizedCurrentLength: normalizedCurrent.length,
+        normalizedOriginalLength: normalizedOriginal.length,
+        currentPreview: normalizedCurrent.substring(0, 100) + '...',
+        originalPreview: normalizedOriginal.substring(0, 100) + '...',
+        isExtendingContent,
+        previousHasUnsavedChanges: hasUnsavedChanges,
+        willSetHasUnsavedChanges: hasChanges
+      });
+      
+      setHasUnsavedChanges(hasChanges);
     } else if (!currentModule || switchingModule) {
+      console.log('🔄 [CHANGES] Resetando hasUnsavedChanges (sem módulo ou trocando)', {
+        hasCurrentModule: !!currentModule,
+        switchingModule,
+        selectedModuleId,
+        currentModuleId: currentModule?.id,
+        previousHasUnsavedChanges: hasUnsavedChanges
+      });
       setHasUnsavedChanges(false);
     }
-  }, [moduleHtml, moduleTitle, currentModule, switchingModule, selectedModuleId, hasUnsavedChanges]);
+  }, [moduleHtml, moduleTitle, currentModule, switchingModule, selectedModuleId, isExtendingContent]);
 
   useEffect(() => {
     if (error) toast({ title: "Erro", description: "Falha ao carregar o editor do curso.", variant: "destructive" });
   }, [error]);
+
+  // Auto-save quando há mudanças não salvas
+  useEffect(() => {
+    console.log('🔍 [AUTO-SAVE] Verificando condições para auto-save:', {
+      hasUnsavedChanges,
+      selectedModuleId,
+      isExtendingContent,
+      switchingModule,
+      shouldTriggerSave: hasUnsavedChanges && selectedModuleId && !isExtendingContent && !switchingModule
+    });
+    
+    if (hasUnsavedChanges && selectedModuleId && !isExtendingContent && !switchingModule) {
+      console.log('💾 [AUTO-SAVE] Acionando salvamento automático devido a mudanças não salvas');
+      debouncedSave();
+    }
+  }, [hasUnsavedChanges, selectedModuleId, isExtendingContent, switchingModule, debouncedSave]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -678,7 +910,18 @@ export default function AdminCourseEditor() {
                           <TiptapAdminEditor
                             ref={tiptapRef}
                             content={moduleHtml}
-                            onChange={setModuleHtml}
+                            onChange={(newContent) => {
+                              // Proteger contra onChange durante extensão de conteúdo
+                              if (isExtendingContent) {
+                                console.log('🛡️ Proteção ativa: ignorando onChange do editor durante extensão');
+                                return;
+                              }
+                              console.log('📝 onChange do editor:', { 
+                                contentLength: newContent.length,
+                                isExtendingContent 
+                              });
+                              setModuleHtml(newContent);
+                            }}
                             courseId={id || ''}
                             placeholder="Digite o conteúdo do módulo..."
                           />
@@ -689,40 +932,92 @@ export default function AdminCourseEditor() {
                             currentHtml={tiptapRef.current?.getHTML() || moduleHtml}
                             onExtended={(extendedHtml) => {
                               try {
-                                console.log('🤖 Estendendo conteúdo do módulo com IA...');
+                                console.log('🤖 [EXTEND DEBUG] Iniciando extensão de conteúdo com IA...');
+                                
+                                // Cancelar qualquer auto-save pendente para evitar corrida
+                                if (isPending && isPending()) {
+                                  console.log('🚫 [AUTO-SAVE] Cancelando debouncedSave pendente antes da extensão de IA');
+                                }
+                                cancelSave?.();
+                                
+                                // Ativar flag de proteção
+                                setIsExtendingContent(true);
                                 
                                 const currentContent = tiptapRef.current?.getHTML() || moduleHtml;
                                 const newContent = `${currentContent}\n\n${extendedHtml}`;
                                 
-                                console.log('📝 Novo conteúdo:', newContent.substring(0, 200) + '...');
+                                console.log('🤖 [EXTEND DEBUG] Dados da extensão:', {
+                                  moduleId: selectedModuleId,
+                                  currentContentLength: currentContent.length,
+                                  extendedHtmlLength: extendedHtml.length,
+                                  newContentLength: newContent.length,
+                                  currentContentPreview: currentContent.substring(0, 200) + '...',
+                                  extendedHtmlPreview: extendedHtml.substring(0, 200) + '...',
+                                  newContentPreview: newContent.substring(0, 200) + '...'
+                                });
                                 
                                 // Atualizar estado primeiro
                                 setModuleHtml(newContent);
+                                console.log('🤖 [EXTEND DEBUG] Estado moduleHtml atualizado');
                                 
                                 // Atualizar editor Tiptap
                                 if (tiptapRef.current && tiptapRef.current.setContent) {
                                   setTimeout(() => {
                                     try {
                                       tiptapRef.current?.setContent(newContent);
-                                      console.log('✅ Editor atualizado com conteúdo estendido');
+                                      console.log('🤖 [EXTEND DEBUG] Editor Tiptap atualizado com conteúdo estendido');
+                                      
+                                      // Verificar se o conteúdo foi realmente definido
+                                      const verifyContent = tiptapRef.current?.getHTML();
+                                      console.log('🤖 [EXTEND DEBUG] Verificação do conteúdo no editor:', {
+                                        contentLength: verifyContent?.length,
+                                        contentPreview: verifyContent?.substring(0, 200) + '...'
+                                      });
                                     } catch (editorError) {
-                                      console.warn('⚠️ Erro ao atualizar editor Tiptap:', editorError);
+                                      console.warn('⚠️ [EXTEND DEBUG] Erro ao atualizar editor Tiptap:', editorError);
                                     }
                                   }, 100);
                                 }
                                 
-                                setHasUnsavedChanges(true);
-                                
-                                // Disparar auto-save após extensão do conteúdo
-                                console.log('💾 Disparando auto-save após extensão com IA...');
+                                // Definir mudanças não salvas e desativar proteção APÓS atualizar o conteúdo
                                 setTimeout(() => {
-                                  debouncedSave();
-                                }, 200);
+                                  setHasUnsavedChanges(true);
+                                  setIsExtendingContent(false);
+                                  console.log('🤖 [EXTEND DEBUG] Estado hasUnsavedChanges definido como true e proteção desativada após extensão');
+                                  
+                                  // Salvar automaticamente após extensão do conteúdo (sem aguardar selectedModuleId)
+                                  const moduleIdToSave = selectedModuleId || currentModule?.id || undefined;
+                                  if (!moduleIdToSave) {
+                                    console.warn('⚠️ [AUTO-SAVE] Não foi possível determinar o módulo para salvar automaticamente.');
+                                    toast({ title: "Aviso", description: "Conteúdo estendido mas não foi salvo automaticamente. Clique em Salvar.", variant: "destructive" });
+                                    return;
+                                  }
+                                  
+                                  // Cancelar novamente qualquer debounce que tenha sido agendado no intervalo
+                                  if (isPending && isPending()) {
+                                    console.log('🚫 [AUTO-SAVE] Cancelando debouncedSave pendente antes do salvamento forçado');
+                                  }
+                                  cancelSave?.();
+                                  
+                                  (async () => {
+                                    try {
+                                      console.log('💾 [AUTO-SAVE] Salvando automaticamente após extensão com IA (sem espera de selectedModuleId)');
+                                      await handleSaveModule(true, { content: newContent, moduleId: moduleIdToSave });
+                                      console.log('✅ [AUTO-SAVE] Conteúdo estendido salvo automaticamente');
+                                      toast({ title: "Sucesso", description: "Conteúdo estendido e salvo automaticamente!" });
+                                    } catch (error) {
+                                      console.error('❌ [AUTO-SAVE] Erro ao salvar conteúdo estendido:', error);
+                                      toast({ title: "Aviso", description: "Conteúdo estendido mas não foi salvo automaticamente. Clique em Salvar.", variant: "destructive" });
+                                    }
+                                  })();
+                                }, 300); // Aumentar o tempo para garantir que o estado foi atualizado
                                 
-                                toast({ title: "Sucesso", description: "Conteúdo do módulo estendido com IA" });
+                                // Remover o toast de sucesso inicial, pois será mostrado após o salvamento
+                                // toast({ title: "Sucesso", description: "Conteúdo do módulo estendido com IA" });
                                 
                               } catch (error) {
-                                console.error('❌ Erro ao estender módulo:', error);
+                                console.error('❌ [EXTEND DEBUG] Erro ao estender módulo:', error);
+                                setIsExtendingContent(false);
                                 toast({ title: "Erro", description: "Erro ao estender módulo com IA", variant: "destructive" });
                               }
                             }}
@@ -779,16 +1074,18 @@ export default function AdminCourseEditor() {
                                           setModuleHtml(nextContent);
                                           
                                           // Atualizar editor
-                                          if (tiptapRef.current && tiptapRef.current.setContent) {
-                                            setTimeout(() => {
-                                              try {
-                                                tiptapRef.current?.setContent(nextContent);
-                                                console.log('✅ Editor atualizado após exclusão');
-                                              } catch (error) {
-                                                console.warn('⚠️ Erro ao atualizar editor:', error);
-                                              }
-                                            }, 100);
-                                          }
+                          if (tiptapRef.current && tiptapRef.current.setContent) {
+                            setTimeout(() => {
+                              try {
+                                tiptapRef.current?.setContent(nextContent);
+                                console.log('✅ Editor atualizado após exclusão');
+                              } catch (error) {
+                                console.warn('⚠️ Erro ao atualizar editor:', error);
+                              }
+                            }, 100);
+                          } else {
+                            console.warn('⚠️ Editor TipTap não disponível para atualização após exclusão');
+                          }
                                         } else {
                                           // Nenhum módulo restante
                                           console.log('📭 Nenhum módulo restante');
@@ -797,14 +1094,16 @@ export default function AdminCourseEditor() {
                                           setModuleHtml("");
                                           
                                           if (tiptapRef.current && tiptapRef.current.setContent) {
-                                            setTimeout(() => {
-                                              try {
-                                                tiptapRef.current?.setContent("");
-                                              } catch (error) {
-                                                console.warn('⚠️ Erro ao limpar editor:', error);
-                                              }
-                                            }, 100);
-                                          }
+                            setTimeout(() => {
+                              try {
+                                tiptapRef.current?.setContent("");
+                              } catch (error) {
+                                console.warn('⚠️ Erro ao limpar editor:', error);
+                              }
+                            }, 100);
+                          } else {
+                            console.warn('⚠️ Editor TipTap não disponível para limpeza');
+                          }
                                         }
                                         
                                         setHasUnsavedChanges(false);
@@ -828,7 +1127,7 @@ export default function AdminCourseEditor() {
                             }}>Reverter</Button>
                             <Button 
                               variant="hero" 
-                              onClick={handleSaveModule}
+                              onClick={() => handleSaveModule()}
                               className={hasUnsavedChanges ? "bg-orange-600 hover:bg-orange-700" : ""}
                             >
                               {hasUnsavedChanges ? "Salvar mudanças" : "Salvar módulo"}

@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { toast } from 'sonner';
+import { 
+  handleSupabaseError, 
+  executeWithRetry, 
+  safeSupabaseOperation,
+  SupabaseErrorType 
+} from '@/utils/supabaseErrorHandler';
 
 interface User {
   id: string;
@@ -33,45 +40,79 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
-      // Limpar estado local primeiro
+      // Limpar estado local primeiro para UX mais rápida
       setUser(null);
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
       
-      // Tentar logout no Supabase com timeout
+      // Tentar logout no Supabase com timeout reduzido
       const logoutPromise = supabase.auth.signOut({ scope: 'local' });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
+        setTimeout(() => reject(new Error('Timeout')), 2000) // Reduzido para 2s
       );
       
       try {
         await Promise.race([logoutPromise, timeoutPromise]);
+        console.log('✅ Logout do Supabase realizado com sucesso');
       } catch (logoutError) {
-        console.warn('Erro no logout do Supabase (continuando com logout local):', logoutError);
-        // Limpar storage local manualmente se o logout falhar
-        localStorage.removeItem('supabase.auth.token');
-        localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
+        console.warn('⚠️ Timeout no logout do Supabase (continuando com logout local):', logoutError);
+        // Storage já foi limpo acima, então apenas continuar
       }
       
       // Navegar para página de auth
       navigate('/auth', { replace: true });
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      // Mesmo com erro, limpar estado e redirecionar
+      console.error('❌ Erro crítico no logout:', error);
+      handleSupabaseError(error, false); // Log error but don't show toast
+      // Garantir limpeza mesmo com erro crítico
       setUser(null);
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
       navigate('/auth', { replace: true });
     }
-  };
+  }, [navigate]);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ 
-      email: email.trim().toLowerCase(), 
-      password 
+  const signIn = useCallback(async (email: string, password: string) => {
+    const result = await executeWithRetry(async () => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (error) throw error;
+      return data;
     });
-    if (error) throw error;
-  };
+
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    const data = result.data;
+    if (data?.user) {
+      // Buscar dados adicionais do perfil com retry
+      const profileResult = await safeSupabaseOperation(() => 
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .maybeSingle(),
+        false // Don't show toast for profile fetch errors
+      );
+
+      const userData = {
+        ...data.user,
+        profile: profileResult.success ? profileResult.data : null
+      };
+
+      setUser(userData as any);
+      toast.success('Login realizado com sucesso!');
+      return { success: true };
+    }
+
+    return { success: false, error: 'Dados de usuário inválidos' };
+  }, []);
 
   const signUp = async (email: string, password: string, metadata?: UserMetadata) => {
     const redirectUrl = `${window.location.origin}/`;

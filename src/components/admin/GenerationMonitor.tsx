@@ -148,14 +148,28 @@ export default function GenerationMonitor() {
           table: 'generation_events'
         },
         (payload) => {
-          const newEvent = payload.new as GenerationEvent;
-          setEvents(prev => [newEvent, ...prev.slice(0, 49)]); // Manter apenas 50 eventos
+          try {
+            const newEvent = payload.new as GenerationEvent;
+            setEvents(prev => [newEvent, ...prev.slice(0, 49)]); // Manter apenas 50 eventos
+          } catch (error) {
+            console.warn('[GENERATION_MONITOR] Erro ao processar evento:', error);
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[GENERATION_MONITOR] Canal subscrito com sucesso');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.warn('[GENERATION_MONITOR] Erro no canal, funcionando sem tempo real');
+        }
+      });
 
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        supabase.removeChannel(channel);
+      } catch (error) {
+        console.warn('[GENERATION_MONITOR] Erro ao limpar canal:', error);
+      }
     };
   }, []);
 

@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
+import { 
+  handleSupabaseError, 
+  executeWithRetry, 
+  safeSupabaseOperation,
+  checkUserPermissions,
+  SupabaseErrorType 
+} from '@/utils/supabaseErrorHandler';
 import type {
   Course,
   GenerationJob,
@@ -20,79 +27,94 @@ export function useCourses(): UseCoursesReturn {
 
   // Fetch all courses
   const fetchCourses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      // Verificar se há uma sessão ativa
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Sessão expirada. Por favor, faça login novamente.');
-      }
+    // Verificar permissões antes de buscar cursos
+    const permissionCheck = await checkUserPermissions(supabase);
+    if (!permissionCheck.success) {
+      setError(permissionCheck.error);
+      toast({
+        title: "Erro",
+        description: permissionCheck.error,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
 
-      const { data, error } = await supabase
+    // Buscar cursos com retry automático
+    const result = await executeWithRetry(async () => {
+      return await supabase
         .from('courses')
         .select(`
           *,
-          modules:course_modules(
+          modules(
             *,
             quizzes:module_quizzes(*)
           )
         `)
         .order('created_at', { ascending: false });
+    }, 3);
 
-      if (error) {
-        if (error.code === 'PGRST301' || error.message.includes('JWT')) {
-          throw new Error('Erro de autenticação. Por favor, faça login novamente.');
-        }
-        throw error;
-      }
-
-      setCourses(data || []);
+    if (result.success) {
+      setCourses(result.data || []);
       toast({
         title: "Sucesso",
         description: "Cursos carregados com sucesso!",
       });
-    } catch (err: any) {
-      console.error('Erro ao buscar cursos:', err);
-      setError(err.message || 'Erro ao carregar cursos');
+    } else {
+      console.error('Erro ao buscar cursos:', result.error);
+      setError(result.error);
       toast({
         title: "Erro",
-        description: err.message || "Erro ao carregar cursos",
+        description: result.error,
         variant: "destructive",
       });
-      
-      // Se for erro de autenticação, limpar o estado
-      if (err.message.includes('autenticação') || err.message.includes('sessão')) {
-        setCourses([]);
-        // Forçar recarregamento da página para atualizar o estado de autenticação
-        window.location.reload();
-      }
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   // Generate course using AI
   const generateCourse = async (request: GenerateCourseRequest) => {
-    try {
-      setLoading(true);
-      setError(null);
-      setGenerationJob(null);
-      setGeneratedCourse(null);
-      setJobProgress(null);
-
-      // Call Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('ai-generate-course', {
-        body: request
+    // Verificar permissões antes de gerar curso
+    const permissionCheck = await checkUserPermissions(supabase);
+    if (!permissionCheck.success) {
+      setError(permissionCheck.error);
+      toast({
+        title: "Erro",
+        description: permissionCheck.error,
+        variant: "destructive",
       });
+      return;
+    }
 
-      if (error) throw error;
+    setLoading(true);
+    setError(null);
+    setGenerationJob(null);
+    setGeneratedCourse(null);
+    setJobProgress(null);
 
-      if (data?.job_id) {
+    try {
+      // Chamar Edge Function com retry automático
+      const result = await executeWithRetry(async () => {
+        const { data, error } = await supabase.functions.invoke('ai-generate-course', {
+          body: request
+        });
+        
+        if (error) throw error;
+        return data;
+      }, 2);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      if (result.data?.job_id) {
         // Set initial job status
         setGenerationJob({
-          id: data.job_id,
+          id: result.data.job_id,
           type: 'ai_generate_course',
           status: 'processing',
           input: request,
@@ -104,16 +126,17 @@ export function useCourses(): UseCoursesReturn {
         });
 
         // Start polling for job status
-        await pollJobStatus(data.job_id);
+        await pollJobStatus(result.data.job_id);
       } else {
         throw new Error('Job ID não retornado pela função');
       }
     } catch (err: any) {
       console.error('Erro ao gerar curso:', err);
-      setError(err.message || 'Erro ao gerar curso');
+      const errorMessage = handleSupabaseError(err);
+      setError(errorMessage);
       toast({
         title: "Erro",
-        description: "Erro ao gerar curso: " + (err.message || "Erro desconhecido"),
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -124,58 +147,59 @@ export function useCourses(): UseCoursesReturn {
   // Poll job status
   const pollJobStatus = async (jobId: string) => {
     const pollInterval = setInterval(async () => {
-      try {
-        // Check job status in generation_jobs table
-        const { data: jobData, error: jobError } = await supabase
+      // Verificar status do job com operação segura
+      const jobResult = await safeSupabaseOperation(async () => {
+        return await supabase
           .from('generation_jobs')
           .select('*')
           .eq('id', jobId)
           .single();
+      });
 
-        if (jobError) {
-          console.error('Erro ao verificar status do job:', jobError);
-          return;
-        }
+      if (!jobResult.success) {
+        console.error('Erro ao verificar status do job:', jobResult.error);
+        return;
+      }
 
-        if (jobData) {
-          setGenerationJob(jobData);
-          setJobProgress(jobData.output);
+      const jobData = jobResult.data;
+      if (jobData) {
+        setGenerationJob(jobData);
+        setJobProgress(jobData.output);
 
-          // If job is completed, fetch the generated course
-          if (jobData.status === 'completed' && jobData.output?.course_id) {
-            const { data: courseData, error: courseError } = await supabase
+        // If job is completed, fetch the generated course
+        if (jobData.status === 'completed' && jobData.output?.course_id) {
+          const courseResult = await safeSupabaseOperation(async () => {
+            return await supabase
               .from('courses')
               .select(`
                 *,
-                modules:course_modules(
+                modules(
                   *,
                   quizzes:module_quizzes(*)
                 )
               `)
               .eq('id', jobData.output.course_id)
               .single();
+          });
 
-            if (!courseError && courseData) {
-              setGeneratedCourse(courseData);
-            }
-
-            clearInterval(pollInterval);
-            toast({
-              title: "Sucesso",
-              description: "Curso gerado com sucesso!",
-            });
-          } else if (jobData.status === 'failed') {
-            clearInterval(pollInterval);
-            setError(jobData.error || 'Erro na geração do curso');
-            toast({
-              title: "Erro",
-              description: "Falha na geração do curso",
-              variant: "destructive",
-            });
+          if (courseResult.success && courseResult.data) {
+            setGeneratedCourse(courseResult.data);
           }
+
+          clearInterval(pollInterval);
+          toast({
+            title: "Sucesso",
+            description: "Curso gerado com sucesso!",
+          });
+        } else if (jobData.status === 'failed') {
+          clearInterval(pollInterval);
+          setError(jobData.error || 'Erro na geração do curso');
+          toast({
+            title: "Erro",
+            description: "Falha na geração do curso",
+            variant: "destructive",
+          });
         }
-      } catch (err: any) {
-        console.error('Erro no polling:', err);
       }
     }, 2000); // Poll every 2 seconds
 
@@ -187,17 +211,17 @@ export function useCourses(): UseCoursesReturn {
 
   // Publish course
   const publishCourse = async (courseId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      const { error } = await supabase
+    const result = await safeSupabaseOperation(async () => {
+      return await supabase
         .from('courses')
         .update({ status: 'published' as CourseStatus })
         .eq('id', courseId);
+    });
 
-      if (error) throw error;
-
+    if (result.success) {
       // Update local state
       setCourses(prev => prev.map(course => 
         course.id === courseId 
@@ -213,32 +237,32 @@ export function useCourses(): UseCoursesReturn {
         title: "Sucesso",
         description: "Curso publicado com sucesso!",
       });
-    } catch (err: any) {
-      console.error('Erro ao publicar curso:', err);
-      setError(err.message || 'Erro ao publicar curso');
+    } else {
+      console.error('Erro ao publicar curso:', result.error);
+      setError(result.error);
       toast({
         title: "Erro",
-        description: "Erro ao publicar curso",
+        description: result.error,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   // Delete course
   const deleteCourse = async (courseId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      const { error } = await supabase
+    const result = await safeSupabaseOperation(async () => {
+      return await supabase
         .from('courses')
         .delete()
         .eq('id', courseId);
+    });
 
-      if (error) throw error;
-
+    if (result.success) {
       // Update local state
       setCourses(prev => prev.filter(course => course.id !== courseId));
 
@@ -250,17 +274,17 @@ export function useCourses(): UseCoursesReturn {
         title: "Sucesso",
         description: "Curso excluído com sucesso!",
       });
-    } catch (err: any) {
-      console.error('Erro ao excluir curso:', err);
-      setError(err.message || 'Erro ao excluir curso');
+    } else {
+      console.error('Erro ao excluir curso:', result.error);
+      setError(result.error);
       toast({
         title: "Erro",
-        description: "Erro ao excluir curso",
+        description: result.error,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   // Reset generation state

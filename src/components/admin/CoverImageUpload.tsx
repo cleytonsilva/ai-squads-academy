@@ -7,6 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/hooks/use-toast';
 import { Upload, Image as ImageIcon, Link, Palette } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  handleSupabaseError, 
+  executeWithRetry, 
+  safeSupabaseOperation,
+  checkUserPermissions 
+} from '@/utils/supabaseErrorHandler';
 
 interface CoverImageUploadProps {
   courseId: string;
@@ -46,57 +52,59 @@ export default function CoverImageUpload({
    * @returns URL da imagem ou null em caso de erro
    */
   const deleteFromStorage = async (filePath: string) => {
-    try {
-      const { error } = await supabase.storage.from('course-images').remove([filePath]);
-      if (error) {
-        console.error('[CLEANUP] Falha ao remover arquivo órfão:', error);
-        toast({ title: "Erro", description: "Falha ao limpar arquivo antigo após erro. Contate o suporte.", variant: "destructive" });
-      } else {
-        console.log('[CLEANUP] Arquivo órfão removido com sucesso:', filePath);
-      }
-    } catch (error: any) {
-      console.error('[CLEANUP] Erro inesperado ao remover arquivo órfão:', error);
+    const result = await safeSupabaseOperation(async () => {
+      return await supabase.storage.from('course-images').remove([filePath]);
+    });
+    
+    if (result.success) {
+      console.log('[CLEANUP] Arquivo órfão removido com sucesso:', filePath);
+    } else {
+      console.error('[CLEANUP] Falha ao remover arquivo órfão:', result.error);
+      toast({ title: "Erro", description: "Falha ao limpar arquivo antigo após erro. Contate o suporte.", variant: "destructive" });
     }
   };
 
   const uploadFileToStorage = async (file: File): Promise<{ publicUrl: string; path: string } | null> => {
-    try {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      if (!allowedTypes.includes(file.type)) {
-        toast({ title: "Erro", description: "Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou GIF.", variant: "destructive" });
-        return null;
-      }
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        toast({ title: "Erro", description: "Arquivo muito grande. Máximo 10MB.", variant: "destructive" });
-        return null;
-      }
-      const fileExt = file.name.split('.').pop() || 'png';
-      const filePath = `public/${courseId}-${Date.now()}.${fileExt}`;
-      console.log('[UPLOAD] Enviando arquivo para:', filePath);
-      const { data, error } = await supabase.storage
-        .from('course-images')
-        .upload(filePath, file, { cacheControl: '3600', upsert: false });
-      if (error) {
-        console.error('[UPLOAD] Erro no upload:', error);
-        toast({ title: "Erro", description: `Falha no upload da capa: ${error.message}`, variant: "destructive" });
-        return null;
-      }
-      const { data: { publicUrl } } = supabase.storage
-        .from('course-images')
-        .getPublicUrl(data.path);
-      console.log('[UPLOAD] Upload concluído:', publicUrl);
-      return { publicUrl, path: data.path };
-    } catch (error: any) {
-      console.error('[UPLOAD] Erro inesperado:', error);
-      toast({ title: "Erro", description: `Falha no upload da capa: ${error.message}`, variant: "destructive" });
+    // Validações de arquivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Erro", description: "Tipo de arquivo não suportado. Use JPEG, PNG, WebP ou GIF.", variant: "destructive" });
       return null;
     }
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast({ title: "Erro", description: "Arquivo muito grande. Máximo 10MB.", variant: "destructive" });
+      return null;
+    }
+
+    const fileExt = file.name.split('.').pop() || 'png';
+    const filePath = `public/${courseId}-${Date.now()}.${fileExt}`;
+    console.log('[UPLOAD] Enviando arquivo para:', filePath);
+
+    // Upload com retry automático
+    const uploadResult = await executeWithRetry(async () => {
+      return await supabase.storage
+        .from('course-images')
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+    }, 2);
+
+    if (!uploadResult.success) {
+      console.error('[UPLOAD] Erro no upload:', uploadResult.error);
+      toast({ title: "Erro", description: uploadResult.error, variant: "destructive" });
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('course-images')
+      .getPublicUrl(uploadResult.data.path);
+    
+    console.log('[UPLOAD] Upload concluído:', publicUrl);
+    return { publicUrl, path: uploadResult.data.path };
   };
 
   const updateCourseImage = async (newImageUrl: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase
+    const result = await safeSupabaseOperation(async () => {
+      return await supabase
         .from('courses')
         .update({
           cover_image_url: newImageUrl,
@@ -104,20 +112,18 @@ export default function CoverImageUpload({
           updated_at: new Date().toISOString()
         })
         .eq('id', courseId);
-      if (error) {
-        console.error('[UPDATE] Erro ao atualizar curso:', error);
-        toast({ title: "Erro", description: `Falha ao atualizar a capa no banco de dados: ${error.message}`, variant: "destructive" });
-        return false;
-      }
+    });
+
+    if (result.success) {
       console.log('[UPDATE] Capa do curso atualizada com sucesso');
       onImageUpdated(newImageUrl);
       toast({ title: "Sucesso", description: "Capa do curso atualizada com sucesso!" });
       setIsOpen(false);
       setImageUrl('');
       return true;
-    } catch (error: any) {
-      console.error('[UPDATE] Erro inesperado:', error);
-      toast({ title: "Erro", description: `Falha inesperada ao atualizar a capa: ${error.message}`, variant: "destructive" });
+    } else {
+      console.error('[UPDATE] Erro ao atualizar curso:', result.error);
+      toast({ title: "Erro", description: result.error, variant: "destructive" });
       return false;
     }
   };
@@ -125,6 +131,13 @@ export default function CoverImageUpload({
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Verificar permissões antes de prosseguir
+    const permissionCheck = await checkUserPermissions(supabase);
+    if (!permissionCheck.success) {
+      toast({ title: "Erro", description: permissionCheck.error, variant: "destructive" });
+      return;
+    }
 
     // O estado de 'isUploading' desabilita os botões na UI para prevenir cliques duplos.
     setIsUploading(true);
@@ -144,7 +157,7 @@ export default function CoverImageUpload({
       }
     } catch (error: any) {
       console.error('[UPLOAD_PROCESS] Erro geral no processo de upload:', error);
-      toast({ title: "Erro", description: `Ocorreu um erro inesperado: ${error.message}`, variant: "destructive" });
+      handleSupabaseError(error);
       // Tenta limpar o arquivo se um erro inesperado ocorrer após o upload.
       if (uploadResult) {
           await deleteFromStorage(uploadResult.path);
@@ -183,30 +196,43 @@ export default function CoverImageUpload({
    * Gera capa automaticamente com IA
    */
   const handleGenerateWithAI = async () => {
+    // Verificar permissões antes de prosseguir
+    const permissionCheck = await checkUserPermissions(supabase);
+    if (!permissionCheck.success) {
+      toast({ title: "Erro", description: permissionCheck.error, variant: "destructive" });
+      return;
+    }
+
     setIsGenerating(true);
     try {
       console.log('[AI_GENERATION] Iniciando geração de capa para curso:', courseId);
 
-      const { data, error } = await supabase.functions.invoke('generate-course-cover', {
-        body: {
-          courseId,
-          engine: 'flux', // Usar Flux por padrão
-          regenerate: true
-        }
-      });
+      // Executar geração com retry automático
+      const result = await executeWithRetry(async () => {
+        const { data, error } = await supabase.functions.invoke('generate-course-cover', {
+          body: {
+            courseId,
+            engine: 'flux', // Usar Flux por padrão
+            regenerate: true
+          }
+        });
+        
+        if (error) throw error;
+        return data;
+      }, 2);
 
-      if (error) {
-        console.error('[AI_GENERATION] Erro na geração:', error);
-        toast({ title: "Erro", description: `Erro ao gerar capa com IA: ${error.message}`, variant: "destructive" });
+      if (!result.success) {
+        console.error('[AI_GENERATION] Erro na geração:', result.error);
+        toast({ title: "Erro", description: result.error, variant: "destructive" });
         return;
       }
 
-      console.log('[AI_GENERATION] Geração iniciada:', data);
+      console.log('[AI_GENERATION] Geração iniciada:', result.data);
       toast({ title: "Sucesso", description: "Geração de capa iniciada! A imagem será atualizada em breve." });
       setIsOpen(false);
     } catch (error: any) {
       console.error('[AI_GENERATION] Erro inesperado:', error);
-      toast({ title: "Erro", description: "Erro inesperado ao gerar capa", variant: "destructive" });
+      handleSupabaseError(error);
     } finally {
       setIsGenerating(false);
     }

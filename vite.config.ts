@@ -107,7 +107,7 @@ export default defineConfig(({ mode }) => {
               'react-hook-form'
             ],
             'vendor-supabase': ['@supabase/supabase-js'],
-            'vendor-editor': ['react-quill'],
+
             'vendor-charts': ['recharts'],
             'vendor-motion': ['framer-motion'],
             'vendor-date': ['date-fns'],

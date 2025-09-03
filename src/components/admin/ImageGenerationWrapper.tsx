@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import ImageGenerationDialog from './ImageGenerationDialog';
 import { useRealtimeCourseUpdates } from '@/hooks/useRealtimeCourseUpdates';
+import { 
+  handleSupabaseError, 
+  executeWithRetry, 
+  checkUserPermissions,
+  SupabaseErrorType 
+} from '@/utils/supabaseErrorHandler';
 
 interface ImageGenerationWrapperProps {
   isOpen: boolean;
@@ -47,44 +53,28 @@ export default function ImageGenerationWrapper({
 
   async function checkAuthentication() {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const permissionCheck = await checkUserPermissions(supabase);
       
-      if (error || !user) {
-        console.log('[AUTH] Usuário não autenticado:', error?.message);
+      if (permissionCheck.success) {
+        setIsAuthenticated(true);
+        setUserRole(permissionCheck.data?.role || null);
+        console.log('[AUTH] Usuário autenticado:', {
+          userId: permissionCheck.data?.userId,
+          role: permissionCheck.data?.role,
+          isAuthorized: true
+        });
+      } else {
+        console.log('[AUTH] Usuário não autorizado:', permissionCheck.error);
         setIsAuthenticated(false);
-        setAuthChecked(true);
-        return;
+        setUserRole(null);
       }
-
-      // Verificar role do usuário
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('[AUTH] Erro ao buscar perfil:', profileError);
-        setIsAuthenticated(false);
-        setAuthChecked(true);
-        return;
-      }
-
-      const role = profile?.role;
-      setUserRole(role);
-      setIsAuthenticated(!!user && ['admin', 'instructor'].includes(role));
+      
       setAuthChecked(true);
-      
-      console.log('[AUTH] Usuário autenticado:', {
-        userId: user.id,
-        email: user.email,
-        role: role,
-        isAuthorized: ['admin', 'instructor'].includes(role)
-      });
-      
     } catch (error) {
       console.error('[AUTH] Erro ao verificar autenticação:', error);
+      handleSupabaseError(error, false);
       setIsAuthenticated(false);
+      setUserRole(null);
       setAuthChecked(true);
     }
   }
@@ -113,72 +103,37 @@ export default function ImageGenerationWrapper({
     try {
       console.log('[GENERATION] Iniciando geração de capa:', { courseId, engine });
       
-      // Usar apenas a função generate-course-cover que está deployada
-      const { data, error } = await supabase.functions.invoke('generate-course-cover', {
-        body: {
-          courseId,
-          engine: engine || 'flux',
-          regenerate: true
-        }
-      });
-      
-      if (error) {
-        console.error('[GENERATION] Erro na função generate-course-cover:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
+      // Executar geração com retry automático
+      const result = await executeWithRetry(async () => {
+        const { data, error } = await supabase.functions.invoke('generate-course-cover', {
+          body: {
+            courseId,
+            engine: engine || 'flux',
+            regenerate: true
+          }
         });
         
-        // Mensagem de erro mais específica baseada no tipo de erro
-        if (error.message?.includes('401') || error.message?.includes('Not authenticated') || error.message?.includes('Token inválido')) {
-          toast({
-            title: "Erro",
-            description: "Erro de autenticação. Faça login novamente como admin ou instrutor.",
-            variant: "destructive",
-          });
-          // Tentar reautenticar
-          await checkAuthentication();
-        } else if (error.message?.includes('403') || error.message?.includes('Not authorized') || error.message?.includes('Acesso negado')) {
-          toast({
-            title: "Erro",
-            description: "Você não tem permissão para gerar imagens. Role necessário: admin ou instructor.",
-            variant: "destructive",
-          });
-        } else if (error.message?.includes('500') || error.message?.includes('Internal Server Error')) {
-          toast({
-            title: "Erro",
-            description: "Erro interno do servidor. Verifique as configurações da Edge Function.",
-            variant: "destructive",
-          });
-        } else if (error.message?.includes('REPLICATE_API_TOKEN')) {
-          toast({
-            title: "Erro",
-            description: "Token da API Replicate não configurado. Contate o administrador.",
-            variant: "destructive",
-          });
-        } else if (error.message?.includes('Bucket not found')) {
-          toast({
-            title: "Erro",
-            description: "Bucket de imagens não configurado. Contate o administrador.",
-            variant: "destructive",
-          });
-        } else if (error.message?.includes('Edge Function returned a non-2xx status code')) {
-          toast({
-            title: "Erro",
-            description: "Erro de autenticação ou permissão. Verifique se você está logado como admin/instrutor.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Erro",
-            description: `Erro na geração de capa: ${error.message || 'Erro desconhecido'}`,
-            variant: "destructive",
-          });
+        if (error) throw error;
+        return data;
+      }, 2); // Máximo 2 tentativas para Edge Functions
+      
+      if (!result.success) {
+        console.error('[GENERATION] Erro na função generate-course-cover:', result.error);
+        
+        // Tratar erro de autenticação especificamente
+        if (result.errorType === SupabaseErrorType.AUTHENTICATION) {
+          await checkAuthentication(); // Tentar reautenticar
         }
+        
+        toast({
+          title: "Erro",
+          description: result.error,
+          variant: "destructive",
+        });
         return;
       }
       
+      const data = result.data;
       console.log('[GENERATION] Resposta da função generate-course-cover:', data);
       
       // Verificar se a resposta indica sucesso
@@ -196,18 +151,14 @@ export default function ImageGenerationWrapper({
         console.warn('[GENERATION] Resposta inesperada:', data);
         toast({
           title: "Erro",
-          description: "Resposta inesperada do serviço de geração. Tente novamente.",
+          description: data?.error || "Resposta inesperada do serviço de geração. Tente novamente.",
           variant: "destructive",
         });
       }
       
     } catch (error: unknown) {
       console.error('[GENERATION] Erro inesperado na geração de capa:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado. Verifique sua conexão e tente novamente.",
-        variant: "destructive",
-      });
+      handleSupabaseError(error);
     } finally {
       // Só parar o loading se não iniciou a geração
       if (!generationStarted) {

@@ -32,6 +32,7 @@ interface CourseCover {
 interface CourseCoverManagerProps {
   courseId: string;
   courseTitle?: string;
+  currentImageUrl?: string;
   onCoverUpdated?: (imageUrl: string) => void;
 }
 

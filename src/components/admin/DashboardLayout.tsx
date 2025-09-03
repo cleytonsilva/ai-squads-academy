@@ -61,28 +61,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      // Tentar logout no Supabase com timeout
+      // Limpar estado local primeiro para UX mais rápida
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
+      
+      // Tentar logout no Supabase com timeout reduzido
       const logoutPromise = supabase.auth.signOut({ scope: 'local' });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
+        setTimeout(() => reject(new Error('Timeout')), 2000) // Reduzido para 2s
       );
       
       try {
         await Promise.race([logoutPromise, timeoutPromise]);
+        console.log('✅ Logout do Supabase realizado com sucesso');
       } catch (logoutError) {
-        console.warn('Erro no logout do Supabase (continuando com logout local):', logoutError);
-        // Limpar storage local manualmente se o logout falhar
-        localStorage.removeItem('supabase.auth.token');
-        localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
+        console.warn('⚠️ Timeout no logout do Supabase (continuando com logout local):', logoutError);
+        // Storage já foi limpo acima, então apenas continuar
       }
       
-      navigate('/');
+      // Navegar para página inicial
+      navigate('/', { replace: true });
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      // Mesmo com erro, limpar storage e redirecionar
+      console.error('❌ Erro crítico no logout:', error);
+      // Garantir limpeza mesmo com erro crítico
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
-      navigate('/');
+      navigate('/', { replace: true });
     }
   };
 

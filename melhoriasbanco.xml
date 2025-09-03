@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SchemaImprovements>
+  <Improvement type="Integrity">
+    <Title>Unificar Rastreamento de Progresso do Usuário</Title>
+    <Problem>
+      Existe uma redundância de dados crítica entre as tabelas `enrollments`, `course_completions` e `user_progress`. Elas rastreiam informações sobrepostas sobre o progresso de um usuário em um curso, o que pode levar a inconsistências de dados.
+    </Problem>
+    <AffectedTables>
+      <Table>enrollments</Table>
+      <Table>course_completions</Table>
+      <Table>user_progress</Table>
+    </AffectedTables>
+    <Recommendation>
+      Unificar as três tabelas em uma única tabela `enrollments`, que servirá como a fonte central da verdade para a relação entre um usuário e um curso. As tabelas `course_completions` e `user_progress` devem ser removidas.
+    </Recommendation>
+    <SqlExample>
+      <![CDATA[
+      -- Remover as tabelas antigas
+      -- DROP TABLE public.course_completions;
+      -- DROP TABLE public.user_progress;
+
+      -- Criar a tabela unificada
+      CREATE TABLE public.enrollments (
+        id uuid NOT NULL DEFAULT gen_random_uuid(),
+        user_id uuid NOT NULL,
+        course_id uuid NOT NULL,
+        enrolled_at timestamp with time zone DEFAULT now(),
+        progress numeric DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+        last_accessed_at timestamp with time zone,
+        status character varying NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
+        completed_at timestamp with time zone,
+        final_score numeric,
+        created_at timestamp with time zone DEFAULT now(),
+        updated_at timestamp with time zone DEFAULT now(),
+        CONSTRAINT enrollments_pkey PRIMARY KEY (id),
+        CONSTRAINT enrollments_user_id_course_id_key UNIQUE (user_id, course_id),
+        CONSTRAINT enrollments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id), -- Padronizado para profiles.id
+        CONSTRAINT enrollments_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.courses(id)
+      );
+      ]]>
+    </SqlExample>
+  </Improvement>
+
+  <Improvement type="Integrity">
+    <Title>Remover Colunas Redundantes na Tabela `courses`</Title>
+    <Problem>
+      A tabela `courses` contém colunas duplicadas com propósitos idênticos: `level` e `difficulty_level`; e `duration_hours` e `estimated_duration`. Isso polui o schema e pode causar confusão.
+    </Problem>
+    <AffectedTables>
+      <Table>courses</Table>
+    </AffectedTables>
+    <Recommendation>
+      Manter apenas uma coluna para cada finalidade (`difficulty` e `duration_minutes`), removendo as duplicatas e usando um nome e unidade de medida claros.
+    </Recommendation>
+    <SqlExample>
+      <![CDATA[
+      -- Exemplo de colunas corrigidas na tabela 'courses'
+      ALTER TABLE public.courses DROP COLUMN level;
+      ALTER TABLE public.courses DROP COLUMN duration_hours;
+      ALTER TABLE public.courses RENAME COLUMN difficulty_level TO difficulty;
+      ALTER TABLE public.courses RENAME COLUMN estimated_duration TO duration_minutes;
+      ALTER TABLE public.courses ALTER COLUMN duration_minutes TYPE integer;
+      ]]>
+    </SqlExample>
+  </Improvement>
+
+  <Improvement type="Consistency">
+    <Title>Padronizar Referências de Chave Estrangeira para Usuários</Title>
+    <Problem>
+      O schema é inconsistente ao referenciar usuários. Algumas chaves estrangeiras apontam para `auth.users(id)` enquanto outras apontam para `public.profiles(id)`. A tabela `profiles` já está ligada a `auth.users`.
+    </Problem>
+    <AffectedTables>
+      <Table>certificates</Table>
+      <Table>challenge_participations</Table>
+      <Table>enrollments</Table>
+      <Table>lesson_progress</Table>
+      <Table>replicate_predictions</Table>
+      <Table>user_achievements</Table>
+      <Table>user_activities</Table>
+      <Table>user_assessment_attempts</Table>
+      <Table>user_badges</Table>
+      <Table>user_missions</Table>
+    </AffectedTables>
+    <Recommendation>
+      Padronizar todas as chaves estrangeiras relacionadas a usuários para que apontem para `public.profiles(id)`. Isso centraliza a lógica da aplicação na tabela de perfis.
+    </Recommendation>
+    <SqlExample>
+      <![CDATA[
+      -- Exemplo para a tabela 'certificates'
+      ALTER TABLE public.certificates DROP CONSTRAINT certificates_user_id_fkey;
+      ALTER TABLE public.certificates ADD CONSTRAINT certificates_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id);
+      
+      -- NOTA: Este processo deve ser repetido para todas as tabelas afetadas que referenciam auth.users(id) diretamente.
+      ]]>
+    </SqlExample>
+  </Improvement>
+
+  <Improvement type="Performance">
+    <Title>Adicionar Índices em Chaves Estrangeiras</Title>
+    <Problem>
+      Nenhuma chave estrangeira no schema possui um índice explícito. A ausência de índices causa uma degradação severa de performance em operações de JOIN e WHERE, especialmente com o crescimento do volume de dados.
+    </Problem>
+    <AffectedTables>
+      <Table>quase todas as tabelas com chaves estrangeiras.</Table>
+    </AffectedTables>
+    <Recommendation>
+      Criar um índice para cada coluna de chave estrangeira (`user_id`, `course_id`, `module_id`, etc.) para otimizar as consultas.
+    </Recommendation>
+    <SqlExample>
+      <![CDATA[
+      CREATE INDEX idx_modules_course_id ON public.modules(course_id);
+      CREATE INDEX idx_lessons_module_id ON public.lessons(module_id);
+      CREATE INDEX idx_assessments_course_id ON public.assessments(course_id);
+      CREATE INDEX idx_certificates_user_id ON public.certificates(user_id);
+      CREATE INDEX idx_certificates_course_id ON public.certificates(course_id);
+      -- NOTA: Adicionar índices para todas as outras chaves estrangeiras.
+      ]]>
+    </SqlExample>
+  </Improvement>
+
+  <Improvement type="BestPractice">
+    <Title>Normalizar Dados Categóricos (Tags e Categorias)</Title>
+    <Problem>
+      Colunas como `category` e `tags` são armazenadas como texto livre ou arrays. Isso permite erros de digitação, dificulta a manutenção e torna as consultas de agregação ineficientes.
+    </Problem>
+    <AffectedTables>
+      <Table>courses</Table>
+      <Table>achievements</Table>
+      <Table>badges</Table>
+      <Table>badge_challenges</Table>
+    </AffectedTables>
+    <Recommendation>
+      Criar tabelas de lookup (`categories`, `tags`) e uma tabela de junção (`course_tags`) para criar relações many-to-many, garantindo a integridade dos dados.
+    </Recommendation>
+    <SqlExample>
+      <![CDATA[
+      CREATE TABLE public.categories (
+        id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+        name character varying NOT NULL UNIQUE
+      );
+      
+      -- Alterar a tabela 'badges' para usar a nova tabela
+      -- ALTER TABLE public.badges ADD COLUMN category_id uuid REFERENCES public.categories(id);
+      -- ALTER TABLE public.badges DROP COLUMN category;
+      ]]>
+    </SqlExample>
+  </Improvement>
+  
+  <Improvement type="BestPractice">
+    <Title>Utilizar Tipos ENUM para Colunas de Status e Tipo</Title>
+    <Problem>
+      O uso de `CHECK (column::text = ANY (ARRAY[...]::text[]))` para restringir valores é menos performático e seguro do que usar tipos ENUM nativos do PostgreSQL.
+    </Problem>
+    <AffectedTables>
+      <Table>courses</Table>
+      <Table>lessons</Table>
+      <Table>generation_jobs</Table>
+      <Table>modules</Table>
+    </AffectedTables>
+    <Recommendation>
+      Definir tipos ENUM para domínios de valores fixos, como status, tipos de lição e níveis de dificuldade, e alterar as colunas para usar esses tipos.
+    </Recommendation>
+    <SqlExample>
+      <![CDATA[
+      -- 1. Criar o tipo ENUM
+      CREATE TYPE course_status AS ENUM ('draft', 'published', 'archived');
+
+      -- 2. Alterar a coluna na tabela
+      -- Para fazer isso sem perder dados, pode ser necessário um passo intermediário:
+      ALTER TABLE public.courses ALTER COLUMN status TYPE course_status USING status::course_status;
+      ]]>
+    </SqlExample>
+  </Improvement>
+
+  <Improvement type="BestPractice">
+    <Title>Automatizar Atualização do Timestamp `updated_at`</Title>
+    <Problem>
+      As colunas `updated_at` existem, mas sua atualização depende da lógica da aplicação. A melhor prática é garantir que o banco de dados atualize este campo automaticamente em qualquer modificação de linha.
+    </Problem>
+    <AffectedTables>
+      <Table>Todas as tabelas com a coluna `updated_at`.</Table>
+    </AffectedTables>
+    <Recommendation>
+      Criar uma função de trigger no PostgreSQL que define `updated_at` como a hora atual e aplicar este trigger em todas as tabelas relevantes na operação `BEFORE UPDATE`.
+    </Recommendation>
+    <SqlExample>
+      <![CDATA[
+      -- 1. Criar a função de trigger
+      CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      -- 2. Aplicar o trigger em uma tabela (repetir para as outras)
+      CREATE TRIGGER set_timestamp
+      BEFORE UPDATE ON public.courses
+      FOR EACH ROW
+      EXECUTE PROCEDURE trigger_set_timestamp();
+      ]]>
+    </SqlExample>
+  </Improvement>
+</SchemaImprovements>

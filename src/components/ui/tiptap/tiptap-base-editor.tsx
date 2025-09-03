@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, { forwardRef, useImperativeHandle, useCallback, useEffect } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -166,6 +166,21 @@ const TiptapBaseEditor = forwardRef<TiptapBaseEditorRef, TiptapBaseEditorProps>(
       },
     },
   });
+
+  // Sincronizar conteúdo quando o prop content muda
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      // Evitar loops infinitos verificando se o conteúdo realmente mudou
+      const currentEditorContent = editor.getHTML();
+      const normalizedContent = content.trim();
+      const normalizedEditorContent = currentEditorContent.trim();
+      
+      if (normalizedContent !== normalizedEditorContent) {
+        console.log('🔄 [TiptapBaseEditor] Atualizando conteúdo do editor');
+        editor.commands.setContent(content);
+      }
+    }
+  }, [content, editor]);
 
   // Expor métodos através da ref
   useImperativeHandle(ref, () => ({

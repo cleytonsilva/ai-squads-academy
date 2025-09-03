@@ -92,31 +92,37 @@ export default function TacticalSidebar({ className }: TacticalSidebarProps) {
 
   const handleLogout = async () => {
     try {
-      // Tentar logout no Supabase com timeout
+      // Limpar storage local primeiro para UX mais rápida
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
+      
+      // Tentar logout no Supabase com timeout reduzido
       const logoutPromise = supabase.auth.signOut({ scope: 'local' });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
+        setTimeout(() => reject(new Error('Timeout')), 2000) // Reduzido para 2s
       );
       
       try {
         await Promise.race([logoutPromise, timeoutPromise]);
-        toast({
-          title: "Sucesso",
-          description: "Logout realizado com sucesso!"
-        });
+        console.log('✅ Logout do Supabase realizado com sucesso');
       } catch (logoutError) {
-        console.warn('Erro no logout do Supabase (continuando com logout local):', logoutError);
-        // Continuar mesmo com erro - limpar estado local
-        toast({
-          title: "Sucesso",
-          description: "Logout realizado com sucesso!"
-        });
+        console.warn('⚠️ Timeout no logout do Supabase (continuando com logout local):', logoutError);
+        // Storage já foi limpo acima, então apenas continuar
       }
+      
+      toast({
+        title: "Sucesso",
+        description: "Logout realizado com sucesso!"
+      });
       
       // Redirecionar para página inicial
       window.location.href = '/';
     } catch (error) {
-      console.error('Erro no logout:', error);
+      console.error('❌ Erro crítico no logout:', error);
+      // Garantir limpeza mesmo com erro crítico
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-ncrlojjfkhevjotchhxi-auth-token');
+      
       toast({
         title: "Erro",
         description: "Erro ao fazer logout",

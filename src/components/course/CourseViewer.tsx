@@ -89,12 +89,12 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
       let courseData = null;
       let courseError = null;
       
-      // Primeiro, tentar com course_modules
+      // Primeiro, tentar com modules
       const { data: courseData1, error: courseError1 } = await supabase
         .from('courses')
         .select(`
           *,
-          modules:course_modules(
+          modules(
             *,
             quizzes:module_quizzes(*)
           )
@@ -102,27 +102,11 @@ export default function CourseViewer({ courseId, isAdmin = false, userId, mockCo
         .eq('id', courseId)
         .single();
       
+      courseData = courseData1;
+      courseError = courseError1;
+      
       if (courseError1) {
-        console.log('Tentativa 1 falhou, tentando com tabela modules:', courseError1);
-        
-        // Se falhar, tentar com tabela modules
-        const { data: courseData2, error: courseError2 } = await supabase
-          .from('courses')
-          .select(`
-            *,
-            modules(
-              *,
-              quizzes:module_quizzes(*)
-            )
-          `)
-          .eq('id', courseId)
-          .single();
-          
-        courseData = courseData2;
-        courseError = courseError2;
-      } else {
-        courseData = courseData1;
-        courseError = courseError1;
+        console.error('Erro ao carregar curso:', courseError1);
       }
       
       console.log('Dados do curso carregados:', { courseData, courseError });

@@ -7,6 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { 
+  handleSupabaseError, 
+  executeWithRetry, 
+  checkUserPermissions 
+} from "@/utils/supabaseErrorHandler";
 
 interface AIModuleExtendDialogProps {
   moduleTitle: string;
@@ -26,30 +31,54 @@ export default function AIModuleExtendDialog({ moduleTitle, currentHtml, onExten
   const handleExtend = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke("ai-extend-module", {
-        body: {
-          moduleTitle,
-          html: currentHtml,
-          prompt,
-          length,
-          tone,
-          language: "pt-BR",
-        },
-      });
+      
+      // Verificar permissões do usuário
+      const permissionCheck = await checkUserPermissions(supabase);
+      if (!permissionCheck.success) {
+        toast.error('Acesso negado', {
+          description: permissionCheck.error
+        });
+        return;
+      }
 
-      if (error) throw error;
+      // Executar extensão com retry automático
+      const result = await executeWithRetry(async () => {
+        const { data, error } = await supabase.functions.invoke("ai-extend-module", {
+          body: {
+            moduleTitle,
+            html: currentHtml,
+            prompt,
+            length,
+            tone,
+            language: "pt-BR",
+          },
+        });
 
-      const extendedHtml = (data as any)?.extendedHtml as string | undefined;
+        if (error) throw error;
+        return data;
+      }, 2); // Máximo 2 tentativas para Edge Functions
+
+      if (!result.success) {
+        toast.error("Erro ao estender com IA", {
+          description: result.error
+        });
+        return;
+      }
+
+      const extendedHtml = result.data?.extendedHtml as string | undefined;
       if (!extendedHtml) {
-        toast.error("Falha ao gerar extensão com IA");
+        toast.error("Falha ao gerar extensão com IA", {
+          description: "Resposta vazia do serviço de IA"
+        });
         return;
       }
 
       onExtended(extendedHtml);
       setOpen(false);
+      toast.success("Módulo estendido com sucesso!");
     } catch (e: any) {
       console.error("AI extend error", e);
-      toast.error("Erro ao estender com IA", { description: e?.message });
+      handleSupabaseError(e);
     } finally {
       setLoading(false);
     }

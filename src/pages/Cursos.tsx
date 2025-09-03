@@ -178,25 +178,16 @@ export default function CursosPage() {
     
     setLoadingModules(true);
     try {
-      // Tentar buscar da tabela course_modules primeiro
+      // Buscar da tabela modules
       let { data: modules, error } = await supabase
-        .from('course_modules')
+        .from('modules')
         .select('*')
         .eq('course_id', courseId)
         .order('order_index', { ascending: true });
 
-      // Se não encontrar, tentar tabela modules
-      if (error || !modules || modules.length === 0) {
-        console.log('⚠️ Tentando tabela modules como fallback...');
-        const { data: fallbackModules, error: fallbackError } = await supabase
-          .from('modules')
-          .select('*')
-          .eq('course_id', courseId)
-          .order('order_index', { ascending: true });
-        
-        if (!fallbackError && fallbackModules) {
-          modules = fallbackModules;
-        }
+      // Se houver erro, usar módulos de exemplo
+      if (error) {
+        console.error('❌ Erro ao carregar módulos:', error);
       }
 
       if (error && !modules) {

@@ -9,6 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { 
+  handleSupabaseError, 
+  executeWithRetry, 
+  checkUserPermissions,
+  SupabaseErrorType 
+} from "@/utils/supabaseErrorHandler";
 
 interface AIGenerationDialogProps {
   type: 'missions' | 'quizzes';
@@ -41,31 +47,63 @@ export default function AIGenerationDialog({ type, trackId, courseId, onSuccess 
   };
 
   const handleGenerate = async () => {
+    if (type === 'quizzes' && questionTypes.length === 0) {
+      toast.error('Selecione pelo menos um tipo de questão');
+      return;
+    }
+
+    setLoading(true);
     try {
-      setLoading(true);
+      // Verificar permissões do usuário
+      const permissionCheck = await checkUserPermissions(supabase);
+      if (!permissionCheck.success) {
+        toast.error('Acesso negado', {
+          description: permissionCheck.error
+        });
+        return;
+      }
 
-      const { error } = await supabase.functions.invoke('ai-generate-certifications', {
-        body: {
-          type,
-          trackId,
-          courseId,
-          count,
-          difficulty,
-          missionType: type === 'missions' ? missionType : undefined,
-          basePoints: type === 'missions' ? basePoints : undefined,
-          questionTypes: type === 'quizzes' ? questionTypes : undefined,
-        }
-      });
+      // Executar geração com retry automático
+      const result = await executeWithRetry(async () => {
+        const { data, error } = await supabase.functions.invoke('ai-generate-certifications', {
+          body: {
+            type,
+            trackId,
+            courseId,
+            count,
+            difficulty,
+            missionType: type === 'missions' ? missionType : undefined,
+            basePoints: type === 'missions' ? basePoints : undefined,
+            questionTypes: type === 'quizzes' ? questionTypes : undefined,
+          },
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+        return data;
+      }, 2); // Máximo 2 tentativas para Edge Functions
 
-      toast(`${type === 'missions' ? 'Missões' : 'Quizzes'} geradas com sucesso!`);
-      setOpen(false);
-      onSuccess?.();
-      
+      if (!result.success) {
+        toast.error('Erro na geração', {
+          description: result.error
+        });
+        return;
+      }
+
+      const data = result.data;
+      if (data?.success) {
+        toast.success(`${type === 'missions' ? 'Missões' : 'Quizzes'} gerados com sucesso!`, {
+          description: `${data.inserted} itens foram criados.`
+        });
+        setOpen(false);
+        onSuccess?.();
+      } else {
+        toast.error('Erro na geração', {
+          description: data?.error || 'Resposta inesperada do servidor'
+        });
+      }
     } catch (error: any) {
       console.error('Generation error:', error);
-      toast(`Erro ao gerar ${type === 'missions' ? 'missões' : 'quizzes'}: ${error.message}`);
+      handleSupabaseError(error);
     } finally {
       setLoading(false);
     }
