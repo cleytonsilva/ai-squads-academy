@@ -17,7 +17,7 @@ export enum SupabaseErrorType {
 /**
  * Interface para resultado de operação com Supabase
  */
-export interface SupabaseOperationResult<T = any> {
+export interface SupabaseOperationResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -28,11 +28,12 @@ export interface SupabaseOperationResult<T = any> {
 /**
  * Classifica o tipo de erro baseado na mensagem e código
  */
-export function classifySupabaseError(error: any): SupabaseErrorType {
+export function classifySupabaseError(error: unknown): SupabaseErrorType {
   if (!error) return SupabaseErrorType.UNKNOWN;
   
-  const message = error.message?.toLowerCase() || '';
-  const code = error.code;
+  const errorObj = error as { message?: string; code?: string };
+  const message = errorObj.message?.toLowerCase() || '';
+  const code = errorObj.code;
   
   // Erros de autenticação
   if (
@@ -118,7 +119,7 @@ export function shouldRetryError(errorType: SupabaseErrorType): boolean {
 /**
  * Gera mensagem de erro amigável para o usuário
  */
-export function getErrorMessage(errorType: SupabaseErrorType, originalError?: any): string {
+export function getErrorMessage(errorType: SupabaseErrorType, originalError?: Error): string {
   switch (errorType) {
     case SupabaseErrorType.AUTHENTICATION:
       return 'Sessão expirada. Por favor, faça login novamente.';
@@ -134,14 +135,14 @@ export function getErrorMessage(errorType: SupabaseErrorType, originalError?: an
       return 'Erro interno do servidor. Tente novamente em alguns minutos.';
     case SupabaseErrorType.UNKNOWN:
     default:
-      return originalError?.message || 'Erro inesperado. Tente novamente.';
+      return (originalError as Error)?.message || 'Erro inesperado. Tente novamente.';
   }
 }
 
 /**
  * Manipula erros do Supabase de forma consistente
  */
-export function handleSupabaseError(error: any, showToast = true): SupabaseOperationResult {
+export function handleSupabaseError(error: unknown, showToast = true): SupabaseOperationResult {
   console.error('[Supabase Error]', error);
   
   const errorType = classifySupabaseError(error);
@@ -171,7 +172,7 @@ export async function executeWithRetry<T>(
   delayMs = 1000,
   autoLog = true
 ): Promise<SupabaseOperationResult<T>> {
-  let lastError: any;
+  let lastError: unknown;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {

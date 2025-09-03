@@ -91,7 +91,7 @@ export default function CursosPage() {
         setCourseProgress(progressData || []);
 
         // Combinar dados dos cursos com progresso
-        const coursesWithProgress = coursesData?.map((course: any) => {
+        const coursesWithProgress = coursesData?.map((course: Course) => {
           const progress = progressData?.find(p => p.course_id === course.id);
           return {
             id: course.id,
@@ -113,7 +113,8 @@ export default function CursosPage() {
         console.log(`✅ ${coursesWithProgress.length} cursos processados`);
         setCourses(coursesWithProgress);
       } catch (error) {
-        console.error('❌ Erro ao buscar cursos:', error);
+        const err = error as Error;
+        console.error('❌ Erro ao buscar cursos:', err);
         setCourses([]);
       } finally {
         setLoading(false);
